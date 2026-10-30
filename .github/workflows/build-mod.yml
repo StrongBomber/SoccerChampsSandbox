@@ -100,8 +100,9 @@ jobs:
             echo ""
             echo "- Icerik: frida-server (android-arm) + The Boys ajani + acilista otomatik baslatma"
             echo "- Kurulum: Magisk uzerinden zip'i flash et, oyunu ac, PC'den tools/theboys.sh --attach"
-            echo "- Menu: Tara (para/yas/gorunum/zeka/saglik...) / The Boys (10 karakter + Vought) / Istatistik / Kayit"
-            echo "- Oyun APK'si, paket adi ve imzasi korunur"
+            echo "- Menu: Tara (para/yas/gorunum/zeka/saglik...) / The Boys (10 karakter, Vought parasi, Vought Modu,"
+            echo "  Compound V +5, Siralamam) / Istatistik (8 sablon) / Kayit (dosyalar + 0-1 bayraklar)"
+            echo "- Oyun APK'si, paket adi ve imzasi korunur; pakette oyun kodu YOKTUR"
             echo ""
             echo "Ayrica: theboys-mod.js tek basina (frida -U -f com.candywriter.bitlife -l theboys-mod.js)"
           } > NOTES.md
