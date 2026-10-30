@@ -24,6 +24,8 @@
         <input id="globalSearch" type="search" placeholder="Oyuncu, personel veya kulüp ara…" autocomplete="off" />
       </div>
 
+      <div class="palette" id="palette" hidden></div>
+
       <div class="title-actions">
         <button class="dirty-pill" id="reviewBtn" title="Bekleyen değişiklikleri incele (Ctrl+R)">Kaydedildi</button>
         <button class="btn ghost" id="undoBtn" title="Son düzenlemeyi geri al (Ctrl+Z)">↶ Geri Al</button>
@@ -36,6 +38,12 @@
     <main class="editor-body">
       <div id="view"></div>
     </main>
+
+    <div class="mobile-bar">
+      <button class="mbtn" id="mUndo">↶ Geri Al</button>
+      <button class="mbtn" id="mReview">Bekleyen <b id="mCount">0</b></button>
+      <button class="mbtn primary" id="mSave">Kaydet</button>
+    </div>
 
     <footer class="statusbar">
       <button class="status-chip" id="statusLeft">Hazır</button>

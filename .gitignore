@@ -7,3 +7,7 @@ apk/last-build.log
 # Geçici analiz çıktıları
 analysis/il2cpp-evidence.json
 *.tmp
+
+# test bağımlılıkları (repoda tutulmaz)
+node_modules/
+package-lock.json

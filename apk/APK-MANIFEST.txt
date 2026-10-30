@@ -1,6 +1,6 @@
 APK: apk/out/wsc-editor.apk
 Boyut: 66474 bayt
-SHA-256: d4df15bfefc08275fc6c3341263ce50322efca238bb621d589243f217814e0c0
+SHA-256: ab374eff2990dca29e58f70f86b5a0cc9efe03fe4bde1e36a3c928f6acd45d3d
 
 === içerik ===
 Archive:  apk/out/wsc-editor.apk
@@ -8,21 +8,21 @@ Archive:  apk/out/wsc-editor.apk
 ---------  ---------- -----   ----
      2228  1980-01-01 00:00   AndroidManifest.xml
        40  1980-01-01 00:00   resources.arsc
-    12868  2026-10-30 12:28   classes.dex
-    26006  2026-10-30 12:28   assets/styles.css
-    50735  2026-10-30 12:28   assets/demo-save.js
-    83242  2026-10-30 12:28   assets/demo-save.json
-     5470  2026-10-30 12:28   assets/data.js
-     2276  2026-10-30 12:28   assets/index.html
-    74358  2026-10-30 12:28   assets/app.js
-      945  2026-10-30 12:29   META-INF/WSC.SF
-     1337  2026-10-30 12:29   META-INF/WSC.RSA
-      818  2026-10-30 12:29   META-INF/MANIFEST.MF
+    12868  2026-10-30 12:27   classes.dex
+    26006  2026-10-30 12:27   assets/styles.css
+    50735  2026-10-30 12:27   assets/demo-save.js
+    83242  2026-10-30 12:27   assets/demo-save.json
+     5470  2026-10-30 12:27   assets/data.js
+     2276  2026-10-30 12:27   assets/index.html
+    74358  2026-10-30 12:27   assets/app.js
+      945  2026-10-30 12:27   META-INF/WSC.SF
+     1337  2026-10-30 12:27   META-INF/WSC.RSA
+      818  2026-10-30 12:27   META-INF/MANIFEST.MF
 ---------                     -------
    260323                     12 files
 
 === imza ===
 V3.0 Signer: certificate DN: CN=WSC In-Game Editor, OU=Sandbox, O=WSC, L=Istanbul, C=TR
-V3.0 Signer: certificate SHA-256 digest: 1a40caeb419258339cfb8e6d15ee75eb5fd987140de1796ca00792393dd8a7d9
-V3.0 Signer: certificate SHA-1 digest: 247f58acd00d7332fc4d75db75bc42df7e2f9489
-V3.0 Signer: certificate MD5 digest: 511e79c45fcc2e921e31cab6b19b6973
+V3.0 Signer: certificate SHA-256 digest: f9aba2a949aa7b50f908a60bcee1c3890cafb47bca47399a79924a4194c53aa4
+V3.0 Signer: certificate SHA-1 digest: 006d43e25794817534ac38f3b5e290b175bcf367
+V3.0 Signer: certificate MD5 digest: 38bd09c99336a486ec4b6da3a61aff00

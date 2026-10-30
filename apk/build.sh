@@ -83,7 +83,7 @@ echo "==> [4/6] APK paketleniyor"
 "$BT/aapt2" link -o "$BUILD/base.apk" -I "$ANDROID_JAR" \
      --manifest "$APK_DIR/AndroidManifest.xml" \
      --min-sdk-version 24 --target-sdk-version 34 \
-     --version-code 1 --version-name "1.0"
+     --version-code 2 --version-name "1.1"
 
 cp "$BUILD/dex/classes.dex" "$BUILD/classes.dex"
 ( cd "$BUILD" && zip -q base.apk classes.dex && zip -qr base.apk assets )

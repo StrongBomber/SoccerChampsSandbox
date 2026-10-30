@@ -555,3 +555,93 @@ table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: 
   letter-spacing: .08em; text-transform: uppercase; font-weight: 600;
 }
 .bulk-item button:hover { background: rgba(124,58,237,.45); }
+
+/* ==========================================================================
+   Serbest JSON ağacı · komut paleti · mobil aksiyon çubuğu
+   ========================================================================== */
+
+.tree { max-height: 62vh; overflow: auto; padding: 6px 0 10px; font-size: 12px; }
+.tree-row { display: grid; grid-template-columns: 18px minmax(120px, 320px) 1fr auto; gap: 8px; align-items: center; padding: 3px 10px; border-bottom: 1px solid var(--line-soft); }
+.tree-row:hover { background: #16161e; }
+.tree-caret {
+  width: 18px; height: 18px; border: none; background: transparent; color: var(--purple-3);
+  cursor: pointer; font-size: 11px; line-height: 1; padding: 0;
+}
+.tree-caret.ghost { visibility: hidden; }
+.tree-key { color: var(--text-dim); font-family: var(--mono); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-key b { color: #cfc7ee; font-weight: 700; }
+.tree-type { color: var(--muted); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; }
+.tree-val { display: flex; justify-content: flex-end; }
+.tree-input {
+  width: 100%; max-width: 420px; height: 22px; padding: 0 6px; text-align: right;
+  background: #0c0c11; border: 1px solid var(--line); border-radius: 2px; font-size: 11.5px;
+  font-family: var(--mono);
+}
+.tree-input.num { max-width: 150px; }
+.tree-input:focus { outline: none; border-color: var(--purple-2); background: #12121a; }
+.tree-actions button {
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  height: 20px; min-width: 20px; border-radius: 3px; cursor: pointer; font-size: 11px; line-height: 1;
+}
+.tree-actions button:hover { color: #fff; border-color: var(--purple-2); }
+.tree-add {
+  border: 1px dashed #3a3a4a; background: transparent; color: var(--muted); border-radius: 3px;
+  height: 22px; padding: 0 10px; font-size: 10.5px; cursor: pointer; letter-spacing: .06em;
+}
+.tree-add:hover { color: #e9defd; border-color: var(--purple-2); }
+.tree-search {
+  flex: 1; height: 26px; padding: 0 9px; background: #0c0c11; border: 1px solid var(--line);
+  border-radius: 3px; font-size: 12px;
+}
+
+/* komut paleti */
+.palette {
+  position: absolute; top: 46px; left: 246px; width: min(520px, 60vw);
+  background: #15151d; border: 1px solid #3b2c60; border-radius: 4px; z-index: 80;
+  box-shadow: 0 18px 44px rgba(0,0,0,.6); overflow: hidden;
+}
+.titlebar { position: relative; }
+.pal-item {
+  display: grid; grid-template-columns: 74px 1fr auto; gap: 10px; align-items: center;
+  width: 100%; text-align: left; border: none; background: transparent; color: var(--text-dim);
+  padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--line-soft); font-size: 12.5px;
+}
+.pal-item:hover, .pal-item.active { background: rgba(91,33,182,.28); color: #fff; }
+.pal-kind { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--purple-3); }
+.pal-hint { font-size: 10.5px; color: var(--muted); }
+
+/* mobil aksiyon çubuğu */
+.mobile-bar { display: none; }
+
+@media (max-width: 720px) {
+  .mobile-bar {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+    background: #0d0d13; border-top: 1px solid #2c2c3a;
+  }
+  .mbtn {
+    height: 40px; border-radius: 4px; border: 1px solid var(--line);
+    background: #1a1a24; color: var(--text-dim); font-size: 12px; font-weight: 600;
+    letter-spacing: .04em; cursor: pointer;
+  }
+  .mbtn.primary { background: linear-gradient(180deg, #7c3aed, #5b21b6); color: #fff; border-color: #6d28d9; }
+  .mbtn:disabled { opacity: .45; }
+  .mbtn b { color: var(--gold); }
+
+  /* dokunma hedeflerini büyüt */
+  .stepper button { width: 30px; height: 30px; font-size: 16px; }
+  .stepper input { height: 30px; width: 90px; font-size: 13px; }
+  select.field, input.field { height: 32px; max-width: 100%; }
+  .attr input { width: 44px; height: 28px; font-size: 13px; }
+  .row { min-height: 42px; }
+  .tab { height: 42px; padding: 0 12px; font-size: 10px; }
+  .section-tabs { position: sticky; top: 0; z-index: 30; background: #121218; }
+  .card-head { height: 36px; }
+  .palette { left: 10px; right: 10px; width: auto; }
+  .tree-row { grid-template-columns: 18px minmax(90px, 1fr) 1.2fr; }
+  .tree-actions { grid-column: 3; }
+  body { -webkit-text-size-adjust: 100%; }
+  button, .tab, .list-row { -webkit-tap-highlight-color: transparent; }
+  .subtabs { overflow-x: auto; flex-wrap: nowrap; }
+  .subtab { white-space: nowrap; }
+}

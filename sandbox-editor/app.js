@@ -24,6 +24,7 @@
     { id: "finances", label: "Finans" },
     { id: "competitions", label: "Müsabakalar" },
     { id: "sandbox", label: "Sandbox" },
+    { id: "free", label: "Serbest JSON" },
     { id: "preferences", label: "Tercihler" },
   ];
 
@@ -46,6 +47,9 @@
     playerTab: "profile",
     staffId: null,
     staffQ: "",
+    expanded: new Set(["club", "club.finances", "game", "meta", "finances"]),
+    treeQ: "",
+    palette: { open: false, index: 0, items: [] },
     q: "",
     posFilter: "ALL",
     sort: "ca",
@@ -335,6 +339,127 @@
   /* ============================ görünümler ============================ */
 
   function playerIndex(p) { return S.save.players.indexOf(p); }
+
+  /* ============================ serbest JSON ağacı ============================ */
+
+  function treeValue(obj, key) {
+    return obj[key];
+  }
+
+  function renderTree(node, path, depth) {
+    if (node === null || typeof node !== "object") return "";
+    const isArr = Array.isArray(node);
+    const keys = isArr ? node.map((_, i) => String(i)) : Object.keys(node);
+    const rows = [];
+
+    keys.forEach((k) => {
+      const childPath = path ? `${path}.${k}` : k;
+      const v = node[k];
+      const isBranch = v !== null && typeof v === "object";
+      const open = S.expanded.has(childPath);
+      const indent = `style="padding-left:${10 + depth * 14}px"`;
+
+      if (isBranch) {
+        const count = Array.isArray(v) ? v.length : Object.keys(v).length;
+        rows.push(`<div class="tree-row branch" ${indent}>
+          <button class="tree-caret ${open ? "open" : ""}" data-tree-toggle="${esc(childPath)}">${open ? "▾" : "▸"}</button>
+          <span class="tree-key">${esc(isArr ? `#${k}` : k)}</span>
+          <span class="tree-type">${Array.isArray(v) ? "dizi" : "nesne"} · ${count}</span>
+          ${isArr ? `<span class="tree-actions">
+            <button title="Öğe ekle" data-tree-add="${esc(childPath)}">＋</button>
+          </span>` : ""}
+        </div>`);
+        if (open) rows.push(renderTree(v, childPath, depth + 1));
+      } else {
+        const type = v === null ? "null" : typeof v;
+        const input = type === "boolean"
+          ? `<input type="checkbox" data-tree-path="${esc(childPath)}" data-tree-type="boolean" ${v ? "checked" : ""} />`
+          : `<input class="tree-input ${type === "number" ? "num" : ""}" data-tree-path="${esc(childPath)}"
+               data-tree-type="${type}" value="${esc(v === null ? "" : v)}" ${type === "number" ? 'type="number" step="any"' : 'type="text"'} />`;
+        rows.push(`<div class="tree-row leaf" ${indent}>
+          <span class="tree-caret ghost"></span>
+          <span class="tree-key">${esc(isArr ? `#${k}` : k)}</span>
+          <span class="tree-val">${input}</span>
+          ${isArr ? `<span class="tree-actions"><button title="Sil" data-tree-del="${esc(childPath)}">✕</button></span>` : ""}
+        </div>`);
+      }
+    });
+
+    // dizi/nesne için öğe ekleme satırı
+    if (isArr) {
+      rows.push(`<div class="tree-row add" style="padding-left:${10 + depth * 14 + 22}px">
+        <button class="tree-add" data-tree-add="${esc(path)}">＋ öğe ekle</button>
+      </div>`);
+    }
+    return rows.join("");
+  }
+
+  function treeMatches(query) {
+    const out = [];
+    const q = query.toLocaleLowerCase("tr");
+    (function walk(node, path) {
+      if (node === null || typeof node !== "object") {
+        if (path.toLocaleLowerCase("tr").includes(q) || String(node).toLocaleLowerCase("tr").includes(q)) out.push(path);
+        return;
+      }
+      Object.keys(node).forEach((k) => walk(node[k], path ? `${path}.${k}` : k));
+    })(S.save, "");
+    return out.slice(0, 400);
+  }
+
+  /* ============================ komut paleti ============================ */
+
+  function paletteItems(query) {
+    const q = (query || "").toLocaleLowerCase("tr").trim();
+    const out = [];
+    if (!q) {
+      out.push({ kind: "Komut", label: "Değişiklikleri kaydet", hint: "Ctrl+S", run: () => saveNow() });
+      out.push({ kind: "Komut", label: "Bekleyen değişiklikler", hint: "Ctrl+R", run: () => openReview() });
+      TABS.forEach((t) => out.push({ kind: "Bölüm", label: t.label, run: () => { S.route = t.id; paint(); } }));
+      return out.slice(0, 12);
+    }
+    S.save.players.forEach((p) => {
+      if (p.name.toLocaleLowerCase("tr").includes(q))
+        out.push({ kind: "Oyuncu", label: p.name, hint: `${p.position} · ${p.age} yaş · CA ${p.ca}`, run: () => { S.route = "players"; S.playerId = p.id; paint(); } });
+    });
+    S.save.staff.forEach((m) => {
+      if (m.name.toLocaleLowerCase("tr").includes(q))
+        out.push({ kind: "Personel", label: m.name, hint: m.role, run: () => { S.route = "staff"; S.staffId = m.id; paint(); } });
+    });
+    TABS.forEach((t) => {
+      if (t.label.toLocaleLowerCase("tr").includes(q))
+        out.push({ kind: "Bölüm", label: t.label, run: () => { S.route = t.id; paint(); } });
+    });
+    S.save.competitions.forEach((c, i) => {
+      if (c.name.toLocaleLowerCase("tr").includes(q))
+        out.push({ kind: "Müsabaka", label: c.name, hint: `itibar ${c.reputation}`, run: () => { S.route = "competitions"; paint(); } });
+    });
+    return out.slice(0, 12);
+  }
+
+  function paintPalette() {
+    const box = $("#palette");
+    if (!box) return;
+    const items = S.palette.items;
+    if (!S.palette.open || !items.length) { box.hidden = true; box.innerHTML = ""; return; }
+    box.hidden = false;
+    box.innerHTML = items.map((it, i) => `
+      <button class="pal-item ${i === S.palette.index ? "active" : ""}" data-pal="${i}">
+        <span class="pal-kind">${esc(it.kind)}</span>
+        <span class="pal-label">${esc(it.label)}</span>
+        <span class="pal-hint">${esc(it.hint || "")}</span>
+      </button>`).join("");
+  }
+
+  function runPalette(i) {
+    const it = S.palette.items[i];
+    if (!it) return;
+    S.palette.open = false;
+    const gs = $("#globalSearch");
+    if (gs) gs.value = "";
+    it.run();
+    paint();
+  }
 
   const views = {
     overview() {
@@ -744,6 +869,51 @@
             <div><div class="bi-title">${esc(b.title)}</div><div class="bi-desc">${esc(b.desc)}</div></div>
             <button data-bulk="${b.id}">Uygula</button>
           </div>`).join("")}
+        </div>`;
+    },
+
+    free() {
+      const matches = S.treeQ ? treeMatches(S.treeQ) : null;
+      return `
+        <div class="hint-box">
+          <span>⌘</span>
+          <div>
+            <b>Serbest JSON düzenleme.</b> Gerçek oyun kaydını içe aldığında alan adları tanınmasa bile
+            buradan her değeri düzenleyebilirsin. Yaptığın değişiklikler aynı inceleme çekmecesinde görünür.
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div class="card-head">
+            <span>Kayıt Ağacı</span>
+            <span class="sub">${fmt.num(Object.keys(S.save).length)} kök alan</span>
+          </div>
+          <div class="toolbar" style="display:flex;gap:8px;padding:10px;border-bottom:1px solid var(--line)">
+            <input id="treeQ" class="tree-search" placeholder="Alan veya değer ara… (örn. wage, 0.5)" value="${esc(S.treeQ)}" />
+            <button class="btn" style="background:#241a3a;height:26px" data-tree-expand="all">Tümünü aç</button>
+            <button class="btn" style="background:#241a3a;height:26px" data-tree-expand="none">Kapat</button>
+          </div>
+          <div class="tree">
+            ${matches
+              ? (matches.length
+                  ? matches.map((path) => {
+                      const parts = path.split(".");
+                      const key = parts.pop();
+                      const value = getPath(S.save, path);
+                      const type = typeof value;
+                      return `<div class="tree-row leaf">
+                        <span class="tree-caret ghost"></span>
+                        <span class="tree-key" title="${esc(path)}">${esc(parts.join(".") || "kök")}<b>.${esc(key)}</b></span>
+                        <span class="tree-val">
+                          ${type === "boolean"
+                            ? `<input type="checkbox" data-tree-path="${esc(path)}" data-tree-type="boolean" ${value ? "checked" : ""} />`
+                            : `<input class="tree-input ${type === "number" ? "num" : ""}" data-tree-path="${esc(path)}" data-tree-type="${type}" value="${esc(value === null ? "" : value)}" ${type === "number" ? 'type="number" step="any"' : 'type="text"'} />`}
+                        </span>
+                      </div>`;
+                    }).join("")
+                  : `<div class="empty-state"><b>Eşleşme yok</b>Farklı bir anahtar dene.</div>`)
+              : renderTree(S.save, "", 0)}
+          </div>
         </div>`;
     },
 
@@ -1304,6 +1474,13 @@
     $("#statusIssues").innerHTML = errs || warns
       ? `<span class="${errs ? "warn" : "ok"}">${errs} hata · ${warns} uyarı</span>`
       : `<span class="ok">doğrulama temiz</span>`;
+    const mCount = $("#mCount");
+    if (mCount) mCount.textContent = String(n);
+    const mSave = $("#mSave");
+    if (mSave) mSave.disabled = n === 0;
+    const mUndo = $("#mUndo");
+    if (mUndo) mUndo.disabled = n === 0;
+
     $("#statusRight").textContent =
       `${S.save.club.name} · ${S.save.game.season} · ${S.save.players.length} oyuncu · CA/PA 1–200 · nitelikler 1–20`;
   }
@@ -1313,6 +1490,11 @@
   function wire() {
     document.addEventListener("click", (e) => {
       const t = e.target;
+
+      if (S.palette.open && !t.closest("#palette") && !t.closest("#globalSearch")) {
+        S.palette.open = false;
+        paintPalette();
+      }
 
       const tab = t.closest("[data-route]");
       if (tab) { S.route = tab.dataset.route; paint(); return; }
@@ -1330,6 +1512,60 @@
       if (pf) { S.posFilter = pf.dataset.posFilter; paint(); return; }
 
       if (t.closest("[data-toggle-filters]")) { S.showFilters = !S.showFilters; paint(); return; }
+
+      const treeToggle = t.closest("[data-tree-toggle]");
+      if (treeToggle) {
+        const path = treeToggle.dataset.treeToggle;
+        if (S.expanded.has(path)) S.expanded.delete(path); else S.expanded.add(path);
+        paint();
+        return;
+      }
+
+      const treeExpand = t.closest("[data-tree-expand]");
+      if (treeExpand) {
+        if (treeExpand.dataset.treeExpand === "all") {
+          (function walk(node, path) {
+            if (node === null || typeof node !== "object") return;
+            S.expanded.add(path || "kök");
+            Object.keys(node).forEach((k) => walk(node[k], path ? `${path}.${k}` : k));
+          })(S.save, "");
+          S.expanded.delete("kök");
+        } else {
+          S.expanded.clear();
+        }
+        paint();
+        return;
+      }
+
+      const treeAdd = t.closest("[data-tree-add]");
+      if (treeAdd) {
+        const path = treeAdd.dataset.treeAdd;
+        const arr = getPath(S.save, path);
+        if (!Array.isArray(arr)) return;
+        const template = arr.length ? clone(arr[arr.length - 1]) : (path === "players" ? {} : "");
+        bulk(`Diziye öğe ekle: ${path}`, (save) => {
+          const target = getPath(save, path);
+          target.push(clone(template));
+        });
+        S.expanded.add(path);
+        return;
+      }
+
+      const treeDel = t.closest("[data-tree-del]");
+      if (treeDel) {
+        const path = treeDel.dataset.treeDel;
+        if (!confirm("Bu öğe silinsin mi?")) return;
+        bulk(`Öğe sil: ${path}`, (save) => {
+          const parts = path.split(".");
+          const idx = Number(parts.pop());
+          const parent = getPath(save, parts.join("."));
+          if (Array.isArray(parent)) parent.splice(idx, 1);
+        });
+        return;
+      }
+
+      const palItem = t.closest("[data-pal]");
+      if (palItem) { runPalette(Number(palItem.dataset.pal)); return; }
 
       const issueBtn = t.closest("[data-issue-go]");
       if (issueBtn) {
@@ -1401,11 +1637,11 @@
       // ---- inceleme çekmecesi ----
       const rv = t.closest("[data-revert]");
       if (rv) { revertPatch(Number(rv.dataset.revert)); renderReview(); return; }
-      if (t.closest("#reviewBtn") || t.closest("#statusLeft")) { openReview(); return; }
+      if (t.closest("#reviewBtn") || t.closest("#statusLeft") || t.closest("#mReview")) { openReview(); return; }
       if (t.closest("#reviewClose") || t.closest("#scrim")) { closeReview(); return; }
       if (t.closest("#revertAllBtn")) { revertAll(); renderReview(); return; }
-      if (t.closest("#saveFromReview") || t.closest("#saveBtn")) { saveNow(); return; }
-      if (t.closest("#undoBtn")) { undo(); return; }
+      if (t.closest("#saveFromReview") || t.closest("#saveBtn") || t.closest("#mSave")) { saveNow(); return; }
+      if (t.closest("#undoBtn") || t.closest("#mUndo")) { undo(); return; }
 
       if (t.closest("#exportBtn")) { exportJson(); return; }
       if (t.closest("#resetBtn")) {
@@ -1419,13 +1655,6 @@
     });
 
     document.addEventListener("input", (e) => {
-      if (e.target.id === "globalSearch") {
-        S.q = e.target.value; S.route = "players";
-        paint({ focus: "search" });
-        const gs = $("#globalSearch");
-        if (gs) { gs.focus(); gs.setSelectionRange(gs.value.length, gs.value.length); }
-        return;
-      }
       if (e.target.id === "sq") {
         S.staffQ = e.target.value;
         const pos2 = e.target.selectionStart;
@@ -1443,11 +1672,39 @@
         return;
       }
       if (e.target.id === "psort") { S.sort = e.target.value; paint(); return; }
+      if (e.target.id === "treeQ") {
+        S.treeQ = e.target.value;
+        const caret = e.target.selectionStart;
+        paint();
+        const el = $("#treeQ");
+        if (el) { el.focus(); el.setSelectionRange(caret, caret); }
+        return;
+      }
+      if (e.target.id === "globalSearch") {
+        S.palette.items = paletteItems(e.target.value);
+        S.palette.index = 0;
+        S.palette.open = true;
+        paintPalette();
+        return;
+      }
       const f = e.target.closest("[data-filter]");
       if (f) { S.filters[f.dataset.filter] = f.value; paint(); return; }
     });
 
     document.addEventListener("change", (e) => {
+      const treeEl = e.target.closest("[data-tree-path]");
+      if (treeEl) {
+        const path = treeEl.dataset.treePath;
+        const type = treeEl.dataset.treeType;
+        let next;
+        if (type === "boolean") next = treeEl.checked;
+        else if (type === "number") next = Number(treeEl.value === "" ? 0 : treeEl.value);
+        else if (type === "null") next = null;
+        else next = treeEl.value;
+        editPath(path, `Serbest düzenleme · ${path}`, next);
+        return;
+      }
+
       const el = e.target.closest("[data-ctl]");
       if (!el) return;
       applyCtl(Number(el.dataset.ctl), el.type === "checkbox" ? el.checked : el.value, false);
@@ -1459,7 +1716,12 @@
       if (mod && e.key.toLowerCase() === "s") { e.preventDefault(); saveNow(); return; }
       if (mod && e.key.toLowerCase() === "r") { e.preventDefault(); openReview(); return; }
       if (mod && e.key.toLowerCase() === "f") { e.preventDefault(); $("#globalSearch")?.focus(); return; }
-      if (e.key === "Escape") { closeReview(); return; }
+      if (e.key === "Escape") { closeReview(); S.palette.open = false; paintPalette(); return; }
+      if (S.palette.open) {
+        if (e.key === "ArrowDown") { e.preventDefault(); S.palette.index = Math.min(S.palette.items.length - 1, S.palette.index + 1); paintPalette(); return; }
+        if (e.key === "ArrowUp") { e.preventDefault(); S.palette.index = Math.max(0, S.palette.index - 1); paintPalette(); return; }
+        if (e.key === "Enter") { e.preventDefault(); runPalette(S.palette.index); return; }
+      }
 
       const row = e.target.closest?.(".list-row");
       if (row && (e.key === "ArrowDown" || e.key === "ArrowUp")) {

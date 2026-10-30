@@ -42,6 +42,12 @@ jobs:
           set -o pipefail
           bash apk/check-java.sh 2>&1 | tee /tmp/javac-check.log || true
 
+      - name: Editör duman testi (jsdom)
+        run: |
+          set -eu
+          npm install --no-save --no-audit --no-fund jsdom
+          node tests/editor-smoke.mjs
+
       - name: APK derle
         id: build
         run: |
@@ -74,6 +80,13 @@ jobs:
           cat apk/out/wsc-editor.apk.sha256
           echo "size=$(stat -c%s apk/out/wsc-editor.apk)"
 
+      - name: APK kurulabilirlik doğrulaması
+        if: always()
+        run: |
+          set -eu
+          [ -f apk/out/wsc-editor.apk ] || exit 0
+          bash apk/verify-apk.sh apk/out/wsc-editor.apk
+
       - name: APK manifestini yayınla
         if: always()
         run: |
@@ -94,8 +107,8 @@ jobs:
           cat apk/APK-MANIFEST.txt
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
-          git add apk/APK-MANIFEST.txt
-          git commit -m "ci: APK manifesti" || echo "değişiklik yok"
+          git add apk/APK-MANIFEST.txt apk/APK-VERIFY.txt 2>/dev/null || true
+          git commit -m "ci: APK manifesti ve doğrulama raporu" || echo "değişiklik yok"
           git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push atlandı"
 
       - name: Artifact yükle
@@ -119,10 +132,12 @@ jobs:
             echo "Kurulum: APK'yi indir, telefonda 'bilinmeyen kaynaklara izin ver' secenegini ac, kur."
             echo "Uygulama tamamen cevrimdisidir; oyun dosyalarina dokunmaz."
             echo ""
+            echo "- Surum: 1.1 (versionCode 2)"
             echo "- Paket: com.wsc.editor"
             echo "- minSdk 24 (Android 7+)"
             echo "- Icerik: 25 oyuncu demo kaydi, FM alanlariyla (CA/PA, 47 nitelik, tesisler, sozlesmeler)"
             echo "- JSON ice/disa aktarma: sistem dosya secici ile"
+            echo "- Yeni: serbest JSON agac editoru (gercek kayit dosyalari icin), komut paleti, mobil aksiyon cubugu"
           } > NOTES.md
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --title "WSC In-Game Editor - Android APK" --notes-file NOTES.md
