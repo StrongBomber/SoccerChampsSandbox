@@ -1,5 +1,50 @@
-APK doğrulama: apk/out/wsc-editor.apk
-Boyut:  bayt
-SHA-256: 
+APK doğrulama: /home/runner/work/SoccerChampsSandbox/SoccerChampsSandbox/apk/out/wsc-editor.apk
+Boyut: 70570 bayt
+SHA-256: ec9654815acb84593c4553c151073be5145ca97cee2d68fad579a34550b7c6a1
 
 [1] Paket bilgisi (aapt2 dump badging)
+    package: name='com.wsc.editor' versionCode='2' versionName='1.1' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
+    minSdkVersion:'24'
+    targetSdkVersion:'34'
+    application: label='WSC In-Game Editor' icon=''
+    launchable-activity: name='com.wsc.editor.MainActivity'  label='' icon=''
+    feature-group: label=''
+      uses-feature: name='android.hardware.faketouch'
+      uses-implied-feature: name='android.hardware.faketouch' reason='default feature for all apps'
+    main
+    supports-screens: 'small' 'normal' 'large' 'xlarge'
+    supports-any-density: 'true'
+    locales:
+    densities:
+  ✓ paket: com.wsc.editor
+  ✓ launcher activity tanımlı
+  ✗ minSdk 24 değil
+  ✓ targetSdk 34
+  ✗ etiket yok
+  ✓ native kod yok (saf Java — her ABI'de çalışır)
+
+[2] DEX sınıfları (dexdump)
+  ✓ sınıf: Lcom/wsc/editor/MainActivity;
+  ✓ sınıf: Lcom/wsc/editor/MiniServer;
+  ✓ sınıf: Lcom/wsc/editor/MainActivity$Bridge;
+
+[3] Gömülü varlıklar
+  ✓ assets/index.html (2572 bayt)
+  ✓ assets/app.js (85833 bayt)
+  ✓ assets/data.js (5470 bayt)
+  ✓ assets/styles.css (30515 bayt)
+  ✓ assets/demo-save.json (83242 bayt)
+  ✓ assets/demo-save.js (50735 bayt)
+  ✓ classes.dex (12868 bayt)
+
+[4] İmza (apksigner)
+    V3.0 Signer: certificate DN: CN=WSC In-Game Editor, OU=Sandbox, O=WSC, L=Istanbul, C=TR
+    V3.0 Signer: certificate SHA-256 digest: 88e329775ae90c566693a9c32a9c16d7c08a21f828f87e3fc42f80656b52d21b
+    V3.0 Signer: certificate SHA-1 digest: 4cbff5d37caa55d707d1f4235b20a5742a801903
+    V3.0 Signer: certificate MD5 digest: 1b93ce3b26da3408eb1df4e6ab796d91
+  ✓ imza geçerli
+
+[5] Hizalama (zipalign)
+  ✓ 4 bayt hizalı
+
+SONUÇ: HATA VAR — yukarıdaki ✗ satırlarına bak
