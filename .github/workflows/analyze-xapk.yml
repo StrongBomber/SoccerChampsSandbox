@@ -70,26 +70,82 @@ jobs:
       - name: Detect engine and extract native payloads
         run: |
           set -eu
-          BASE=$(find xapk -maxdepth 1 -name 'base.apk' -print -quit || true)
-          if [ -z "$BASE" ]; then BASE=$(find xapk -maxdepth 1 -name '*.apk' -print -quit); fi
-          echo "BASE_APK=$BASE" >> "$GITHUB_ENV"
+          : > out/02-engine.txt
+          # Paket APK'si = AndroidManifest.xml + classes.dex iceren split
+          PKG_APK=""
+          for apk in xapk/*.apk; do
+            if unzip -Z1 "$apk" | grep -q '^AndroidManifest.xml$' && unzip -Z1 "$apk" | grep -q '^classes.*\.dex$'; then
+              PKG_APK="$apk"; break
+            fi
+          done
+          [ -n "$PKG_APK" ] || PKG_APK=$(find xapk -maxdepth 1 -name '*.apk' -print -quit)
+          echo "PKG_APK=$PKG_APK" >> "$GITHUB_ENV"
           {
-            echo "=== base apk: $BASE ==="
-            echo "=== native/asset izleri ==="
-            unzip -Z1 "$BASE" | grep -E 'libil2cpp\.so|libunity\.so|libmono\.so|global-metadata\.dat|assets/bin/Data|unity\.default|libfmod|libmain' || echo "(iz yok)"
+            echo "=== paket apk: $PKG_APK ($(stat -c%s "$PKG_APK") bayt) ==="
             echo
-            echo "=== classes*.dex ==="
-            unzip -Z1 "$BASE" | grep -E '^classes.*\.dex$' || true
+            echo "=== tum split'ler ==="
+            ls -la xapk
             echo
-            echo "=== toplam giris sayisi ==="
-            unzip -Z1 "$BASE" | wc -l
+            echo "=== dex dosyalari ==="
+            unzip -Z1 "$PKG_APK" | grep -E '^classes.*\.dex$' || true
+            echo
+            echo "=== arm64-v8a native kutuphane envanteri ==="
+            unzip -Z1 "$PKG_APK" | grep -E '^lib/' || true
+            echo
+            echo "=== motor isaretleri ==="
+            for marker in libunity.so libil2cpp.so libmono.so libflutter.so libcocos2d libgodot unity.default global-metadata.dat assets/bin/Data libmain.so; do
+              if unzip -Z1 "$PKG_APK" | grep -q "$marker"; then echo "  VAR   $marker"; else echo "  yok   $marker"; fi
+            done
+            echo
+            echo "=== assets ust duzey (ilk 120) ==="
+            unzip -Z1 "$PKG_APK" | grep -E '^assets/' | head -120 || true
+            echo
+            echo "=== ilk 60 giris ==="
+            unzip -Z1 "$PKG_APK" | head -60 || true
           } > out/02-engine.txt 2>&1 || true
           cat out/02-engine.txt
 
-          for split in xapk/*.apk; do
-            echo "--- split: $split" >> out/02-engine.txt
-            unzip -Z1 "$split" | grep -E '\.so$|global-metadata' | head -20 >> out/02-engine.txt 2>&1 || true
-          done
+      - name: "Deep probe - native markers, dex packages, save-format hints"
+        continue-on-error: true
+        timeout-minutes: 20
+        run: |
+          set -eu
+          mkdir -p out/probe
+          unzip -o -j -q "$PKG_APK" 'lib/*/libWorldSoccerChamps.so' -d out/probe 2>/dev/null || true
+          unzip -o -q "$PKG_APK" 'classes*.dex' -d out/probe 2>/dev/null || true
+          {
+            echo "=== native kutuphane ==="
+            ls -la out/probe/*.so 2>/dev/null || echo "(libWorldSoccerChamps.so yok)"
+            for so in out/probe/*.so; do
+              [ -f "$so" ] || continue
+              echo "--- $so"
+              echo "  ELF: $(file -b "$so")"
+              echo "  il2cpp/mono/unity sembolleri:"
+              strings -n 6 "$so" | grep -Ei 'il2cpp_init|il2cpp_domain_get|il2cpp_class_from_name|mono_image_open|UnityPlayer' | sort -u | head -20 || true
+              echo "  IL2CPP metadata imzasi (0xFAB11BAF):"
+              strings -n 6 "$so" | grep -c 'global-metadata' || true
+              echo "  oyun veri anahtarlari (ilk 40):"
+              strings -n 5 "$so" | grep -Ei '^(money|budget|transfer|wage|contract|player|club|finances?)' | sort -u | head -40 || true
+              echo "  sqlite/json/save izleri:"
+              strings -n 6 "$so" | grep -Ei 'sqlite|\.sav\b|playerprefs|savegame|persistentDataPath' | sort -u | head -20 || true
+            done
+            echo
+            echo "=== dex: paket/uygulama siniflari ==="
+            for dex in out/probe/classes*.dex; do
+              [ -f "$dex" ] || continue
+              echo "--- $dex"
+              strings -n 8 "$dex" | grep -E '^L(com|io|net|org)/[a-zA-Z0-9_/]+;' | sed 's/^L//; s/;$//' | cut -d/ -f1-3 | sort -u | head -40 || true
+            done
+            echo
+            echo "=== dex: koruma/guc izleri ==="
+            for dex in out/probe/classes*.dex; do
+              strings -n 6 "$dex" | grep -Ei 'pairip|playcore|integrity|rootbeer|frida|signature.*check|licensing' | sort -u | head -20 || true
+            done
+            echo
+            echo "=== asset veri dosyalari (db/json/csv/sav) ==="
+            unzip -Z1 "$PKG_APK" | grep -Ei '\.(db|sqlite|json|csv|sav|dat|bin|asset)$' | head -60 || true
+          } > out/05-probe.txt 2>&1 || true
+          cat out/05-probe.txt
 
       - name: IL2CPP metadata inventory (REA)
         id: il2cpp
@@ -135,7 +191,7 @@ jobs:
         timeout-minutes: 40
         run: |
           set -eu
-          "$REA_BIN" inspect-android-package "$BASE_APK" --detail summary --json \
+          "$REA_BIN" inspect-android-package "$PKG_APK" --detail summary --json \
             > out/android-package.json 2> out/android-package.stderr || true
           head -c 2000 out/android-package.json || true
 
@@ -146,7 +202,7 @@ jobs:
           git config user.name "rea-bot"
           git config user.email "rea-bot@users.noreply.github.com"
           mkdir -p analysis
-          cp -f out/00-listing.txt out/02-engine.txt out/03-il2cpp.txt out/04-il2cpp-result.txt analysis/ 2>/dev/null || true
+          cp -f out/00-listing.txt out/02-engine.txt out/03-il2cpp.txt out/04-il2cpp-result.txt out/05-probe.txt analysis/ 2>/dev/null || true
           ls -la analysis
           git add analysis
           git commit -m "analysis: REA static analysis of World Soccer Champs 2026.12" || echo "degisiklik yok"
