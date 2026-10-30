@@ -28,8 +28,8 @@ const PKG = "com.candywriter.bitlife";
 const rt = createRuntime();
 const logs = [];
 const files = new Map([
-  [`/data/user/0/${PKG}/files/prefs.json`, JSON.stringify({ money: 5000, age: 27, looks: 78 })],
-  [`/data/user/0/${PKG}/files/savegame`, JSON.stringify({ money: 5000, age: 27, looks: 78, offside: 0 })],
+  [`/data/user/0/${PKG}/files/prefs.json`, JSON.stringify({ money: 5000, age: 27, looks: 78, noAds: false })],
+  [`/data/user/0/${PKG}/files/savegame`, JSON.stringify({ money: 5000, age: 27, vought: 0, premium: 1 })],
 ]);
 const ext = `/storage/emulated/0/Android/data/${PKG}/files`;
 
@@ -152,6 +152,13 @@ check("BitLife dosyaları listelendi", fileRows.length === 2, fileRows.map((r) =
 fileRows.find((r) => r.text.includes("savegame")).click();
 const preview = walk(pages[3]).find((n) => n.kind === "EditText");
 check("dosya önizlendi", preview.getText().toString().includes("5000"));
+saveButtons.find((b) => b.text === "Bayrakları bul").click();
+const flagRows = walk(pages[3]).filter((n) => n.kind === "TextView" && /vought|premium/.test(n.text));
+check("bayraklar bulundu", flagRows.length === 2, flagRows.map((r) => r.text).join(" | "));
+flagRows.find((r) => r.text.startsWith("vought")).click();
+check("bayrak 0 → 1 çevrildi", preview.getText().toString().includes('"vought":1'), preview.getText().toString().slice(0, 60));
+saveButtons.find((b) => b.text === "Geri Yaz").click();
+check("bayrak diske yazıldı", files.get(`/data/user/0/${PKG}/files/savegame`).includes('"vought":1'));
 saveButtons.find((b) => b.text === "Yedekle").click();
 check("yedek alındı", [...files.keys()].some((k) => k.startsWith(ext) && k.includes("backup-")));
 

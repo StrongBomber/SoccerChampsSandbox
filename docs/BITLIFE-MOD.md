@@ -37,7 +37,7 @@ Alternatif (paket kurmadan): `tools/theboys.sh --server /yol/frida-server-arm`
 | **Tara** | int32 / int64 / float / double değer taraması. *İlk Ara → oyunda değeri değiştir → Değişti/Aynı/Arttı/Azaldı* ile daralt → satıra dokun → **Seçilene Yaz** / **Tümüne Yaz** / **Dondur** |
 | **The Boys** | 10 karakter paketi. Seçili adreslere karakterin imza değerini yazar: Homelander 100 · Black Noir 100 · Billy Butcher 95 · Starlight 92 · A-Train 90 · Soldier Boy 88 · Kimiko 85 · Frenchie 78 · Hughie 70 · The Deep 60. Ayrıca **Vought parası** (999.999.999), **Vought Modu** (değeri mevcut halinde kilitler), **Compound V** (her doz +5, 100'de durur) ve **Sıralamam** (bulunan adreslerin canlı ortalamasından Homelander…The Deep sıralaması) |
 | **İstatistik** | Para · Yaş · Görünüm · Zeka · Sağlık · Mutluluk · Şöhret · Karma için doğru tip ve ipucu şablonları |
-| **Kayıt** | Oyunun kendi `files/` dizinini listeler; dosyayı okur, **yedekler**, metinse düzenleyip geri yazar; içinde kural/ayar benzeri alanları bulur |
+| **Kayıt** | Oyunun kendi `files/` dizinini listeler; dosyayı okur, **yedekler**, metinse düzenleyip geri yazar; JSON kayıtta **Bayrakları bul** ile 0/1 ayarları tek dokunuşla çevirir |
 
 ### Tipik akış (para)
 
@@ -50,8 +50,8 @@ Alternatif (paket kurmadan): `tools/theboys.sh --server /yol/frida-server-arm`
 ## Testler (cihaz gerekmez)
 
 ```bash
-node tests/theboys-test.mjs      # 42 iddia — ajan mantığı
-node tests/theboys-ui-test.mjs   # 36 iddia — arayüz, Android çerçeve taklidi
+node tests/theboys-test.mjs      # 48 iddia — ajan mantığı
+node tests/theboys-ui-test.mjs   # 39 iddia — arayüz, Android çerçeve taklidi
 ```
 
 Arayüz testi ajanın **gerçek kod yolunu** çalıştırır: `android.app.Activity.onCreate` hook'u →

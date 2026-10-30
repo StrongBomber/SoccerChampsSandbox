@@ -265,10 +265,12 @@ function freezeAll(value, on, type) {
   return S.frozen.size;
 }
 
-const RULE_RE = /(offside|penalt|throw.?in|corner|foul|yellow|red.?card|var|referee|kural|ofsayt|tac|tas|faul|korner)/i;
+/** Daha önce düzenlenmiş alanları öne çıkarmak için ipucu listesi (para/yaş/istatistik). */
+const INTEREST_RE = /(money|cash|coin|bank|fund|age|year|look|smart|health|happy|fame|karma|stat|level|skill|popular|beauty|intel|strength|talent|vought|supe|power)/i;
 
-/** JSON içinde kural benzeri alanları bulur: [{path, key, value, kind}] */
-function findRuleFields(json) {
+/** JSON içindeki sayısal/boolean alanları bulur: [{path, key, value, kind, hot}]
+ *  hot = ilgi çekici (para, yaş, istatistik) — liste başında gösterilir. */
+function findNumberFields(json) {
   const out = [];
   if (json === null || typeof json !== "object") return out;
   (function walk(node, prefix) {
@@ -280,14 +282,20 @@ function findRuleFields(json) {
     Object.keys(node).forEach((k) => {
       const path = prefix ? `${prefix}.${k}` : k;
       const v = node[k];
-      if (RULE_RE.test(k) && (typeof v === "number" || typeof v === "boolean")) {
-        out.push({ path, key: k, value: v, kind: typeof v });
+      if (typeof v === "number" || typeof v === "boolean") {
+        out.push({ path, key: k, value: v, kind: typeof v, hot: INTEREST_RE.test(k) });
       } else if (v && typeof v === "object") {
         walk(v, path);
       }
     });
   })(json, "");
+  out.sort((a, b) => (b.hot === true) - (a.hot === true));
   return out;
+}
+
+/** Kayıttaki 0/1 bayrakları (açık/kapalı ayarlar) — dokununca çevrilir. */
+function findFlags(json) {
+  return findNumberFields(json).filter((f) => f.kind === "boolean" || f.value === 0 || f.value === 1);
 }
 
 function setByPath(obj, path, value) {
@@ -760,9 +768,9 @@ function buildUi() {
     });
   });
 
-  // ---- kurallar (ofsayt / penaltı / taç / korner / faul) ----
+  // ---- sayısal alanlar (para / yaş / istatistik) ----
   const ruleBox = box(LinearLayout.VERTICAL.getValue());
-  const ruleTitle = text("Kurallar: dosya seçip 'Kuralları bul'", 9, "#9a9ab0");
+  const ruleTitle = text("Açık/kapalı ayarlar: dosya seçip 'Bayrakları bul'", 9, "#9a9ab0");
   ruleBox.addView(ruleTitle);
   const ruleList = box(LinearLayout.VERTICAL.getValue());
   ruleBox.addView(ruleList);
@@ -772,9 +780,9 @@ function buildUi() {
   const renderRules = (UI.renderRules = function () {
     ruleList.removeAllViews();
     if (!ruleJson) return;
-    const fields = findRuleFields(ruleJson);
+    const fields = findFlags(ruleJson);
     if (!fields.length) {
-      ruleList.addView(text("Bu kayıtta kural alanı yok. Ofsayt/taç gibi kurallar oyunun native maç motorunda tutuluyor olabilir; o durumda Tara sekmesiyle maç sırasında değer arayabilirsin.", 8, "#e0a13f"));
+      ruleList.addView(text("Bu dosyada 0/1 bayrak yok. Kayıt ikili (binary) biçimdeyse Tara sekmesiyle bellekten değer arayabilirsin.", 8, "#e0a13f"));
       return;
     }
     fields.slice(0, 24).forEach((f) => {
@@ -800,21 +808,21 @@ function buildUi() {
 
   ruleBox.addView((() => {
     const r = box(LinearLayout.HORIZONTAL.getValue());
-    button(r, "Kuralları bul", () => {
+    button(r, "Bayrakları bul", () => {
       if (!selectedPath) { setStatus("önce bir dosya seç (yukarıdaki listeden)"); return; }
       const raw = saveRead(selectedPath, 262144);
       try {
         ruleJson = JSON.parse(raw);
       } catch (_) {
         ruleJson = null;
-        setStatus("dosya JSON değil — kural alanları okunamadı");
+        setStatus("dosya JSON değil — bayraklar okunamadı");
         renderRules();
         return;
       }
-      const n = findRuleFields(ruleJson).length;
-      ruleTitle.setText(`Kurallar: ${n} alan bulundu (dokun → 0/1 çevir)`);
+      const n = findFlags(ruleJson).length;
+      ruleTitle.setText(`Bayraklar: ${n} bulundu (dokun → 0/1)`);
       renderRules();
-      setStatus(`${n} kural alanı`);
+      setStatus(`${n} bayrak`);
     });
     return r;
   })());
@@ -939,7 +947,7 @@ globalThis.BOYS = {
   S, TYPES, TYPE_ORDER, PRESETS, CHARACTERS, VOUGHT_MONEY,
   firstScan, nextScan, writeOne, writeAll, freezeAll,
   saveList, saveRead, saveWrite, saveBackup,
-  findRuleFields, setByPath, isTargetActivity, liveValues, compoundV, rankFor, RANKS,
+  findNumberFields, findFlags, setByPath, isTargetActivity, liveValues, compoundV, rankFor, RANKS,
   candidateRanges, startWatcher, stopWatcher,
 };
 

@@ -19,13 +19,13 @@ tools/theboys.sh --server /yol/frida-server-arm   # sunucuyu at + oyunu menüyle
 | **Tara** | int32/int64/float/double tarama · *İlk Ara → Değişti/Aynı/Arttı/Azaldı* · Seçilene Yaz · Tümüne Yaz · Dondur |
 | **The Boys** | 10 karakter paketi (Homelander 100 · Black Noir 100 · Butcher 95 · Starlight 92 · A-Train 90 · Soldier Boy 88 · Kimiko 85 · Frenchie 78 · Hughie 70 · The Deep 60) + **Vought parası** + **Vought Modu** (kilitle) + **Compound V** (doz başına +5, 100'de durur) + **Sıralamam** (canlı değerlerden The Boys sıralaması) |
 | **İstatistik** | Para · Yaş · Görünüm · Zeka · Sağlık · Mutluluk · Şöhret · Karma şablonları |
-| **Kayıt** | Oyunun kendi `files/` dizini: listele, oku, **yedekle**, düzenle, geri yaz |
+| **Kayıt** | Oyunun kendi `files/` dizini: listele, oku, **yedekle**, düzenle, geri yaz · JSON kayıtta **Bayrakları bul** (0/1 ayarları çevir) |
 
 ## Testler (cihaz gerekmez)
 
 ```bash
-node tests/theboys-test.mjs      # 42 iddia — ajan mantığı
-node tests/theboys-ui-test.mjs   # 36 iddia — arayüz (Android çerçeve taklidi)
+node tests/theboys-test.mjs      # 48 iddia — ajan mantığı
+node tests/theboys-ui-test.mjs   # 39 iddia — arayüz (Android çerçeve taklidi)
 ```
 
 ## Neden modlanmış APK yok?
@@ -44,7 +44,7 @@ Ayrıntı ve dürüst sınırlar: [`docs/BITLIFE-MOD.md`](docs/BITLIFE-MOD.md)
 | `bitlife/theboys-mod.js` | Frida ajanı — menü, tarayıcı, karakter paketleri, kayıt dosyaları |
 | `tools/theboys.sh` | Tek komut başlatıcı (`--check` · `--emulator` · `--server` · `--attach`) |
 | `tools/build-mod-zip.sh` | Magisk/KernelSU paketi üretir |
-| `tests/` | `theboys-test.mjs` (42) · `theboys-ui-test.mjs` (36) · `frida-mock.mjs` · `android-mock.mjs` |
+| `tests/` | `theboys-test.mjs` (48) · `theboys-ui-test.mjs` (39) · `frida-mock.mjs` · `android-mock.mjs` |
 | `.github/workflows/build-mod.yml` | Testler → paket → release |
 
 ## Not

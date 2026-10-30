@@ -113,6 +113,19 @@ check("sıralama: 10 → The Deep", MOD.rankFor(10).name === "The Deep");
 check("sıralama: NaN → null", MOD.rankFor(NaN) === null);
 check("sıralama merdiveni azalan", MOD.RANKS.slice(0, -1).every((r, i) => r[0] > MOD.RANKS[i + 1][0]));
 
+section("Kayıt dosyası alan tarayıcı");
+const save = { money: 5000, age: 27, noAds: true, vought: 0, name: "x", nested: { premium: 1, notes: "a" }, arr: [{ flag: 0 }] };
+const nums = MOD.findNumberFields(save);
+check("sayısal/boolean alanlar bulundu", nums.length === 6, nums.map((f) => f.path).join(", "));
+check("ilgi çekici alanlar önce", nums[0].hot === true, nums[0].path);
+const flags = MOD.findFlags(save);
+check("bayraklar: 0/1/boolean", flags.length === 4, flags.map((f) => `${f.path}=${f.value}`).join(", "));
+check("iç içe dizi yolu", flags.some((f) => f.path === "arr[0].flag"));
+check("metin alanı bayrak değil", !flags.some((f) => f.key === "name"));
+const target = { a: { b: 0 } };
+MOD.setByPath(target, "a.b", 1);
+check("setByPath iç içe yazdı", target.a.b === 1);
+
 section("Oyunun kendi kayıt dosyaları (BitLife)");
 check("Java yokken liste boş (çökmez)", Array.isArray(MOD.saveList()) && MOD.saveList().length === 0);
 check("okuma hatayı yutar", String(MOD.saveRead("/yok/dosya", 100)).startsWith("HATA"));
