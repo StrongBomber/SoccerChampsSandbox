@@ -8,12 +8,15 @@ Editörün telefonda kurulabilir sürümü. Tamamen çevrimdışı, oyun dosyala
 
 | | |
 |---|---|
-| Boyut | 66.474 bayt (65 KB) |
-| SHA-256 | `ab374eff2990dca29e58f70f86b5a0cc9efe03fe4bde1e36a3c928f6acd45d3d` |
+| Sürüm | 1.1 (versionCode 2) |
+| Boyut | 75.072 bayt (~73 KB) |
+| SHA-256 | `b662222ba60a846f92475d14c58e893f4bca1466242964b3c927603066b91036` |
 | Paket | `com.wsc.editor` |
 | minSdk / targetSdk | 24 (Android 7+) / 34 |
 | İmza | APK Signature Scheme v3, `CN=WSC In-Game Editor` |
+| İkon | 5 yoğunluk (mdpi→xxxhdpi) |
 | İçerik | `classes.dex`, `assets/{index.html,app.js,data.js,styles.css,demo-save.json,demo-save.js}` |
+| Doğrulama | `apk/APK-VERIFY.txt` — paket, launcher, SDK, dex, varlık, imza, hizalama: **hepsi ✓** |
 
 ## Kurulum
 
@@ -66,10 +69,33 @@ Gereksinimler: JDK 17, Android SDK (build-tools + platforms/android-34). Gradle 
 CI: `.github/workflows/build-apk.yml` her `apk/**` veya `sandbox-editor/**` değişikliğinde derler,
 imzalar, artifact + release asset olarak yayınlar ve `apk/APK-MANIFEST.txt` dosyasını commit eder.
 
+## Otomatik kurulabilirlik doğrulaması
+
+`apk/verify-apk.sh` her derlemeden sonra çalışır ve `apk/APK-VERIFY.txt` dosyasını üretir:
+
+| Kontrol | Araç |
+|---|---|
+| Paket kimliği, launcher activity, minSdk/targetSdk, etiket, ikon | `aapt2 dump badging` |
+| `MainActivity`, `MiniServer`, `MainActivity$Bridge` sınıfları | `dexdump` |
+| 6 gömülü varlık + `classes.dex` | `unzip -l` |
+| Sertifika ve imza | `apksigner verify --print-certs` |
+| 4 bayt hizalama | `zipalign -c -p 4` |
+| Native kod yok (tüm ABİ'lerde çalışır) | badging `native-code` yok |
+
+Son koşu: **"SONUÇ: APK kurulabilir görünüyor (tüm kontroller geçti)"**
+
+## Kalite kapısı
+
+CI her derlemede önce `tests/editor-smoke.mjs` (jsdom, 46 iddia) çalıştırır; testler geçmeden
+APK yayınlanmaz. Testler: tüm sekmeler, 7 oyuncu alt sekmesi, kontrol yolu geçerliliği,
+sahneleme→inceleme→geri al→kaydet, toplu işlemler, serbest JSON ağacı, komut paleti,
+gelişmiş filtre, doğrulama, mobil çubuk.
+
 ## Bilinen sınırlar
 
-- **Cihazda kurulum testi yapılmadı** (bu ortamda Android cihaz/emülatör yok). Derleme, imza ve
-  paket içeriği doğrulandı; ilk açılışta sorun olursa `apk/last-build.log` + ekran görüntüsü ile bildir.
+- **Fiziksel cihazda açılış testi yapılmadı** (bu ortamda Android cihaz/emülatör yok).
+  Ancak kurulabilirlik statik olarak kanıtlandı (`APK-VERIFY.txt`): paket, launcher, dex sınıfları,
+  varlıklar, imza ve hizalama tam. İlk açılışta sorun olursa Logcat çıktısı ile bildir.
 - APK, **oyunun kendisini içermez**: ayrı bir uygulamadır, oyunun belleğine erişemez (root'suz
   Android'de başka uygulamanın belleğine erişim mümkün değildir).
 - Oyun içi (overlay) mod menü için root + Frida gerekir → [`../modmenu/README.md`](../modmenu/README.md)

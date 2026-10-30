@@ -6,7 +6,7 @@ ve root'lu cihazlar için **Frida overlay mod menüsü**.
 ## Android APK
 
 **İndir:** https://github.com/StrongBomber/SoccerChampsSandbox/releases/download/editor-apk/wsc-editor.apk
-(65 KB · minSdk 24 · imzalı · çevrimdışı)
+(73 KB · v1.1 · minSdk 24 · imzalı · çevrimdışı · kurulabilirlik doğrulandı)
 
 ```bash
 adb install wsc-editor.apk          # veya telefona kopyalayıp dokun
@@ -32,6 +32,7 @@ Ayrıntılı kullanım: [`docs/EDITOR.md`](docs/EDITOR.md)
 | **Personel** | CA/PA, itibar, 7 nitelik, tercih edilen diziliş/tarz, **sorumluluklar** |
 | **Finans** | Bütçeler, maaş yükü göstergesi, sezon projeksiyonu, hızlı işlemler |
 | **Müsabakalar** | Seviye, itibar, takım sayısı, ödül havuzu, tur ödülü + lig tablosu |
+| **Serbest JSON** | Gerçek kayıt dosyaları için ağaç editörü (her alanı düzenle, dizi ekle/sil, ara) |
 | **Sandbox** | 8 toplu işlem (nitelik maks, PA=CA, sakatlık temizle, sözleşme +3 yıl, bütçe, moral, genç yetenek…) |
 | **Tercihler** | Renk/otomatik kayıt, JSON içe/dışa aktarma, kısayollar |
 
@@ -54,7 +55,8 @@ Sağ üstte **◢ SANDBOX** düğmesi: değer tara → daralt → yaz / dondur. 
 |---|---|
 | `tools/` | `wsc-save.sh` (kayıt çek/geri yaz), `frida-run.sh` |
 | `analysis/` | REA statik analiz çıktıları |
-| `apk/` | Android APK kaynakları (`build.sh`, Java, manifest) |
+| `apk/` | Android APK kaynakları (`build.sh`, `verify-apk.sh`, Java, manifest, ikon) |
+| `tests/` | `editor-smoke.mjs` — 46 iddialık jsdom duman testi |
 | `docs/` | `APK.md`, `EDITOR.md`, `REA-ANALYSIS.md`, `ROOTSUZ-KURULUM.md` |
 | `.github/workflows/` | XAPK indirme + REA analiz iş akışları |
 

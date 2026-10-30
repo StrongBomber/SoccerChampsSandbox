@@ -19,6 +19,7 @@ cd sandbox-editor && python3 -m http.server 8080     # → http://localhost:8080
 | Müsabakalar | Edit Competition | seviye, itibar, takım sayısı, ödül havuzu, tur ödülü |
 | Sandbox | — | 8 toplu işlem |
 | Tercihler | Preferences | renk, otomatik kayıt, içe/dışa aktarma, kısayollar |
+| **Serbest JSON** | — | **Gerçek kayıt dosyası için ağaç editörü**: her düğümü aç/kapat, değer düzenle, diziye öğe ekle/sil, alan/değer ara |
 
 ### Oyuncu alt sekmeleri
 
@@ -52,10 +53,30 @@ Genel Bakış ve durum çubuğunda sürekli çalışır:
 
 Her uyarının yanındaki **Git** düğmesi ilgili oyuncuya/ekrana atlar.
 
+## Komut paleti
+
+Üstteki arama kutusuna yaz: oyuncu/personel/müsabaka adı veya bölüm adı. `↑/↓` ile gez, `Enter` ile git.
+Boşken hızlı komutlar (Kaydet, Bekleyen değişiklikler, bölümler) listelenir.
+
+## Serbest JSON (gerçek kayıtlar)
+
+Gerçek oyun kaydı içe alındığında alan adları tanınmasa bile **Serbest JSON** sekmesinden her değer
+düzenlenebilir. Bu ağaç görünümü, REA analizinden çıkan alan adları doğrulanana kadar köprü görevi görür:
+
+- dal aç/kapat, **Tümünü aç / Kapat**
+- alan veya değer araması (örn. `wage`, `0.5`)
+- sayı/metin/boolean düzenleme, **diziye öğe ekle**, **öğe sil**
+- tüm değişiklikler aynı inceleme çekmecesinde ve aynı geri al yığınında
+
 ## Gelişmiş arama
 
 Oyuncular listesinde ⚙ düğmesi: yaş, CA, PA aralıkları, ayak, yetişme durumu, sözleşme bitiş yılı.
-`↑ / ↓` ile listede gezinilir, `Ctrl+F` global aramaya odaklanır.
+`↑ / ↓` ile listede gezinilir, `Ctrl+F` aramaya odaklanır.
+
+## Mobil (APK)
+
+`720px` altında bölüm sekmeleri yatay kaydırılır, altta **Geri Al / Bekleyen / Kaydet** aksiyon çubuğu
+görünür, stepper düğmeleri 30×30'a büyür. Uygulama olarak: [`APK.md`](APK.md)
 
 ## Gerçek veriyle kullanım
 
