@@ -1,7 +1,11 @@
 name: Analyze XAPK with REA
 
-# REA (https://github.com/morluto/rea) ile World Soccer Champs XAPK'sini statik analiz eder.
-# Cikti: engine tespiti, IL2CPP metadata envanteri ve (varsa) libil2cpp.so method adres linkleri.
+# REA (https://github.com/morluto/rea, MIT) ile World Soccer Champs XAPK'sini statik analiz eder:
+#   * motor tespiti (Unity IL2CPP?),
+#   * IL2CPP global-metadata envanteri,
+#   * libil2cpp.so method adres linkleri (mod menu hook'lari icin RVA'lar),
+#   * APK manifest envanteri (JADX).
+# Sonuclar `analysis/` altina commit edilir; tam Evidence artifact olarak yuklenir.
 on:
   push:
     branches:
@@ -9,19 +13,20 @@ on:
     paths:
       - .github/workflows/analyze-xapk.yml
       - scripts/download_drive.sh
+      - scripts/rea_reduce.py
+  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   REA_VERSION: 6.8.0
-  FILE_ID: 1q83CaQEAi8ELOoG966wQr87VPqvCUFfv
   FILE_NAME: World+Soccer+Champs_2026.12_APKPure-1.xapk
 
 jobs:
   analyze:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
 
@@ -33,117 +38,125 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
+          set -eu
+          mkdir -p out
           gh release download wsc-2026.12 --pattern '*.xapk' --output src.xapk
           ls -la src.xapk
-          echo "size=$(stat -c%s src.xapk) (beklenen 237511212)"
+          echo "size=$(stat -c%s src.xapk) (beklenen 237511212)" | tee out/00-download.txt
 
       - name: Unpack XAPK
         run: |
-          set -euo pipefail
-          mkdir -p xapk out
+          set -eu
+          mkdir -p xapk
           unzip -o -q src.xapk -d xapk
-          echo "=== XAPK icerigi ===" | tee out/00-listing.txt
-          unzip -l src.xapk | tee -a out/00-listing.txt
-          echo "=== dosya turleri ===" | tee -a out/00-listing.txt
-          find xapk -type f -print0 | xargs -0 file | tee -a out/00-listing.txt
+          {
+            echo "=== XAPK icerigi ==="
+            unzip -l src.xapk
+            echo
+            echo "=== dosya turleri ==="
+            find xapk -type f -printf '%p  ' -exec sh -c 'file -b "$1"' _ {} \;
+          } > out/00-listing.txt 2>&1 || true
+          tail -40 out/00-listing.txt
           ls -la xapk
 
       - name: Install REA
         run: |
-          set -euo pipefail
+          set -eu
           mkdir -p "$RUNNER_TEMP/rea"
           npm install --prefix "$RUNNER_TEMP/rea" --no-audit --no-fund "rea-agents@$REA_VERSION"
           echo "REA_BIN=$RUNNER_TEMP/rea/node_modules/.bin/rea" >> "$GITHUB_ENV"
-          "$RUNNER_TEMP/rea/node_modules/.bin/rea" --version
+          "$RUNNER_TEMP/rea/node_modules/.bin/rea" --version | tee out/01-rea-version.txt
 
       - name: Detect engine and extract native payloads
         run: |
-          set -euo pipefail
-          BASE=$(find xapk -maxdepth 1 -name 'base.apk' | head -1)
-          [ -n "$BASE" ] || BASE=$(find xapk -maxdepth 1 -name '*.apk' | head -1)
+          set -eu
+          BASE=$(find xapk -maxdepth 1 -name 'base.apk' -print -quit || true)
+          if [ -z "$BASE" ]; then BASE=$(find xapk -maxdepth 1 -name '*.apk' -print -quit); fi
           echo "BASE_APK=$BASE" >> "$GITHUB_ENV"
-          mkdir -p out/base
-          unzip -o -q "$BASE" -d out/base || true
           {
-            echo "=== base.apk ABI/lib envanteri ==="
-            unzip -l "$BASE" | awk '{print $4}' | grep -Ev '^$' | grep -E '^(lib|assets|classes)' | head -80
+            echo "=== base apk: $BASE ==="
+            echo "=== native/asset izleri ==="
+            unzip -Z1 "$BASE" | grep -E 'libil2cpp\.so|libunity\.so|libmono\.so|global-metadata\.dat|assets/bin/Data|unity\.default|libfmod|libmain' || echo "(iz yok)"
             echo
-            echo "=== Unity izleri ==="
-            for f in $(unzip -Z1 "$BASE" | grep -E 'libil2cpp\.so|libunity\.so|libmono\.so|global-metadata\.dat|unity\.default|assets/bin/Data' | head -20); do
-              echo "  $f"
-            done
-          } | tee out/01-engine.txt
+            echo "=== classes*.dex ==="
+            unzip -Z1 "$BASE" | grep -E '^classes.*\.dex$' || true
+            echo
+            echo "=== toplam giris sayisi ==="
+            unzip -Z1 "$BASE" | wc -l
+          } > out/02-engine.txt 2>&1 || true
+          cat out/02-engine.txt
 
           for split in xapk/*.apk; do
-            [ "$split" = "$BASE" ] && continue
-            echo "--- split: $split" | tee -a out/01-engine.txt
-            unzip -l "$split" | grep -E '\.so$|metadata' | head -20 | tee -a out/01-engine.txt
+            echo "--- split: $split" >> out/02-engine.txt
+            unzip -Z1 "$split" | grep -E '\.so$|global-metadata' | head -20 >> out/02-engine.txt 2>&1 || true
           done
 
       - name: IL2CPP metadata inventory (REA)
         id: il2cpp
-        continue-on-error: true
         run: |
-          set -euo pipefail
-          echo "=== tum .dat/.so adaylari ===" | tee out/02-il2cpp.txt
-          find xapk -name '*.apk' -print0 | while IFS= read -r -d '' apk; do
-            echo "## $apk" | tee -a out/02-il2cpp.txt
-            unzip -Z1 "$apk" | grep -E 'global-metadata\.dat|libil2cpp\.so' | head | tee -a out/02-il2cpp.txt || true
-          done
-
-          # global-metadata.dat genelde bir split apk icinde assets/bin/Data/Managed/Metadata/ altinda olur
+          set -eu
           mkdir -p out/native
           for apk in xapk/*.apk; do
             if unzip -Z1 "$apk" | grep -q 'global-metadata.dat'; then
               unzip -o -j -q "$apk" '*global-metadata.dat' -d out/native
-              echo "metadata kaynagi: $apk" | tee -a out/02-il2cpp.txt
+              echo "metadata kaynagi: $apk" >> out/03-il2cpp.txt
             fi
             if unzip -Z1 "$apk" | grep -q 'libil2cpp.so'; then
-              mkdir -p "out/native/lib-$(basename "$apk" .apk)"
-              unzip -o -j -q "$apk" '*arm64-v8a/libil2cpp.so' -d "out/native/lib-$(basename "$apk" .apk)" || true
+              d="out/native/lib-$(basename "$apk" .apk)"
+              mkdir -p "$d"
+              unzip -o -j -q "$apk" '*arm64-v8a/libil2cpp.so' -d "$d" 2>/dev/null || true
             fi
           done
-          ls -la out/native || true
+          find out/native -type f -printf '%p %s\n' | tee -a out/03-il2cpp.txt || true
 
-          META=$(find out/native -name 'global-metadata.dat' | head -1)
+          META=$(find out/native -name 'global-metadata.dat' -print -quit || true)
           if [ -z "$META" ]; then
-            echo "global-metadata.dat bulunamadi (Unity IL2CPP olmayabilir)." | tee -a out/02-il2cpp.txt
+            echo "global-metadata.dat bulunamadi -> Unity IL2CPP degil." | tee out/04-il2cpp-result.txt
             exit 0
           fi
-          echo "META=$META" >> "$GITHUB_ENV"
-          LIB=$(find out/native -path '*arm64-v8a*' -name 'libil2cpp.so' | head -1 || true)
-          echo "LIB=$LIB" >> "$GITHUB_ENV"
-          echo "metadata=$META lib=${LIB:-yok}" | tee -a out/02-il2cpp.txt
+          LIB=$(find out/native -name 'libil2cpp.so' -print -quit || true)
+          echo "META=$META LIB=${LIB:-yok}" | tee out/04-il2cpp-result.txt
 
           ARGS=(--detail summary --evidence_output "$PWD/out/il2cpp-evidence.json" --json)
           if [ -n "$LIB" ]; then ARGS+=(--binary "$LIB" --architecture arm64); fi
           set +e
           "$REA_BIN" inspect-il2cpp-metadata "$META" "${ARGS[@]}" \
             > out/il2cpp-summary.json 2> out/il2cpp-summary.stderr
-          echo "exit=$?" | tee -a out/02-il2cpp.txt
+          RC=$?
           set -e
-          head -c 4000 out/il2cpp-summary.json
+          echo "rea_exit=$RC" | tee -a out/04-il2cpp-result.txt
+          head -c 1500 out/il2cpp-summary.json | tee -a out/04-il2cpp-result.txt
+          if [ -f out/il2cpp-evidence.json ]; then
+            python3 scripts/rea_reduce.py out/il2cpp-evidence.json analysis | tee -a out/04-il2cpp-result.txt
+          fi
 
       - name: APK manifest inventory (REA / JADX)
         continue-on-error: true
-        timeout-minutes: 45
+        timeout-minutes: 40
         run: |
-          set -euo pipefail
+          set -eu
           "$REA_BIN" inspect-android-package "$BASE_APK" --detail summary --json \
             > out/android-package.json 2> out/android-package.stderr || true
-          head -c 4000 out/android-package.json
+          head -c 2000 out/android-package.json || true
 
-      - name: Summary
+      - name: Publish analysis results to the branch
+        if: always()
         run: |
-          set -euo pipefail
-          ls -laR out | head -60
-          du -sh out
+          set -eu
+          git config user.name "rea-bot"
+          git config user.email "rea-bot@users.noreply.github.com"
+          mkdir -p analysis
+          cp -f out/00-listing.txt out/02-engine.txt out/03-il2cpp.txt out/04-il2cpp-result.txt analysis/ 2>/dev/null || true
+          ls -la analysis
+          git add analysis
+          git commit -m "analysis: REA static analysis of World Soccer Champs 2026.12" || echo "degisiklik yok"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
-      - name: Upload analysis artifacts
+      - name: Upload full evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: rea-analysis
           path: out
-          retention-days: 30
+          retention-days: 14
           if-no-files-found: warn
