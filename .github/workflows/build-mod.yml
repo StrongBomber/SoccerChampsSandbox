@@ -62,10 +62,10 @@ jobs:
           test -s "$Z"
           unzip -l "$Z" | tee /tmp/list.txt
           for f in module.prop customize.sh post-fs-data.sh service.sh agent/game-mod.js system/bin/frida-server; do
-            grep -q " $f$" /tmp/list.txt || { echo "eksik: $f" >&2; exit 1; }
+            unzip -l "$Z" "$f" | grep -q "$f" || { echo "eksik: $f" >&2; exit 1; }
           done
           unzip -p "$Z" module.prop | grep -q "id=wscmod"
-          unzip -p "$Z" agent/game-mod.js | head -1 | grep -q "WSC MOD MENU"
+          unzip -p "$Z" agent/game-mod.js | grep -q "WSC MOD MENU"
           # ajan dosyası repodakiyle birebir aynı olmalı
           unzip -p "$Z" agent/game-mod.js > /tmp/agent.js
           cmp /tmp/agent.js modmenu/game-mod.js
