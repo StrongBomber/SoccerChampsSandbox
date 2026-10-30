@@ -3,60 +3,51 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sandbox Editor — World Soccer Champs</title>
+<title>In-Game Editor — World Soccer Champs</title>
 <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-<div id="app">
-  <aside class="rail">
-    <div class="rail-brand">
-      <div class="crest">WSC</div>
-      <div>
-        <strong>Sandbox</strong>
-        <span>Editor</span>
-      </div>
-    </div>
-    <nav id="nav" class="rail-nav"></nav>
-    <div class="rail-foot">
-      <span class="dot" id="saveDot"></span>
-      <span id="saveState">Demo kayıt yüklü</span>
-    </div>
-  </aside>
+<div class="desktop">
+  <div class="window">
 
-  <main class="stage">
-    <header class="topbar">
-      <div class="club">
-        <div class="club-crest" id="clubCrest">KRT</div>
-        <div class="club-meta">
-          <h1 id="clubName">—</h1>
-          <p id="clubSub">—</p>
+    <header class="titlebar">
+      <div class="brand">
+        <span class="brand-badge">FM</span>
+        <div class="brand-text">
+          <strong>In-Game Editor</strong>
+          <span id="brandSub">World Soccer Champs · 2026/27</span>
         </div>
       </div>
-      <div class="topbar-actions">
-        <span class="chip" id="changeChip">0 değişiklik</span>
-        <button class="btn ghost" id="undoBtn" title="Son değişikliği geri al (Ctrl+Z)">↶ Geri Al</button>
-        <button class="btn ghost" id="diffBtn">Δ Değişiklikler</button>
-        <label class="btn ghost" for="importFile">↧ İçe Al</label>
-        <input type="file" id="importFile" accept=".json,application/json" hidden />
-        <button class="btn primary" id="exportBtn">↥ Dışa Aktar</button>
+
+      <div class="global-search">
+        <span class="search-ico">⌕</span>
+        <input id="globalSearch" type="search" placeholder="Oyuncu, personel veya kulüp ara…" autocomplete="off" />
+      </div>
+
+      <div class="title-actions">
+        <span class="dirty-pill" id="dirtyPill">Kaydedildi</span>
+        <button class="btn ghost" id="undoBtn" title="Son düzenlemeyi geri al (Ctrl+Z)">↶ Geri Al</button>
+        <button class="btn primary" id="saveBtn">Değişiklikleri Kaydet</button>
       </div>
     </header>
 
-    <section id="view" class="view"></section>
-  </main>
+    <nav class="section-tabs" id="tabs"></nav>
+
+    <main class="editor-body">
+      <div id="view"></div>
+    </main>
+
+    <footer class="statusbar">
+      <span id="statusLeft">Hazır</span>
+      <span id="statusRight"></span>
+    </footer>
+
+  </div>
 </div>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<div id="drawer" class="drawer" hidden>
-  <div class="drawer-head">
-    <h2>Değişiklik Günlüğü</h2>
-    <button class="btn ghost" id="drawerClose">✕</button>
-  </div>
-  <div id="drawerBody" class="drawer-body"></div>
-</div>
-
-<script src="./schema.js"></script>
+<script src="./data.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>

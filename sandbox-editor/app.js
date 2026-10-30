@@ -1,691 +1,833 @@
-/* Sandbox Editor — uygulama mantığı (bağımlılıksız, tek sayfa). */
+/* In-Game Editor — Football Manager oyun içi editörünün birebir muadili.
+ * Ekran akışı: Genel Bakış → Kulüp / Oyuncular / Personel / Finans / Müsabakalar / Tercihler
+ * Düzenleme modeli: değişiklikler sahnelenir, "Değişiklikleri Kaydet" ile kalıcılaşır.
+ */
 (function () {
   "use strict";
 
-  const { POSITIONS, fmt, TOOLS } = window.WSC;
-  const LS_KEY = "wsc-sandbox-save-v1";
+  const { POSITIONS, POSITION_LABEL, GROUPS, STAFF_ATTRS, ENUMS, attrColor, abilityColor, fmt } = window.FM;
+
+  const LS_KEY = "wsc-fm-editor-v1";
   const DEMO_URL = "./demo-save.json";
 
-  const state = {
-    save: null,
-    demo: null,
-    changes: [],
-    route: "overview",
-    squad: { q: "", pos: "", listedOnly: false, sort: { key: "ovr", dir: -1 } },
-    focusPath: null,
-  };
-
-  const NAV = [
-    { id: "overview", icon: "◈", label: "Genel Bakış" },
-    { id: "squad", icon: "👥", label: "Kadro" },
-    { id: "finances", icon: "€", label: "Finans" },
-    { id: "transfers", icon: "⇄", label: "Transferler" },
-    { id: "staff", icon: "🎓", label: "Personel" },
-    { id: "sandbox", icon: "⚙", label: "Sandbox Araçları" },
-    { id: "raw", icon: "{ }", label: "Ham JSON" },
+  const TABS = [
+    { id: "overview", label: "Genel Bakış" },
+    { id: "club", label: "Kulüp" },
+    { id: "players", label: "Oyuncular" },
+    { id: "staff", label: "Personel" },
+    { id: "finances", label: "Finans" },
+    { id: "competitions", label: "Müsabakalar" },
+    { id: "preferences", label: "Tercihler" },
   ];
 
-  /* ---------------- yardımcılar ---------------- */
+  const S = {
+    save: null,
+    demo: null,
+    saved: null,
+    route: "overview",
+    playerId: null,
+    playerTab: "profile",
+    staffId: null,
+    q: "",
+    posFilter: "ALL",
+    sort: "ca",
+    changes: [],
+    history: [],
+    prefs: { confirmLeave: true, attrColors: true, showAbility: true, autoSave: false },
+    focusKey: null,
+  };
 
+  /* ---------------- temel yardımcılar ---------------- */
+
+  const $ = (s, r = document) => r.querySelector(s);
   const clone = (o) => JSON.parse(JSON.stringify(o));
-  const $ = (sel, root = document) => root.querySelector(sel);
-  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  function esc(v) {
-    return String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  }
-
-  function getPath(obj, path) {
-    return path.split(".").reduce((acc, k) => (acc == null ? acc : acc[k]), obj);
-  }
-
-  function setPath(obj, path, value) {
-    const keys = path.split(".");
-    const last = keys.pop();
-    const target = keys.reduce((acc, k) => acc[k], obj);
-    target[last] = value;
-  }
-
-  function diffObjects(a, b, prefix = "", out = []) {
-    const isObj = (v) => v && typeof v === "object";
-    if (!isObj(a) || !isObj(b)) {
-      if (JSON.stringify(a) !== JSON.stringify(b)) out.push({ path: prefix || "(kök)", from: a, to: b });
-      return out;
-    }
-    const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
-    keys.forEach((k) => {
-      const p = prefix ? `${prefix}.${k}` : k;
-      if (!(k in a)) out.push({ path: p, from: undefined, to: b[k] });
-      else if (!(k in b)) out.push({ path: p, from: a[k], to: undefined });
-      else diffObjects(a[k], b[k], p, out);
-    });
-    return out;
-  }
+  let CTLS = [];
+  function ctl(get, set) { CTLS.push({ get, set }); return CTLS.length - 1; }
 
   function toast(msg) {
     const el = $("#toast");
     el.textContent = msg;
     el.classList.add("show");
     clearTimeout(toast._t);
-    toast._t = setTimeout(() => el.classList.remove("show"), 2200);
+    toast._t = setTimeout(() => el.classList.remove("show"), 2000);
   }
 
-  function persist() {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(state.save)); } catch (_) { /* kota */ }
+  function dirty() {
+    return JSON.stringify(S.save) !== JSON.stringify(S.saved);
   }
 
   function commit(label, mutate) {
-    const before = clone(state.save);
-    mutate(state.save);
-    const after = clone(state.save);
-    const diff = diffObjects(before, after);
-    if (!diff.length) return false;
-    state.changes.push({ label, before, after, diff, at: Date.now() });
-    persist();
+    const before = clone(S.save);
+    mutate(S.save);
+    if (JSON.stringify(before) === JSON.stringify(S.save)) return false;
+    const entry = { label, before, at: new Date() };
+    S.changes.push(entry);
+    S.history.push(entry);
+    if (S.prefs.autoSave) persist();
     paint();
     return true;
   }
 
-  /* ---------------- veri ---------------- */
-
-  function normalise(save) {
-    // Eksik alanları güvenli varsayılanlarla doldur (gerçek kayıt içe alındığında da çalışır).
-    save.club = save.club || {};
-    save.finances = save.finances || {};
-    save.season = save.season || {};
-    save.players = Array.isArray(save.players) ? save.players : [];
-    save.staff = Array.isArray(save.staff) ? save.staff : [];
-    save.transferTargets = Array.isArray(save.transferTargets) ? save.transferTargets : [];
-    save.finances.currency = save.finances.currency || "EUR";
-    save.players.forEach((p, i) => {
-      p.id = p.id ?? i + 1;
-      p.pos = (p.pos || "CM").toUpperCase();
-      ["age", "ovr", "pot", "value", "wage", "morale", "fitness"].forEach((k) => {
-        if (typeof p[k] !== "number") p[k] = Number(p[k]) || 0;
-      });
-      p.listed = Boolean(p.listed);
-    });
-    return save;
+  function persist() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(S.save)); } catch (_) { /* kota */ }
+    S.saved = clone(S.save);
+    S.changes = [];            // kaydedilen düzenlemeler geri alınabilir yığından çıkar
+    paintStatus();
   }
 
-  async function loadDemo() {
-    const res = await fetch(DEMO_URL, { cache: "no-store" });
-    if (!res.ok) throw new Error("demo-save.json yüklenemedi");
-    state.demo = normalise(await res.json());
-    state.save = clone(state.demo);
-    state.changes = [];
+  /* ---------------- kontrol üreticileri ---------------- */
+
+  function numRow(label, getter, setter, opt = {}) {
+    const { min = 0, max = 999999999, step = 1, unit = "", hint = false } = opt;
+    const v = Number(getter()) || 0;
+    const id = ctl(getter, setter);
+    return `<div class="row ${hint ? "hint" : ""}">
+      <span class="label">${esc(label)}</span>
+      <span class="value">
+        <span class="stepper ${opt.wide ? "wide" : ""}">
+          <button type="button" data-step="-1" data-ctl="${id}" tabindex="-1">−</button>
+          <input type="number" data-ctl="${id}" value="${v}" min="${min}" max="${max}" step="${step}" />
+          <button type="button" data-step="1" data-ctl="${id}" tabindex="-1">+</button>
+        </span>
+        <span class="unit">${esc(unit)}</span>
+      </span>
+    </div>`;
   }
 
-  function restoreLocal() {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return false;
-      state.save = normalise(JSON.parse(raw));
-      state.changes = [];
-      return true;
-    } catch (_) {
-      return false;
-    }
+  function selRow(label, getter, setter, options, hint = false) {
+    const v = getter();
+    const id = ctl(getter, setter);
+    return `<div class="row ${hint ? "hint" : ""}">
+      <span class="label">${esc(label)}</span>
+      <span class="value">
+        <select class="field" data-ctl="${id}">
+          ${options.map((o) => `<option value="${esc(o)}" ${String(o) === String(v) ? "selected" : ""}>${esc(o)}</option>`).join("")}
+        </select>
+      </span>
+    </div>`;
+  }
+
+  function txtRow(label, getter, setter, type = "text", hint = false) {
+    const id = ctl(getter, setter);
+    return `<div class="row ${hint ? "hint" : ""}">
+      <span class="label">${esc(label)}</span>
+      <span class="value"><input class="field" type="${type}" data-ctl="${id}" value="${esc(getter())}" /></span>
+    </div>`;
+  }
+
+  function moneyRow(label, getter, setter, hint = false) {
+    const id = ctl(getter, setter);
+    return `<div class="row ${hint ? "hint" : ""}">
+      <span class="label">${esc(label)}</span>
+      <span class="value">
+        <span class="stepper wide">
+          <button type="button" data-step="-100000" data-ctl="${id}" tabindex="-1">−</button>
+          <input type="number" data-ctl="${id}" value="${Number(getter()) || 0}" step="100000" />
+          <button type="button" data-step="100000" data-ctl="${id}" tabindex="-1">+</button>
+        </span>
+        <span class="unit">${esc(fmt.money(getter()))}</span>
+      </span>
+    </div>`;
   }
 
   /* ---------------- görünümler ---------------- */
 
   const views = {
+    /* ===== GENEL BAKIŞ ===== */
     overview() {
-      const s = state.save;
+      const s = S.save;
       const squadValue = s.players.reduce((a, p) => a + (p.value || 0), 0);
-      const wages = s.players.reduce((a, p) => a + (p.wage || 0), 0);
-      s.finances.weeklyWages = wages;
-      const avgOvr = s.players.length ? s.players.reduce((a, p) => a + p.ovr, 0) / s.players.length : 0;
-      const injured = s.players.filter((p) => p.injuryWeeks > 0);
-      const listed = s.players.filter((p) => p.listed);
-      const wagePct = s.finances.wageBudget ? Math.round((wages / s.finances.wageBudget) * 100) : 0;
-
-      const top = [...s.players].sort((a, b) => b.value - a.value).slice(0, 5);
-      const byPos = POSITIONS.map((pos) => ({ pos, n: s.players.filter((p) => p.pos === pos).length }));
+      const wages = s.players.reduce((a, p) => a + (p.contract?.wage || 0), 0);
+      const avgCa = s.players.length ? Math.round(s.players.reduce((a, p) => a + p.ca, 0) / s.players.length) : 0;
+      const expiring = s.players.filter((p) => String(p.contract?.expiry) < "2027-07-01").length;
+      const wagePct = s.club.finances.wageBudget ? Math.round((wages / s.club.finances.wageBudget) * 100) : 0;
 
       return `
-        <div class="grid-kpi">
-          <div class="kpi"><div class="label">Kadro Değeri</div><div class="value">${fmt.money(squadValue, s.finances.currency)}</div><div class="sub">${s.players.length} oyuncu · ort. OVR ${avgOvr.toFixed(1)}</div></div>
-          <div class="kpi blue"><div class="label">Bakiye</div><div class="value">${fmt.money(s.finances.balance, s.finances.currency)}</div><div class="sub">Transfer bütçesi: ${fmt.money(s.finances.transferBudget, s.finances.currency)}</div></div>
-          <div class="kpi ${wagePct > 100 ? "red" : "amber"}"><div class="label">Haftalık Maaş</div><div class="value">${fmt.money(wages, s.finances.currency)}</div><div class="sub">Bütçenin %${wagePct}'i ${wagePct > 100 ? "· AŞIM!" : "kullanıldı"}</div></div>
-          <div class="kpi"><div class="label">Sıralama</div><div class="value">${s.season.position ?? "—"}.</div><div class="sub">${esc(s.season.label || "")} · ${s.season.points ?? 0} puan · ${esc(s.season.phase || "")}</div></div>
-        </div>
-
-        <div class="cols-2">
-          <div class="panel">
-            <div class="panel-head"><h2>En Değerli Oyuncular</h2><span class="hint">piyasa değeri</span></div>
-            <div class="panel-body flush"><div class="list" style="padding:14px 16px">
-              ${top.map((p) => `
-                <div class="list-row">
-                  <div class="who"><span class="pos ${esc(p.pos)}">${esc(p.pos)}</span><div><strong>${esc(p.name)}</strong><div class="muted" style="font-size:12px">${p.ovr} OVR · ${p.age} yaş · ${esc(p.nationality || "")}</div></div></div>
-                  <div class="right mono">${fmt.money(p.value, s.finances.currency)}</div>
-                </div>`).join("")}
-            </div></div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-head"><h2>Kadro Durumu</h2><span class="hint">pozisyon dağılımı</span></div>
-            <div class="panel-body">
-              <div class="list">
-                ${byPos.map(({ pos, n }) => `
-                  <div class="list-row" style="grid-template-columns:64px 1fr auto;background:transparent;border:none;padding:4px 0">
-                    <span class="pos ${pos}">${pos}</span>
-                    <div class="bar ${n === 0 ? "low" : n < 2 ? "mid" : ""}"><i style="width:${Math.min(100, n * 20)}%"></i></div>
-                    <strong class="mono">${n}</strong>
-                  </div>`).join("")}
-              </div>
-              <hr style="border:none;border-top:1px solid var(--line);margin:14px 0" />
-              <div class="muted" style="display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px">
-                <span>🚑 ${injured.length} sakat</span>
-                <span>📋 ${listed.length} transfer listesinde</span>
-                <span>🎯 ${s.transferTargets.length} izlenen oyuncu</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="banner">
-          <span>ℹ️</span>
+        <div class="hero">
+          <div class="crest">${esc(s.club.shortName)}</div>
           <div>
-            <strong>Bu kayıt demo verisidir.</strong> Gerçek bir World Soccer Champs kaydını
-            <em>İçe Al</em> ile yükleyebilirsin; editör aynı alan adlarını (<span class="mono">players</span>,
-            <span class="mono">finances</span>, <span class="mono">club</span>) arar, bulamazsa
-            <em>Ham JSON</em> sekmesinden her alanı düzenleyebilirsin. Alan adları REA ile
-            <span class="mono">libWorldSoccerChamps.so</span> içinden çıkarıldı — ayrıntı:
-            <span class="mono">docs/REA-ANALYSIS.md</span>.
-          </div>
-        </div>`;
-    },
-
-    squad() {
-      const s = state.save;
-      const { q, pos, listedOnly, sort } = state.squad;
-      let rows = s.players.map((p, i) => ({ ...p, i }));
-      if (q) {
-        const needle = q.toLocaleLowerCase("tr");
-        rows = rows.filter((p) => p.name.toLocaleLowerCase("tr").includes(needle) || String(p.id) === q);
-      }
-      if (pos) rows = rows.filter((p) => p.pos === pos);
-      if (listedOnly) rows = rows.filter((p) => p.listed);
-      rows.sort((a, b) => {
-        const A = a[sort.key], B = b[sort.key];
-        if (typeof A === "string") return A.localeCompare(B, "tr") * sort.dir;
-        return ((A || 0) - (B || 0)) * sort.dir;
-      });
-
-      const head = [
-        ["name", "Oyuncu"], ["pos", "Poz"], ["age", "Yaş"], ["ovr", "OVR"], ["pot", "POT"],
-        ["value", "Değer"], ["wage", "Maaş"], ["contract", "Sözleşme"], ["morale", "Moral"],
-        ["form", "Form"], ["injuryWeeks", "Sakat"], ["listed", "Liste"],
-      ];
-      const arrow = (k) => (sort.key === k ? (sort.dir > 0 ? " ▲" : " ▼") : "");
-
-      return `
-        <div class="panel">
-          <div class="toolbar">
-            <input class="search" id="sq-q" placeholder="Oyuncu ara (isim veya ID)…" value="${esc(q)}" />
-            <select class="ctl" id="sq-pos">
-              <option value="">Tüm pozisyonlar</option>
-              ${POSITIONS.map((p) => `<option value="${p}" ${p === pos ? "selected" : ""}>${p}</option>`).join("")}
-            </select>
-            <label class="chip" style="display:flex;gap:8px;align-items:center;cursor:pointer">
-              <input type="checkbox" id="sq-listed" ${listedOnly ? "checked" : ""} /> sadece listede
-            </label>
-            <span class="chip">${rows.length} / ${s.players.length} oyuncu</span>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr>
-                <th class="num">#</th>
-                ${head.map(([k, label]) => `<th data-sort="${k}" class="${["age","ovr","pot","value","wage","morale","form","injuryWeeks"].includes(k) ? "num" : ""}">${label}${arrow(k)}</th>`).join("")}
-              </tr></thead>
-              <tbody>
-              ${rows.map((p) => `
-                <tr>
-                  <td class="num muted">${p.i + 1}</td>
-                  <td>
-                    <div class="name-cell">
-                      <span class="avatar">${esc(p.name.split(" ").map((w) => w[0]).join("").slice(0, 2))}</span>
-                      <div><div>${esc(p.name)}</div><div class="muted" style="font-size:11px">${esc(p.nationality || "—")}</div></div>
-                    </div>
-                  </td>
-                  <td><span class="pos ${esc(p.pos)}">${esc(p.pos)}</span></td>
-                  <td class="num">${numCell(`players.${p.i}.age`, p.age, 15, 45)}</td>
-                  <td class="num">${numCell(`players.${p.i}.ovr`, p.ovr, 1, 99)}</td>
-                  <td class="num">${numCell(`players.${p.i}.pot`, p.pot, 1, 99)}</td>
-                  <td class="num">${numCell(`players.${p.i}.value`, p.value, 0, 999_000_000, "wide", fmt.compact(p.value))}</td>
-                  <td class="num">${numCell(`players.${p.i}.wage`, p.wage, 0, 5_000_000, "wide", fmt.compact(p.wage))}</td>
-                  <td><input class="cell-input wide" type="date" data-path="players.${p.i}.contract" value="${esc(p.contract || "")}" /></td>
-                  <td class="num">${numCell(`players.${p.i}.morale`, p.morale, 0, 100)}</td>
-                  <td class="num">${numCell(`players.${p.i}.form`, p.form, 1, 10, "", p.form, "float")}</td>
-                  <td class="num">${numCell(`players.${p.i}.injuryWeeks`, p.injuryWeeks || 0, 0, 52)}</td>
-                  <td><label class="switch"><input type="checkbox" data-path="players.${p.i}.listed" ${p.listed ? "checked" : ""}/><span></span></label></td>
-                </tr>`).join("")}
-              </tbody>
-            </table>
-          </div>
-        </div>`;
-    },
-
-    finances() {
-      const s = state.save;
-      const f = s.finances;
-      const wages = s.players.reduce((a, p) => a + (p.wage || 0), 0);
-      const pct = f.wageBudget ? Math.min(140, Math.round((wages / f.wageBudget) * 100)) : 0;
-      return `
-        <div class="cols-2">
-          <div class="panel">
-            <div class="panel-head"><h2>Kulüp Finansı</h2><span class="hint">${esc(f.currency)}</span></div>
-            <div class="panel-body">
-              <div class="list">
-                ${moneyField("Bakiye", "finances.balance", f.balance)}
-                ${moneyField("Transfer Bütçesi", "finances.transferBudget", f.transferBudget)}
-                ${moneyField("Maaş Bütçesi (haftalık)", "finances.wageBudget", f.wageBudget)}
-                ${moneyField("Sponsorluk (yıllık)", "finances.sponsorship", f.sponsorship)}
-                ${moneyField("Borç", "finances.debt", f.debt)}
-              </div>
+            <h1>${esc(s.club.name)}</h1>
+            <div class="meta">
+              <span><b>${esc(s.club.league)}</b> · ${esc(s.club.country)}</span>
+              <span>Sezon <b>${esc(s.game.season)}</b></span>
+              <span>Tarih <b>${fmt.date(s.game.date)}</b></span>
+              <span>${esc(s.game.transferWindow)}</span>
+            </div>
+            <div class="chips" style="margin-top:8px">
+              <span class="chip purple">${esc(s.club.status)}</span>
+              <span class="chip">İtibar ${fmt.num(s.club.reputation)}</span>
+              <span class="chip">Stadyum ${fmt.num(s.club.capacity)}</span>
+              <span class="chip gold">${s.players.length} oyuncu</span>
             </div>
           </div>
-          <div class="panel">
-            <div class="panel-head"><h2>Maaş Yükü</h2><span class="hint">kadro toplamı / bütçe</span></div>
-            <div class="panel-body">
-              <div class="kpi ${pct > 100 ? "red" : pct > 85 ? "amber" : ""}" style="margin-bottom:14px">
-                <div class="label">Haftalık Toplam</div>
-                <div class="value">${fmt.money(wages, f.currency)}</div>
-                <div class="sub">${pct}% kullanım · bütçe ${fmt.money(f.wageBudget, f.currency)}</div>
+          <div class="spacer"></div>
+          <div class="chips" style="flex-direction:column;align-items:flex-end">
+            <span class="chip">${esc(s.meta.editor)} v${esc(s.meta.version)}</span>
+            <span class="chip">${esc(s.meta.package)}</span>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="stats">
+          <div class="stat"><div class="k">Kadro Değeri</div><div class="v">${fmt.money(squadValue)}</div><div class="s">${s.players.length} oyuncu</div></div>
+          <div class="stat"><div class="k">Ortalama CA</div><div class="v" style="color:${abilityColor(avgCa)}">${avgCa}</div><div class="s">1–200 ölçeği</div></div>
+          <div class="stat"><div class="k">Bakiye</div><div class="v">${fmt.money(s.club.finances.balance)}</div><div class="s">Transfer: ${fmt.money(s.club.finances.transferBudget)}</div></div>
+          <div class="stat"><div class="k">Haftalık Maaş</div><div class="v">${fmt.money(wages)}</div><div class="s">Bütçenin %${wagePct}'i</div></div>
+          <div class="stat"><div class="k">Sözleşmesi Biten</div><div class="v">${expiring}</div><div class="s">1 yıl içinde</div></div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="cols">
+          <div class="card">
+            <div class="card-head">Son Düzenlemeler <span class="sub">${S.history.length} değişiklik</span></div>
+            <div class="card-body">
+              ${S.history.length ? S.history.slice(-8).reverse().map((c) => `
+                <div class="row"><span class="label">${esc(c.label)}</span>
+                <span class="value muted mono">${c.at.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</span></div>`).join("")
+                : `<div class="row"><span class="label muted">Henüz düzenleme yapılmadı.</span><span class="value"></span></div>`}
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">Hızlı Erişim</div>
+            <div class="card-body pad">
+              <div class="chips">
+                <button class="btn" style="background:#2a2a36" data-goto="players">Kadroyu Düzenle</button>
+                <button class="btn" style="background:#2a2a36" data-goto="club">Kulüp Bilgisi</button>
+                <button class="btn" style="background:#2a2a36" data-goto="finances">Finans</button>
+                <button class="btn" style="background:#2a2a36" data-goto="staff">Personel</button>
+                <button class="btn" style="background:#2a2a36" data-goto="competitions">Müsabakalar</button>
               </div>
-              <div class="bar ${pct > 100 ? "low" : pct > 85 ? "mid" : ""}" style="height:10px"><i style="width:${Math.min(100, pct)}%"></i></div>
-              <p class="muted" style="font-size:12.5px;line-height:1.5;margin-top:16px">
-                FM'deki "wage budget" mantığı: toplam maaş bütçeyi aşarsa yeni sözleşme imzalanamaz.
-                <strong>Sandbox Araçları → Maaş Yükünü Sıfırla</strong> ile tek tıkla düşürebilirsin.
+              <p class="muted" style="font-size:11.5px;line-height:1.55;margin:12px 0 0">
+                Bu ekran Football Manager'ın <b>In-Game Editor</b> akışını izler: değerler sahnelenir,
+                sağ üstteki <b>Değişiklikleri Kaydet</b> ile kalıcılaşır, <b>Geri Al</b> ile son düzenleme geri alınır.
               </p>
             </div>
           </div>
         </div>`;
     },
 
-    transfers() {
-      const s = state.save;
-      const listed = s.players.map((p, i) => ({ ...p, i })).filter((p) => p.listed);
-      const targets = s.transferTargets;
+    /* ===== KULÜP ===== */
+    club() {
+      const c = S.save.club;
       return `
-        <div class="cols-2">
-          <div class="panel">
-            <div class="panel-head"><h2>Transfer Listesindekiler</h2><span class="hint">satışa açık</span></div>
-            <div class="panel-body">
-              ${listed.length ? `<div class="list">
-                ${listed.map((p) => `
-                  <div class="list-row">
-                    <div class="who"><span class="pos ${esc(p.pos)}">${esc(p.pos)}</span>
-                      <div><strong>${esc(p.name)}</strong><div class="muted" style="font-size:12px">${p.ovr} OVR · ${fmt.money(p.value, s.finances.currency)}</div></div>
-                    </div>
-                    <button class="btn small" data-action="sell" data-i="${p.i}">%90'ına sat</button>
-                  </div>`).join("")}
-              </div>` : `<p class="muted">Transfer listesinde oyuncu yok.</p>`}
+        <div class="cols">
+          <div class="card">
+            <div class="card-head">Kulüp Bilgisi</div>
+            <div class="card-body">
+              ${txtRow("Ad", () => c.name, (v) => (c.name = v))}
+              ${txtRow("Kısa Ad", () => c.shortName, (v) => (c.shortName = v))}
+              ${txtRow("Lig", () => c.league, (v) => (c.league = v))}
+              ${txtRow("Ülke", () => c.country, (v) => (c.country = v))}
+              ${selRow("Statü", () => c.status, (v) => (c.status = v), ENUMS.clubStatus)}
+              ${numRow("İtibar", () => c.reputation, (v) => (c.reputation = v), { min: 1, max: 10000, unit: "/ 10.000", hint: true })}
+              ${txtRow("Stadyum", () => c.stadium, (v) => (c.stadium = v))}
+              ${numRow("Kapasite", () => c.capacity, (v) => (c.capacity = v), { min: 0, max: 200000, step: 500, unit: "kişi" })}
             </div>
           </div>
 
-          <div class="panel">
-            <div class="panel-head"><h2>İzleme Listesi</h2><span class="hint">scout hedefleri</span></div>
-            <div class="panel-body">
-              ${targets.length ? `<div class="list">
-                ${targets.map((t, ti) => `
-                  <div class="list-row">
-                    <div class="who"><span class="pos ${esc(t.pos)}">${esc(t.pos)}</span>
-                      <div><strong>${esc(t.name)}</strong>
-                        <div class="muted" style="font-size:12px">${esc(t.club || "")} · ${t.ovr}/${t.pot} · ${fmt.money(t.value, s.finances.currency)} · ilgi ${t.interest}%</div>
-                      </div>
-                    </div>
-                    <div style="display:flex;gap:6px">
-                      <button class="btn small ghost" data-action="interest" data-ti="${ti}">+20 ilgi</button>
-                      <button class="btn small primary" data-action="sign" data-ti="${ti}">İmzala</button>
-                    </div>
-                  </div>`).join("")}
-              </div>` : `<p class="muted">İzleme listesi boş.</p>`}
+          <div class="card">
+            <div class="card-head">Tesisler</div>
+            <div class="card-body">
+              ${numRow("Antrenman Tesisi", () => c.trainingFacilities, (v) => (c.trainingFacilities = v), { min: 1, max: 20, hint: true })}
+              ${numRow("Altyapı Tesisi", () => c.youthFacilities, (v) => (c.youthFacilities = v), { min: 1, max: 20 })}
+              ${numRow("Genç Oyuncu Keşfi", () => c.youthRecruitment, (v) => (c.youthRecruitment = v), { min: 1, max: 20 })}
+              ${numRow("Genç Antrenörlük", () => c.juniorCoaching, (v) => (c.juniorCoaching = v), { min: 1, max: 20 })}
+              ${txtRow("Antrenman Sahası", () => c.trainingGround, (v) => (c.trainingGround = v))}
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">Finans Özeti <span class="sub">Kulüp</span></div>
+            <div class="card-body">
+              ${moneyRow("Bakiye", () => c.finances.balance, (v) => (c.finances.balance = v))}
+              ${moneyRow("Transfer Bütçesi", () => c.finances.transferBudget, (v) => (c.finances.transferBudget = v))}
+              ${moneyRow("Maaş Bütçesi", () => c.finances.wageBudget, (v) => (c.finances.wageBudget = v))}
+              ${moneyRow("Sponsorluk", () => c.finances.sponsorship, (v) => (c.finances.sponsorship = v))}
+              ${moneyRow("Borç", () => c.finances.debt, (v) => (c.finances.debt = v))}
+              ${numRow("Sezonluk Bilet", () => c.finances.seasonTicketPrice, (v) => (c.finances.seasonTicketPrice = v), { min: 0, max: 100000, unit: "€" })}
             </div>
           </div>
         </div>`;
     },
 
+    /* ===== OYUNCULAR ===== */
+    players() {
+      const s = S.save;
+      const list = filteredPlayers();
+      if (!list.some((p) => p.id === S.playerId)) S.playerId = list[0]?.id ?? s.players[0]?.id ?? null;
+      const p = s.players.find((x) => x.id === S.playerId);
+
+      return `<div class="split">
+        <div class="list-panel">
+          <div class="list-toolbar">
+            <input id="pq" type="search" placeholder="Oyuncu ara…" value="${esc(S.q)}" />
+            <div class="filters">
+              ${[["ALL", "Tümü"], ["GK", "KL"], ["DEF", "DEF"], ["MID", "ORT"], ["ATT", "FOR"]].map(([k, l]) => `
+                <button data-pos-filter="${k}" class="${S.posFilter === k ? "active" : ""}">${l}</button>`).join("")}
+            </div>
+            <select id="psort">
+              ${[["ca", "CA'ya göre"], ["name", "İsme göre"], ["value", "Değere göre"], ["age", "Yaşa göre"]].map(([k, l]) => `
+                <option value="${k}" ${S.sort === k ? "selected" : ""}>${l}</option>`).join("")}
+            </select>
+          </div>
+          <div class="list">
+            ${list.map((x) => `
+              <div class="list-row ${x.id === S.playerId ? "active" : ""}" data-player="${x.id}">
+                <span class="badge-pos ${esc(x.position)}">${esc(x.position)}</span>
+                <div>
+                  <div class="nm">${esc(x.name)}</div>
+                  <div class="sub">${x.age} yaş · ${esc(x.nationality)}</div>
+                </div>
+                <div class="ca-mini" style="color:${abilityColor(x.ca)}">${x.ca}<small> / ${x.pa}</small></div>
+              </div>`).join("")}
+            ${list.length ? "" : `<div class="list-row"><span></span><div class="nm muted">Sonuç yok</div><span></span></div>`}
+          </div>
+        </div>
+
+        ${p ? playerDetail(p) : `<div class="card"><div class="card-body pad muted">Oyuncu seçilmedi.</div></div>`}
+      </div>`;
+    },
+
+    /* ===== PERSONEL ===== */
     staff() {
-      const s = state.save;
+      const s = S.save;
+      if (!s.staff.some((x) => x.id === S.staffId)) S.staffId = s.staff[0]?.id ?? null;
+      const m = s.staff.find((x) => x.id === S.staffId);
+
+      return `<div class="split">
+        <div class="list-panel">
+          <div class="list-toolbar"><input placeholder="Personel ara…" value="" disabled /></div>
+          <div class="list">
+            ${s.staff.map((x) => `
+              <div class="list-row ${x.id === S.staffId ? "active" : ""}" data-staff="${x.id}">
+                <span class="badge-pos" style="background:#2a2140;color:#cfc7ee">${x.role.slice(0, 3).toUpperCase()}</span>
+                <div><div class="nm">${esc(x.name)}</div><div class="sub">${esc(x.role)} · ${x.age} yaş</div></div>
+                <div class="ca-mini" style="color:${abilityColor(x.ca)}">${x.ca}</div>
+              </div>`).join("")}
+          </div>
+        </div>
+
+        ${m ? `
+        <div>
+          <div class="player-head">
+            <div>
+              <h2>${esc(m.name)}</h2>
+              <div class="sub">${esc(m.role)} · ${m.age} yaş · ${esc(m.club)}</div>
+            </div>
+            <div class="ability">
+              <div class="item"><div class="k">CA</div><div class="v" style="color:${abilityColor(m.ca)}">${m.ca}</div></div>
+              <div class="item"><div class="k">PA</div><div class="v pa">${m.pa}</div></div>
+              <div class="item"><div class="k">İtibar</div><div class="v" style="font-size:16px">${fmt.num(m.reputation)}</div></div>
+            </div>
+          </div>
+
+          <div class="cols" style="margin-top:12px">
+            <div class="card">
+              <div class="card-head">Profil</div>
+              <div class="card-body">
+                ${selRow("Görev", () => m.role, (v) => (m.role = v), ENUMS.staffRole)}
+                ${numRow("Yaş", () => m.age, (v) => (m.age = v), { min: 18, max: 90 })}
+                ${numRow("Mevcut Kabiliyet (CA)", () => m.ca, (v) => (m.ca = v), { min: 1, max: 200 })}
+                ${numRow("Potansiyel Kabiliyet (PA)", () => m.pa, (v) => (m.pa = v), { min: 1, max: 200 })}
+                ${numRow("İtibar", () => m.reputation, (v) => (m.reputation = v), { min: 1, max: 10000 })}
+                ${moneyRow("Maaş", () => m.wage, (v) => (m.wage = v))}
+                ${txtRow("Sözleşme Bitişi", () => m.contract, (v) => (m.contract = v), "date")}
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">Nitelikler</div>
+              <div class="card-body">
+                ${STAFF_ATTRS.map((k) => attrRow(k, () => m.attributes[k], (v) => (m.attributes[k] = v))).join("")}
+              </div>
+            </div>
+          </div>
+        </div>` : `<div class="card"><div class="card-body pad muted">Personel seçilmedi.</div></div>`}
+      </div>`;
+    },
+
+    /* ===== FİNANS ===== */
+    finances() {
+      const f = S.save.club.finances;
+      const wages = S.save.players.reduce((a, p) => a + (p.contract?.wage || 0), 0);
+      const pct = f.wageBudget ? Math.round((wages / f.wageBudget) * 100) : 0;
       return `
-        <div class="panel">
-          <div class="panel-head"><h2>Personel</h2><span class="hint">${s.staff.length} kişi</span></div>
-          <div class="table-wrap"><table>
-            <thead><tr><th>İsim</th><th>Görev</th><th class="num">Puan</th><th class="num">Maaş</th><th>Sözleşme</th></tr></thead>
+        <div class="cols">
+          <div class="card">
+            <div class="card-head">Bütçeler</div>
+            <div class="card-body">
+              ${moneyRow("Bakiye", () => f.balance, (v) => (f.balance = v))}
+              ${moneyRow("Transfer Bütçesi", () => f.transferBudget, (v) => (f.transferBudget = v))}
+              ${moneyRow("Maaş Bütçesi (haftalık)", () => f.wageBudget, (v) => (f.wageBudget = v))}
+              ${moneyRow("Sponsorluk (yıllık)", () => f.sponsorship, (v) => (f.sponsorship = v))}
+              ${moneyRow("Borç", () => f.debt, (v) => (f.debt = v))}
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">Maaş Yükü <span class="sub">kadro / bütçe</span></div>
+            <div class="card-body pad">
+              <div class="stat" style="border-left-color:${pct > 100 ? "var(--red)" : pct > 85 ? "var(--gold)" : "var(--green)"}">
+                <div class="k">Haftalık Toplam</div>
+                <div class="v">${fmt.money(wages)}</div>
+                <div class="s">Bütçe ${fmt.money(f.wageBudget)} · %${pct} kullanım</div>
+              </div>
+              <div class="gauge ${pct > 100 ? "bad" : pct > 85 ? "warn" : ""}"><i style="width:${Math.min(100, pct)}%"></i></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">Sezon Projeksiyonu</div>
+            <div class="card-body">
+              ${moneyRow("Beklenen Gelir", () => f.projectedIncome, (v) => (f.projectedIncome = v))}
+              ${moneyRow("Beklenen Gider", () => f.projectedExpenditure, (v) => (f.projectedExpenditure = v))}
+              ${numRow("Sezonluk Bilet", () => f.seasonTicketPrice, (v) => (f.seasonTicketPrice = v), { min: 0, max: 100000, unit: "€" })}
+              <div class="row"><span class="label">Net</span><span class="value mono" style="color:${f.projectedIncome - f.projectedExpenditure >= 0 ? "var(--green)" : "var(--red)"}">
+                ${fmt.money(f.projectedIncome - f.projectedExpenditure)}</span></div>
+            </div>
+          </div>
+        </div>`;
+    },
+
+    /* ===== MÜSABAKALAR ===== */
+    competitions() {
+      const comps = S.save.competitions;
+      return `
+        <div class="card">
+          <div class="card-head">Müsabakalar</div>
+          <table class="grid">
+            <thead><tr><th>Müsabaka</th><th class="num">Seviye</th><th class="num">İtibar</th><th class="num">Takım</th><th class="num">Ödül Havuzu</th><th>Format</th></tr></thead>
             <tbody>
-            ${s.staff.map((m, i) => `
-              <tr>
-                <td>${esc(m.name)}</td>
-                <td class="muted">${esc(m.role)}</td>
-                <td class="num">
-                  <select class="ctl" data-path="staff.${i}.rating" style="padding:4px 6px">
-                    ${[1, 2, 3, 4, 5].map((n) => `<option value="${n}" ${Number(m.rating) === n ? "selected" : ""}>${"★".repeat(n)}</option>`).join("")}
-                  </select>
-                </td>
-                <td class="num">${numCell(`staff.${i}.wage`, m.wage, 0, 10_000_000, "wide", fmt.compact(m.wage))}</td>
-                <td><input class="cell-input wide" type="date" data-path="staff.${i}.contract" value="${esc(m.contract || "")}" /></td>
+              ${comps.map((c, i) => `<tr>
+                <td>${esc(c.name)}</td>
+                <td class="num">${stepperInline(ctl(() => c.level, (v) => (c.level = v)), c.level, 1, 5)}</td>
+                <td class="num">${stepperInline(ctl(() => c.reputation, (v) => (c.reputation = v)), c.reputation, 1, 10000, 100)}</td>
+                <td class="num">${stepperInline(ctl(() => c.teams, (v) => (c.teams = v)), c.teams, 2, 200)}</td>
+                <td class="num">${stepperInline(ctl(() => c.prizeMoney, (v) => (c.prizeMoney = v)), c.prizeMoney, 0, 999999999, 1000000)}</td>
+                <td class="muted">${esc(c.matchRules)}</td>
               </tr>`).join("")}
             </tbody>
-          </table></div>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-head">Lig Tablosu <span class="sub">salt okunur — sezon verisi</span></div>
+          <table class="grid">
+            <thead><tr><th>#</th><th>Takım</th><th class="num">O</th><th class="num">P</th><th class="num">AV</th></tr></thead>
+            <tbody>
+              ${S.save.leagueTable.map((r, i) => `<tr>
+                <td class="num">${i + 1}</td><td>${esc(r.team)}</td>
+                <td class="num">${r.played}</td>
+                <td class="num" style="font-weight:700">${r.points}</td>
+                <td class="num">${r.gd > 0 ? "+" : ""}${r.gd}</td>
+              </tr>`).join("")}
+            </tbody>
+          </table>
         </div>`;
     },
 
-    sandbox() {
-      const s = state.save;
+    /* ===== TERCİHLER ===== */
+    preferences() {
+      const p = S.prefs;
       return `
-        <div class="banner warn">
-          <span>⚙</span>
-          <div><strong>Sandbox modu:</strong> aşağıdaki araçlar kayıt verisini toplu değiştirir; her işlem
-          geri alınabilir ve <em>Değişiklikler</em> panelinde tek tek görünür.</div>
-        </div>
-        <div class="cards">
-          ${TOOLS.map((t) => `
-            <div class="tool" data-tool="${t.id}">
-              <h3><span>${t.icon}</span>${esc(t.title)}</h3>
-              <p>${esc(t.desc)}</p>
-              <div class="muted mono" style="font-size:11.5px">${esc(safeStat(t, s))}</div>
-              <div class="foot">
-                <button class="btn primary small" data-action="tool" data-id="${t.id}">Uygula</button>
-              </div>
-            </div>`).join("")}
-        </div>
-        <div class="panel">
-          <div class="panel-head"><h2>Kayıt</h2><span class="hint">yerel</span></div>
-          <div class="panel-body" style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn" data-action="reset-demo">Demo kayda dön</button>
-            <button class="btn" data-action="clear-local">Yerel kaydı sil</button>
-            <button class="btn ghost" data-action="open-diff">Değişiklik günlüğü (${state.changes.length})</button>
+        <div class="cols">
+          <div class="card">
+            <div class="card-head">Editör Tercihleri</div>
+            <div class="card-body">
+              ${switchRow("Kaydetmeden çıkarken uyar", p.confirmLeave, (v) => (p.confirmLeave = v))}
+              ${switchRow("Nitelikleri renklendir (1–20)", p.attrColors, (v) => (p.attrColors = v))}
+              ${switchRow("CA / PA sütunlarını göster", p.showAbility, (v) => (p.showAbility = v))}
+              ${switchRow("Her düzenlemede otomatik kaydet", p.autoSave, (v) => (p.autoSave = v))}
+            </div>
           </div>
-        </div>`;
-    },
 
-    raw() {
-      return `
-        <div class="panel">
-          <div class="panel-head"><h2>Ham JSON</h2><span class="hint">doğrudan düzenle</span></div>
-          <div class="panel-body">
-            <textarea class="json" id="rawJson" spellcheck="false">${esc(JSON.stringify(state.save, null, 2))}</textarea>
-            <div style="display:flex;gap:10px;margin-top:12px">
-              <button class="btn primary" data-action="raw-apply">JSON'u uygula</button>
-              <button class="btn ghost" data-action="raw-revert">Geri yükle</button>
-              <span class="chip" id="rawStatus">geçerli JSON</span>
+          <div class="card">
+            <div class="card-head">Kayıt İşlemleri</div>
+            <div class="card-body pad">
+              <div class="chips">
+                <button class="btn" style="background:#2a2a36" id="exportBtn">JSON Dışa Aktar</button>
+                <label class="btn" style="background:#2a2a36;cursor:pointer">JSON İçe Al
+                  <input type="file" id="importFile" accept=".json" hidden />
+                </label>
+                <button class="btn" style="background:#2a2a36" id="resetBtn">Demo Kayda Dön</button>
+              </div>
+              <p class="muted" style="font-size:11.5px;line-height:1.55;margin-top:12px">
+                Dışa aktarılan JSON, <span class="mono">tools/wsc-save.sh push</span> ile cihaza geri yazılabilir
+                (root veya emülatör gerekir). Ayrıntı: <span class="mono">docs/ROOTSUZ-KURULUM.md</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">Hakkında</div>
+            <div class="card-body pad">
+              <div class="hint-box">
+                <span>ℹ</span>
+                <div>
+                  Alan adları (CA/PA, nitelikler, itibar, tesisler, sözleşme) Football Manager'ın
+                  In-Game Editor başlıklarıyla eşleşir. Veri kaynağı World Soccer Champs 2026.12'dir;
+                  gerçek kayıt şeması REA analizinde (<span class="mono">docs/REA-ANALYSIS.md</span>) çıkarılan
+                  sınıf/anahtar isimlerine dayanır.
+                </div>
+              </div>
             </div>
           </div>
         </div>`;
     },
   };
 
-  function safeStat(tool, save) {
-    try { return tool.stat(save); } catch (_) { return ""; }
-  }
+  /* ---------------- oyuncu detayı ---------------- */
 
-  function numCell(path, value, min, max, extra = "", display, type = "int") {
-    const step = type === "float" ? "0.1" : "1";
-    return `<input class="cell-input ${extra}" type="number" step="${step}" min="${min}" max="${max}"
-      data-path="${path}" data-type="${type}" value="${value ?? 0}" title="${display ? esc(display) : ""}" />`;
-  }
+  function playerDetail(p) {
+    const tab = S.playerTab;
+    const body = {
+      profile: `
+        <div class="cols">
+          <div class="card">
+            <div class="card-head">Kişisel Bilgiler</div>
+            <div class="card-body">
+              ${txtRow("Ad Soyad", () => p.name, (v) => (p.name = v))}
+              ${numRow("Yaş", () => p.age, (v) => (p.age = v), { min: 15, max: 60 })}
+              ${txtRow("Doğum Tarihi", () => p.dob, (v) => (p.dob = v), "date")}
+              ${txtRow("Uyruk", () => p.nationality, (v) => (p.nationality = v))}
+              ${txtRow("İkinci Uyruk", () => p.secondNationality || "", (v) => (p.secondNationality = v))}
+              ${selRow("Ana Pozisyon", () => p.position, (v) => { p.position = v; }, POSITIONS)}
+              ${selRow("Kullandığı Ayak", () => p.foot, (v) => (p.foot = v), ENUMS.foot)}
+              ${numRow("Boy", () => p.height, (v) => (p.height = v), { min: 140, max: 220, unit: "cm" })}
+              ${numRow("Kilo", () => p.weight, (v) => (p.weight = v), { min: 40, max: 130, unit: "kg" })}
+            </div>
+          </div>
 
-  function moneyField(label, path, value) {
-    return `<div class="field">
-      <label>${label}</label>
-      <div class="row">
-        <input class="cell-input wide" style="width:100%" type="number" step="10000" data-path="${path}" data-type="int" value="${value ?? 0}" />
-        <span class="muted mono">${fmt.compact(value)}</span>
+          <div class="card">
+            <div class="card-head">Kabiliyet & İtibar</div>
+            <div class="card-body">
+              ${numRow("Mevcut Kabiliyet (CA)", () => p.ca, (v) => (p.ca = v), { min: 1, max: 200, hint: true })}
+              ${numRow("Potansiyel Kabiliyet (PA)", () => p.pa, (v) => (p.pa = v), { min: 1, max: 200, hint: true })}
+              ${numRow("İtibar — Mevcut", () => p.reputation.current, (v) => (p.reputation.current = v), { min: 1, max: 10000 })}
+              ${numRow("İtibar — Ülke", () => p.reputation.home, (v) => (p.reputation.home = v), { min: 1, max: 10000 })}
+              ${numRow("İtibar — Dünya", () => p.reputation.world, (v) => (p.reputation.world = v), { min: 1, max: 10000 })}
+              <div class="row"><span class="label">Pi̇yasa Değeri</span>
+                <span class="value mono">${fmt.money(p.value)}</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">Pozisyon Uygunluğu <span class="sub">0–20</span></div>
+            <div class="pos-grid">
+              ${POSITIONS.map((pos) => {
+                const id = ctl(() => p.positions[pos] ?? 0, (v) => (p.positions[pos] = v));
+                const v = p.positions[pos] ?? 0;
+                return `<div class="pos-cell">
+                  <div class="p">${pos}</div>
+                  <input type="number" min="0" max="20" data-ctl="${id}" value="${v}"
+                    style="color:${S.prefs.attrColors ? attrColor(v) : "inherit"}" title="${esc(POSITION_LABEL[pos])}" />
+                </div>`;
+              }).join("")}
+            </div>
+          </div>
+        </div>`,
+
+      attributes: `
+        <div class="attrs">
+          ${GROUPS.map((g) => `
+            <div class="attr-group">
+              <h3>${esc(g.title)}${g.id === "gk" ? " · Kaleci" : ""}</h3>
+              <div style="padding:6px 0 8px">
+                ${g.keys.map((k) => attrRow(k, () => p.attributes[k] ?? 0, (v) => (p.attributes[k] = v))).join("")}
+              </div>
+            </div>`).join("")}
+        </div>`,
+
+      contract: `
+        <div class="cols">
+          <div class="card">
+            <div class="card-head">Sözleşme</div>
+            <div class="card-body">
+              ${txtRow("Kulüp", () => p.club, (v) => (p.club = v))}
+              ${selRow("Sözleşme Türü", () => p.contract.type, (v) => (p.contract.type = v), ENUMS.contractType)}
+              ${txtRow("Bitiş Tarihi", () => p.contract.expiry, (v) => (p.contract.expiry = v), "date")}
+              ${moneyRow("Haftalık Ücret", () => p.contract.wage, (v) => (p.contract.wage = v))}
+              ${moneyRow("İmza Bonusu", () => p.contract.signingBonus, (v) => (p.contract.signingBonus = v))}
+              ${moneyRow("Serbest Kalma Maddesi", () => p.contract.releaseClause, (v) => (p.contract.releaseClause = v))}
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">Transfer Durumu</div>
+            <div class="card-body">
+              ${selRow("Durum", () => p.contract.status, (v) => (p.contract.status = v), ENUMS.transferStatus)}
+              ${moneyRow("Piyasa Değeri", () => p.value, (v) => (p.value = v))}
+              <div class="row"><span class="label">Kalan Süre</span>
+                <span class="value mono">${monthsLeft(p.contract.expiry)} ay</span></div>
+            </div>
+          </div>
+        </div>`,
+
+      personal: `
+        <div class="cols">
+          <div class="card">
+            <div class="card-head">Durum</div>
+            <div class="card-body">
+              ${selRow("Moral", () => p.morale, (v) => (p.morale = v), ENUMS.morale)}
+              ${numRow("Kondisyon", () => p.condition, (v) => (p.condition = v), { min: 0, max: 100, unit: "%" })}
+              ${numRow("Yorgunluk", () => p.jadedness, (v) => (p.jadedness = v), { min: 0, max: 100, unit: "%" })}
+              ${numRow("Keskinlik", () => p.sharpness, (v) => (p.sharpness = v), { min: 0, max: 100, unit: "%" })}
+              ${numRow("Sakatlık", () => p.injuryWeeks, (v) => (p.injuryWeeks = v), { min: 0, max: 52, unit: "hafta" })}
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">Kişilik</div>
+            <div class="card-body">
+              ${selRow("Kişilik", () => p.personality, (v) => (p.personality = v), ENUMS.personality)}
+              ${selRow("Medya ile İlişki", () => p.mediaHandling, (v) => (p.mediaHandling = v), ENUMS.media)}
+            </div>
+          </div>
+        </div>`,
+    }[tab];
+
+    return `<div>
+      <div class="player-head">
+        <div>
+          <h2>${esc(p.name)}</h2>
+          <div class="sub">
+            ${p.age} yaş · ${esc(p.nationality)} · ${esc(POSITION_LABEL[p.position] || p.position)}
+            · ${esc(p.club)} · ${esc(p.contract.type)}
+          </div>
+          <div class="chips" style="margin-top:8px">
+            <span class="chip">Değer ${fmt.money(p.value)}</span>
+            <span class="chip">Ücret ${fmt.money(p.contract.wage)}/h</span>
+            <span class="chip ${p.contract.status === "Listede" ? "gold" : ""}">${esc(p.contract.status)}</span>
+            <span class="chip">Sözleşme ${fmt.date(p.contract.expiry)}</span>
+          </div>
+        </div>
+        <div class="ability">
+          <div class="item"><div class="k">CA</div><div class="v" style="color:${abilityColor(p.ca)}">${p.ca}</div></div>
+          <div class="item"><div class="k">PA</div><div class="v pa">${p.pa}</div></div>
+        </div>
       </div>
+
+      <div class="subtabs">
+        ${[["profile", "Profil"], ["attributes", "Nitelikler"], ["contract", "Sözleşme"], ["personal", "Kişisel"]].map(([k, l]) => `
+          <button class="subtab ${tab === k ? "active" : ""}" data-ptab="${k}">${l}</button>`).join("")}
+      </div>
+
+      ${body}
     </div>`;
   }
 
-  /* ---------------- çizim ---------------- */
+  function attrRow(label, getter, setter) {
+    const v = Number(getter()) || 0;
+    const id = ctl(getter, setter);
+    const c = S.prefs.attrColors ? attrColor(v) : "inherit";
+    return `<div class="attr">
+      <span class="n">${esc(label)}</span>
+      <span class="meter">
+        <i><b style="width:${Math.min(100, (v / 20) * 100)}%;background:${c === "inherit" ? "#6b7280" : c}"></b></i>
+        <input type="number" min="1" max="20" data-ctl="${id}" value="${v}" style="color:${c}" />
+      </span>
+    </div>`;
+  }
+
+  function stepperInline(id, value, min, max, step = 1) {
+    return `<span class="stepper">
+      <button type="button" data-step="-${step}" data-ctl="${id}" tabindex="-1">−</button>
+      <input type="number" data-ctl="${id}" value="${value}" min="${min}" max="${max}" step="${step}" style="width:86px" />
+      <button type="button" data-step="${step}" data-ctl="${id}" tabindex="-1">+</button>
+    </span>`;
+  }
+
+  function switchRow(label, value, setter) {
+    const id = ctl(() => value, setter);
+    return `<div class="switch-row">
+      <span>${esc(label)}</span>
+      <label class="switch"><input type="checkbox" data-ctl="${id}" ${value ? "checked" : ""} /><span></span></label>
+    </div>`;
+  }
+
+  function monthsLeft(expiry) {
+    if (!expiry) return 0;
+    const d = new Date(expiry);
+    const now = new Date(S.save.game.date);
+    const m = (d.getFullYear() - now.getFullYear()) * 12 + (d.getMonth() - now.getMonth());
+    return Math.max(0, m);
+  }
+
+  function filteredPlayers() {
+    const q = S.q.trim().toLocaleLowerCase("tr");
+    return S.save.players
+      .filter((p) => {
+        if (q && !p.name.toLocaleLowerCase("tr").includes(q)) return false;
+        if (S.posFilter === "ALL") return true;
+        if (S.posFilter === "GK") return p.position === "GK";
+        if (S.posFilter === "DEF") return ["DC", "DL", "DR"].includes(p.position);
+        if (S.posFilter === "MID") return ["DM", "MC", "ML", "MR", "AMC", "AML", "AMR"].includes(p.position);
+        if (S.posFilter === "ATT") return p.position === "ST";
+        return true;
+      })
+      .sort((a, b) => {
+        if (S.sort === "name") return a.name.localeCompare(b.name, "tr");
+        if (S.sort === "value") return b.value - a.value;
+        if (S.sort === "age") return a.age - b.age;
+        return b.ca - a.ca;
+      });
+  }
+
+  /* ---------------- çizim / olaylar ---------------- */
+
+  function paintTabs() {
+    $("#tabs").innerHTML = TABS.map((t) => `
+      <button class="tab ${S.route === t.id ? "active" : ""}" data-route="${t.id}">${t.label}</button>`).join("");
+  }
+
+  function paintStatus() {
+    const d = dirty();
+    const pill = $("#dirtyPill");
+    pill.textContent = d ? "Kaydedilmedi" : "Kaydedildi";
+    pill.classList.toggle("dirty", d);
+    $("#undoBtn").disabled = S.changes.length === 0;
+    $("#saveBtn").disabled = !d;
+    const staged = S.changes.length;
+    $("#statusLeft").textContent =
+      `${staged ? staged + " bekleyen düzenleme" : "bekleyen düzenleme yok"} · ${d ? "kaydedilmedi" : "kayıtlı"} · toplam ${S.history.length}`;
+    const p = S.save;
+    $("#statusRight").textContent =
+      `${p.club.name} · ${p.game.season} · ${p.players.length} oyuncu · CA/PA 1–200 · nitelikler 1–20`;
+  }
 
   function paint() {
-    const s = state.save;
-    if (!s) return;
-
-    $("#clubName").textContent = s.club.name || "Bilinmeyen Kulüp";
-    $("#clubSub").textContent = [s.club.league, s.club.country, s.season?.label].filter(Boolean).join(" · ");
-    $("#clubCrest").textContent = s.club.shortName || (s.club.name || "??").slice(0, 3).toUpperCase();
-
-    $("#nav").innerHTML = NAV.map((n) => `
-      <button class="nav-item ${state.route === n.id ? "active" : ""}" data-route="${n.id}">
-        <span class="ico">${n.icon}</span><span>${n.label}</span>
-      </button>`).join("");
-
-    const changelog = state.changes.length;
-    const chip = $("#changeChip");
-    chip.textContent = `${changelog} değişiklik`;
-    chip.classList.toggle("dirty", changelog > 0);
-    $("#undoBtn").disabled = changelog === 0;
-
-    $("#view").innerHTML = views[state.route]();
-    $("#drawerBody").innerHTML = renderDiff();
-
-    // odak geri yükleme (tablo hücresi düzenlerken DOM yenileniyor)
-    if (state.focusPath) {
-      const el = document.querySelector(`[data-path="${state.focusPath}"]`);
-      if (el) { el.focus(); if (el.select) el.select(); }
-      state.focusPath = null;
+    CTLS = [];
+    paintTabs();
+    $("#view").innerHTML = views[S.route]();
+    $("#brandSub").textContent = `${S.save.meta.game} · ${S.save.game.season}`;
+    paintStatus();
+    if (S.focusKey) {
+      const el = document.querySelector(`[data-focus="${S.focusKey}"]`);
+      S.focusKey = null;
     }
-
-    const status = $("#rawStatus");
-    if (status) status.textContent = "geçerli JSON";
   }
 
-  function renderDiff() {
-    if (!state.changes.length) return `<p class="muted">Henüz değişiklik yok.</p>`;
-    return [...state.changes].reverse().map((c, idx) => `
-      <div class="diff-row">
-        <div class="path">${esc(c.label)}</div>
-        ${c.diff.slice(0, 6).map((d) => `
-          <div class="val"><span class="muted mono">${esc(d.path)}</span><br/>
-            <span class="from">${esc(short(d.from))}</span> → <span class="to">${esc(short(d.to))}</span></div>`).join("")}
-        ${c.diff.length > 6 ? `<div class="muted">+${c.diff.length - 6} alan daha…</div>` : ""}
-        <div style="margin-top:8px"><button class="btn small ghost" data-action="undo-to" data-idx="${state.changes.length - 1 - idx}">buna kadar geri al</button></div>
-      </div>`).join("");
+  function applyCtl(id, raw, isStep) {
+    const c = CTLS[id];
+    if (!c) return;
+    const cur = Number(c.get());
+    let next;
+    if (isStep) next = cur + Number(raw);
+    else if (typeof c.get() === "boolean") next = raw;
+    else if (typeof c.get() === "number") next = Number(raw);
+    else next = raw;
+    if (typeof c.get() === "number" && Number.isNaN(next)) return;
+    const label = `Değer güncellendi`;
+    commit(label, () => c.set(next));
   }
-
-  function short(v) {
-    if (v === undefined) return "(yok)";
-    const s = typeof v === "object" ? JSON.stringify(v) : String(v);
-    return s.length > 42 ? s.slice(0, 42) + "…" : s;
-  }
-
-  /* ---------------- etkileşim ---------------- */
 
   function wire() {
     document.addEventListener("click", (e) => {
-      const navBtn = e.target.closest("[data-route]");
-      if (navBtn) { state.route = navBtn.dataset.route; paint(); return; }
+      const tab = e.target.closest("[data-route]");
+      if (tab) { S.route = tab.dataset.route; paint(); return; }
 
-      const sortTh = e.target.closest("[data-sort]");
-      if (sortTh) {
-        const key = sortTh.dataset.sort;
-        const s = state.squad.sort;
-        s.dir = s.key === key ? -s.dir : -1;
-        s.key = key;
-        paint();
+      const goto = e.target.closest("[data-goto]");
+      if (goto) { S.route = goto.dataset.goto; paint(); return; }
+
+      const pl = e.target.closest("[data-player]");
+      if (pl) { S.playerId = Number(pl.dataset.player); paint(); return; }
+
+      const st = e.target.closest("[data-staff]");
+      if (st) { S.staffId = Number(st.dataset.staff); paint(); return; }
+
+      const pt = e.target.closest("[data-ptab]");
+      if (pt) { S.playerTab = pt.dataset.ptab; paint(); return; }
+
+      const pf = e.target.closest("[data-pos-filter]");
+      if (pf) { S.posFilter = pf.dataset.posFilter; paint(); return; }
+
+      const stepBtn = e.target.closest("[data-step]");
+      if (stepBtn) {
+        e.preventDefault();
+        applyCtl(Number(stepBtn.dataset.ctl), stepBtn.dataset.step, true);
         return;
       }
 
-      const btn = e.target.closest("[data-action]");
-      if (!btn) return;
-      const action = btn.dataset.action;
-
-      if (action === "tool") {
-        const tool = TOOLS.find((t) => t.id === btn.dataset.id);
-        if (!tool) return;
-        const ok = commit(`${tool.icon} ${tool.title}`, (save) => { tool.apply(save); });
-        toast(ok ? `${tool.title} uygulandı` : "Değişiklik yok");
+      if (e.target.closest("#undoBtn")) { undo(); return; }
+      if (e.target.closest("#saveBtn")) { persist(); toast("Değişiklikler kaydedildi"); return; }
+      if (e.target.closest("#exportBtn")) { exportJson(); return; }
+      if (e.target.closest("#resetBtn")) {
+        if (!confirm("Demo kayda dönülsün mü? Düzenlemeler kaybolur.")) return;
+        S.save = clone(S.demo); S.changes = []; S.history = []; persist(); paint(); toast("Demo kayıt yüklendi");
+        return;
       }
-
-      if (action === "sell") {
-        const i = Number(btn.dataset.i);
-        const p = state.save.players[i];
-        if (!p) return;
-        commit(`💸 ${p.name} satıldı`, (save) => {
-          const price = Math.round((p.value || 0) * 0.9);
-          save.finances.balance += price;
-          save.finances.transferBudget += price;
-          save.players = save.players.filter((x) => x.id !== p.id);
-        });
-        toast(`${p.name} %90 bedelle satıldı`);
-      }
-
-      if (action === "sign") {
-        const ti = Number(btn.dataset.ti);
-        const t = state.save.transferTargets[ti];
-        if (!t) return;
-        if (state.save.finances.transferBudget < t.value) { toast("Transfer bütçesi yetersiz"); return; }
-        commit(`✍ ${t.name} transfer edildi`, (save) => {
-          save.finances.transferBudget -= t.value;
-          save.finances.balance -= t.value;
-          save.players.push({
-            id: t.id, name: t.name, pos: t.pos, age: t.age, ovr: t.ovr, pot: t.pot,
-            value: t.value, wage: t.wage, contract: "2029-06-30", nationality: t.nationality || "—",
-            morale: 80, fitness: 95, form: 7, listed: false, injuryWeeks: 0,
-          });
-          save.transferTargets = save.transferTargets.filter((x) => x.id !== t.id);
-        });
-        toast(`${t.name} kadroya katıldı`);
-      }
-
-      if (action === "interest") {
-        const ti = Number(btn.dataset.ti);
-        commit(`🎯 ${state.save.transferTargets[ti].name} ilgisi arttı`, (save) => {
-          save.transferTargets[ti].interest = Math.min(100, save.transferTargets[ti].interest + 20);
-        });
-      }
-
-      if (action === "undo-to") {
-        const idx = Number(btn.dataset.idx);
-        state.changes = state.changes.slice(idx, idx + 1);
-        state.save = clone(state.changes[0].before);
-        state.changes = state.changes.slice(1);
-        persist(); paint();
-      }
-
-      if (action === "reset-demo") {
-        if (!confirm("Demo kayda dönülsün mü? Mevcut düzenlemeler kaybolur.")) return;
-        state.changes = [];
-        state.save = clone(state.demo);
-        persist(); paint(); toast("Demo kayıt yüklendi");
-      }
-
-      if (action === "clear-local") {
-        localStorage.removeItem(LS_KEY);
-        toast("Yerel kayıt silindi");
-      }
-
-      if (action === "open-diff") { $("#drawer").hidden = false; }
-      if (action === "raw-apply") {
-        try {
-          const next = normalise(JSON.parse($("#rawJson").value));
-          const before = clone(state.save);
-          const diff = diffObjects(before, next);
-          if (!diff.length) { toast("Fark yok"); return; }
-          state.changes.push({ label: "✎ Ham JSON düzenlemesi", before, after: next, diff, at: Date.now() });
-          state.save = next;
-          persist(); paint(); toast("JSON uygulandı");
-        } catch (err) {
-          const st = $("#rawStatus");
-          if (st) { st.textContent = "hatalı JSON: " + err.message; st.classList.add("dirty"); }
-        }
-      }
-      if (action === "raw-revert") { paint(); toast("Geri yüklendi"); }
-    });
-
-    document.addEventListener("change", (e) => {
-      const el = e.target.closest("[data-path]");
-      if (!el) return;
-      const path = el.dataset.path;
-      let value;
-      if (el.type === "checkbox") value = el.checked;
-      else if (el.dataset.type === "float") value = parseFloat(el.value) || 0;
-      else if (el.type === "date") value = el.value;
-      else value = parseInt(el.value, 10);
-      if (Number.isNaN(value)) return;
-      const from = getPath(state.save, path);
-      if (from === value) return;
-      state.focusPath = path;
-      const label = `✎ ${path}`;
-      commit(label, (save) => setPath(save, path, value));
     });
 
     document.addEventListener("input", (e) => {
-      if (e.target.id === "sq-q") {
-        state.squad.q = e.target.value;
-        const wrap = e.target.closest(".view");
-        const pos = e.target.selectionStart;
-        paint();
-        const again = $("#sq-q");
-        if (again) { again.focus(); again.setSelectionRange(pos, pos); }
-        return;
-      }
-      if (e.target.id === "sq-pos") { state.squad.pos = e.target.value; paint(); }
-      if (e.target.id === "sq-listed") { state.squad.listedOnly = e.target.checked; paint(); }
+      if (e.target.id === "globalSearch") { S.q = e.target.value; if (S.route !== "players") { S.route = "players"; } paint(); $("#globalSearch").focus(); return; }
+      if (e.target.id === "pq") { S.q = e.target.value; const pos = e.target.selectionStart; paint(); const el = $("#pq"); if (el) { el.focus(); el.setSelectionRange(pos, pos); } return; }
+      if (e.target.id === "psort") { S.sort = e.target.value; paint(); return; }
     });
 
-    $("#undoBtn").addEventListener("click", undo);
+    document.addEventListener("change", (e) => {
+      const el = e.target.closest("[data-ctl]");
+      if (!el) return;
+      const raw = el.type === "checkbox" ? el.checked : el.value;
+      applyCtl(Number(el.dataset.ctl), raw, false);
+    });
+
     document.addEventListener("keydown", (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); undo(); }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); persist(); toast("Değişiklikler kaydedildi"); }
     });
 
-    $("#diffBtn").addEventListener("click", () => { $("#drawer").hidden = false; });
-    $("#drawerClose").addEventListener("click", () => { $("#drawer").hidden = true; });
-
-    $("#exportBtn").addEventListener("click", () => {
-      const s = state.save;
-      const name = `wsc-sandbox-${(s.club.name || "kulup").toLowerCase().replace(/[^a-z0-9]+/gi, "-")}-${s.season?.label?.replace("/", "-") || "kayit"}.json`;
-      const blob = new Blob([JSON.stringify(s, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = name;
-      a.click();
-      URL.revokeObjectURL(a.href);
-      toast("Kayıt dışa aktarıldı");
-    });
-
-    $("#importFile").addEventListener("change", async (e) => {
+    $("#importFile")?.addEventListener("change", async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
       try {
-        const data = normalise(JSON.parse(await file.text()));
-        const before = clone(state.save);
-        const diff = diffObjects(before, data);
-        state.changes.push({ label: `↧ ${file.name} içe alındı`, before, after: data, diff, at: Date.now() });
-        state.save = data;
-        persist(); paint();
-        toast("Kayıt içe alındı");
-      } catch (err) {
-        toast("JSON okunamadı: " + err.message);
-      }
+        const data = JSON.parse(await file.text());
+        S.save = data; S.changes = []; S.history = []; persist(); paint(); toast("Kayıt içe alındı");
+      } catch (err) { toast("JSON okunamadı: " + err.message); }
       e.target.value = "";
+    });
+
+    window.addEventListener("beforeunload", (e) => {
+      if (S.prefs.confirmLeave && dirty()) { e.preventDefault(); e.returnValue = ""; }
     });
   }
 
   function undo() {
-    const last = state.changes.pop();
-    if (!last) { toast("Geri alınacak değişiklik yok"); return; }
-    state.save = clone(last.before);
-    persist();
+    const last = S.changes.pop();
+    if (!last) { toast("Geri alınacak düzenleme yok"); return; }
+    S.save = clone(last.before);
     paint();
-    toast("Geri alındı: " + last.label);
+    toast("Geri alındı");
   }
 
-  /* ---------------- başlat ---------------- */
+  function exportJson() {
+    const name = `wsc-editor-${(S.save.club.name || "kulup").toLowerCase().replace(/[^a-z0-9]+/gi, "-")}.json`;
+    const blob = new Blob([JSON.stringify(S.save, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast("JSON dışa aktarıldı");
+  }
 
   async function boot() {
     try {
-      await loadDemo();
-      if (restoreLocal()) toast("Yerel kayıt geri yüklendi");
+      const res = await fetch(DEMO_URL, { cache: "no-store" });
+      S.demo = await res.json();
+      let local = null;
+      try { local = JSON.parse(localStorage.getItem(LS_KEY) || "null"); } catch (_) { local = null; }
+      S.save = local || clone(S.demo);
+      S.saved = clone(S.save);
+      S.playerId = S.save.players[0]?.id ?? null;
+      S.staffId = S.save.staff[0]?.id ?? null;
+      wire();
+      paint();
     } catch (err) {
       document.body.innerHTML = `<pre style="padding:24px;color:#f88">Başlatma hatası: ${esc(err.message)}</pre>`;
-      return;
     }
-    wire();
-    paint();
   }
 
   boot();
