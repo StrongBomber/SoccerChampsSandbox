@@ -133,12 +133,12 @@ jobs:
             echo "Kurulum: APK'yi indir, telefonda 'bilinmeyen kaynaklara izin ver' secenegini ac, kur."
             echo "Uygulama tamamen cevrimdisidir; oyun dosyalarina dokunmaz."
             echo ""
-            echo "- Surum: 1.2 (versionCode 3)"
+            echo "- Surum: 1.3 (versionCode 4)"
             echo "- Paket: com.wsc.editor"
             echo "- minSdk 24 (Android 7+)"
             echo "- Icerik: 25 oyuncu demo kaydi, FM alanlariyla (CA/PA, 47 nitelik, tesisler, sozlesmeler)"
             echo "- JSON ice/disa aktarma: sistem dosya secici ile"
-            echo "- Yeni: serbest JSON agac editoru (gercek kayit dosyalari icin), komut paleti, mobil aksiyon cubugu"
+            echo "- Yeni: mac kurallari (ofsayt/penalti/tac/korner/faul) + mac motoru tahmini, maas sistemi (adil ucret, prim, vergi, butce)"
           } > NOTES.md
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --title "WSC In-Game Editor - Android APK" --notes-file NOTES.md

@@ -23,6 +23,8 @@
     { id: "staff", label: "Personel" },
     { id: "finances", label: "Finans" },
     { id: "competitions", label: "Müsabakalar" },
+    { id: "rules", label: "Maç Kuralları" },
+    { id: "salary", label: "Maaşlar" },
     { id: "sandbox", label: "Sandbox" },
     { id: "free", label: "Serbest JSON" },
     { id: "preferences", label: "Tercihler" },
@@ -59,6 +61,8 @@
     history: [],
     prefs: { confirmLeave: true, attrColors: true, autoSave: false },
     scope: { path: "", name: "" },
+    salaryFilter: "all",
+    salarySort: "wage",
     foreign: false,
     focusPath: null,
   };
@@ -177,6 +181,299 @@
 
   const dirty = () => S.patches.length > 0;
 
+  /* ============================ maç kuralları & maaş modeli ============================ */
+
+  const clampN = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  const DEFAULT_RULES = {
+    profile: "FIFA Standart",
+    offside: { enabled: true, toleranceCm: 0, varCheck: true, semiAuto: true, activeZone: "Tüm saha", passivePlay: true },
+    penalty: { enabled: true, distanceM: 11, varReview: true, retakeOnEncroach: true, keeperMoveAllowed: false, suddenDeath: true },
+    throwIn: { enabled: true, holdSeconds: 5, moveM: 0, autoAward: true, longThrowAssist: true },
+    corner: { enabled: true, arcCm: 100, shortCorner: true, varGoalLine: true, routine: "Karışık" },
+    foul: { enabled: true, threshold: 3, yellowLimit: 5, redDirect: true, advantage: true, simulation: true, physicality: "Normal" },
+  };
+
+  const RULE_PROFILES = ["FIFA Standart", "VAR Sıkı", "Ofsaytsız (Sokak)", "Sert Lig"];
+  const OFFISDE_ZONES = ["Tüm saha", "Hücum yarısı", "Ceza sahası"];
+  const PHYSICALITY = ["Yumuşak", "Normal", "Sert"];
+  const CORNER_ROUTINES = ["Karışık", "Ön Direk", "Arka Direk", "Kısa Korner", "Ceza Yayı"];
+
+  const RULE_PRESETS = {
+    fifa: DEFAULT_RULES,
+    var: {
+      profile: "VAR Sıkı",
+      offside: { enabled: true, toleranceCm: 0, varCheck: true, semiAuto: true, activeZone: "Tüm saha", passivePlay: true },
+      penalty: { enabled: true, distanceM: 11, varReview: true, retakeOnEncroach: true, keeperMoveAllowed: false, suddenDeath: false },
+      throwIn: { enabled: true, holdSeconds: 6, moveM: 2, autoAward: true, longThrowAssist: true },
+      corner: { enabled: true, arcCm: 100, shortCorner: true, varGoalLine: true, routine: "Karışık" },
+      foul: { enabled: true, threshold: 2, yellowLimit: 4, redDirect: true, advantage: true, simulation: true, physicality: "Normal" },
+    },
+    street: {
+      profile: "Ofsaytsız (Sokak)",
+      offside: { enabled: false, toleranceCm: 200, varCheck: false, semiAuto: false, activeZone: "Tüm saha", passivePlay: false },
+      penalty: { enabled: true, distanceM: 11, varReview: false, retakeOnEncroach: false, keeperMoveAllowed: true, suddenDeath: false },
+      throwIn: { enabled: true, holdSeconds: 8, moveM: 4, autoAward: true, longThrowAssist: false },
+      corner: { enabled: true, arcCm: 80, shortCorner: true, varGoalLine: false, routine: "Kısa Korner" },
+      foul: { enabled: true, threshold: 6, yellowLimit: 9, redDirect: false, advantage: true, simulation: false, physicality: "Yumuşak" },
+    },
+    hard: {
+      profile: "Sert Lig",
+      offside: { enabled: true, toleranceCm: 0, varCheck: true, semiAuto: false, activeZone: "Hücum yarısı", passivePlay: true },
+      penalty: { enabled: true, distanceM: 10, varReview: true, retakeOnEncroach: true, keeperMoveAllowed: false, suddenDeath: true },
+      throwIn: { enabled: true, holdSeconds: 4, moveM: 0, autoAward: false, longThrowAssist: true },
+      corner: { enabled: true, arcCm: 110, shortCorner: false, varGoalLine: true, routine: "Ön Direk" },
+      foul: { enabled: true, threshold: 3, yellowLimit: 3, redDirect: true, advantage: false, simulation: false, physicality: "Sert" },
+    },
+  };
+
+  const DEFAULT_SALARY = {
+    taxRate: 15,
+    appearanceBonusRate: 2,
+    goalBonusRate: 5,
+    cleanSheetBonusRate: 3,
+    loyaltyBonusRate: 50,
+    minWage: 15000,
+    maxWage: 4000000,
+    annualRaise: 5,
+    autoRenewYears: 3,
+  };
+
+  function bonusRates(sal) {
+    const s2 = sal || DEFAULT_SALARY;
+    return {
+      appearanceBonus: (Number(s2.appearanceBonusRate) || 0) / 100,
+      goalBonus: (Number(s2.goalBonusRate) || 0) / 100,
+      cleanSheetBonus: (Number(s2.cleanSheetBonusRate) || 0) / 100,
+      loyaltyBonus: (Number(s2.loyaltyBonusRate) || 0) / 100,
+    };
+  }
+
+  function applyBonusRates(p, sal) {
+    if (!p.contract) p.contract = {};
+    const r = bonusRates(sal);
+    const w = Number(p.contract.wage) || 0;
+    p.contract.appearanceBonus = Math.round(w * r.appearanceBonus / 1000) * 1000;
+    p.contract.goalBonus = Math.round(w * r.goalBonus / 1000) * 1000;
+    p.contract.cleanSheetBonus = Math.round(w * r.cleanSheetBonus / 1000) * 1000;
+    p.contract.loyaltyBonus = Math.round(w * r.loyaltyBonus / 1000) * 1000;
+  }
+
+  /** Kayda kural + maaş modellerini ekler (FM şeması varsa). */
+  function ensureModels(save) {
+    if (!save || !Array.isArray(save.players)) return save;
+    if (!save.rules || typeof save.rules !== "object") save.rules = clone(DEFAULT_RULES);
+    else {
+      save.rules.profile = save.rules.profile || DEFAULT_RULES.profile;
+      ["offside", "penalty", "throwIn", "corner", "foul"].forEach((k) => {
+        save.rules[k] = { ...clone(DEFAULT_RULES[k]), ...(save.rules[k] || {}) };
+      });
+    }
+    save.salary = { ...clone(DEFAULT_SALARY), ...(save.salary || {}) };
+    save.players.forEach((p) => {
+      if (!p.contract) p.contract = {};
+      if (typeof p.contract.appearanceBonus !== "number" ||
+          typeof p.contract.goalBonus !== "number" ||
+          typeof p.contract.cleanSheetBonus !== "number" ||
+          typeof p.contract.loyaltyBonus !== "number") applyBonusRates(p, save.salary);
+    });
+    return save;
+  }
+
+  /** Piyasa değeri + CA + kulüp itibarı karışımından adil haftalık ücret. */
+  function fairWage(p, save) {
+    const sal = (save && save.salary) || DEFAULT_SALARY;
+    const ca = clampN(Number(p.ca) || 100, 40, 200);
+    const value = Math.max(0, Number(p.value) || 0);
+    const age = Number(p.age) || 25;
+    const ageAdj = age >= 33 ? 0.88 : age >= 31 ? 0.93 : age <= 21 ? 1.05 : 1;
+    const caAdj = clampN(0.82 + (ca / 200) * 0.36, 0.85, 1.2);
+    const valueBase = value > 0 ? value / 474 : 220000 * Math.pow(ca / 100, 3);
+    const raw = valueBase * caAdj * ageAdj;
+    return Math.max(Number(sal.minWage) || 0, Math.round(raw / 1000) * 1000);
+  }
+
+  function wageStatus(p, save) {
+    const fair = fairWage(p, save);
+    const wage = Number(p.contract?.wage) || 0;
+    const ratio = fair ? wage / fair : 1;
+    if (ratio > 2) return { fair, ratio, key: "crit", label: "Çok yüksek" };
+    if (ratio > 1.15) return { fair, ratio, key: "high", label: "Yüksek" };
+    if (ratio < 0.85) return { fair, ratio, key: "low", label: "Düşük" };
+    return { fair, ratio, key: "ok", label: "Uygun" };
+  }
+
+  function expectedGoals(p) {
+    const m = { ST: 0.55, AMC: 0.28, AML: 0.22, AMR: 0.22, ML: 0.16, MR: 0.16, MC: 0.09, DM: 0.04, DL: 0.03, DR: 0.03, DC: 0.03, GK: 0 };
+    return (m[p.position] ?? 0.08) * 34;
+  }
+
+  /** Yıllık prim yükü: maç başı + gol + gol yememe beklentisiyle. */
+  function bonusLoad(p) {
+    const c = p.contract || {};
+    const apps = 26;
+    const cs = ["GK", "DC", "DL", "DR"].includes(p.position) ? 10 : 0;
+    return Math.round((Number(c.appearanceBonus) || 0) * apps +
+      (Number(c.goalBonus) || 0) * expectedGoals(p) +
+      (Number(c.cleanSheetBonus) || 0) * cs);
+  }
+
+  function salaryModel(save) {
+    const sal = (save && save.salary) || DEFAULT_SALARY;
+    const ps = Array.isArray(save?.players) ? save.players : [];
+    const taxRate = Number(sal.taxRate) || 0;
+    const rows = ps.map((p, i) => {
+      const st = wageStatus(p, save);
+      const annual = (Number(p.contract?.wage) || 0) * 52;
+      const bonus = bonusLoad(p);
+      const tax = Math.round((annual + bonus) * taxRate / 100);
+      return { p, i, fair: st.fair, ratio: st.ratio, key: st.key, label: st.label, annual, bonus, tax, total: annual + bonus + tax };
+    });
+    const weekly = rows.reduce((a, r) => a + (Number(r.p.contract?.wage) || 0), 0);
+    const annual = weekly * 52;
+    const bonus = rows.reduce((a, r) => a + r.bonus, 0);
+    const tax = Math.round((annual + bonus) * taxRate / 100);
+    const budget = Number(save?.club?.finances?.wageBudget) || 0;
+    return {
+      rows, weekly, annual, bonus, tax, taxRate, budget,
+      employer: annual + bonus + tax,
+      usage: budget ? (weekly / budget) * 100 : 0,
+      avgWage: rows.length ? weekly / rows.length : 0,
+      totalPayrollShare: rows,
+    };
+  }
+
+  function rulesModel(save) {
+    const r = (save && save.rules) || DEFAULT_RULES;
+    const ps = Array.isArray(save?.players) ? save.players : [];
+    const avg = (fn) => (ps.length ? ps.reduce((a, p) => a + (Number(fn(p)) || 0), 0) / ps.length : 10);
+    const aggr = avg((p) => p.attributes?.Agresiflik);
+    const dec = avg((p) => p.attributes?.["Karar Verme"]);
+    const tech = avg((p) => p.attributes?.Teknik);
+    const pace = avg((p) => p.attributes?.Hız);
+    const pass = avg((p) => p.attributes?.Pas);
+    const fin = avg((p) => p.attributes?.Bitiricilik);
+    const ca = avg((p) => p.ca);
+
+    const physKey = r.foul.physicality;
+    const phys = physKey === "Sert" ? 1.35 : physKey === "Yumuşak" ? 0.78 : 1;
+    const thresholdMod = 1 + (3 - (Number(r.foul.threshold) || 3)) * 0.07;
+    const fouls = r.foul.enabled ? clampN((6 + aggr * 0.38) * phys * thresholdMod, 0, 30) : 0;
+    const yellows = r.foul.enabled
+      ? clampN(fouls * (0.15 + Math.max(0, 5 - (Number(r.foul.yellowLimit) || 5)) * 0.03) * (1.15 - dec * 0.012), 0, 8)
+      : 0;
+    const reds = r.foul.enabled ? clampN((r.foul.redDirect ? 0.02 : 0) + fouls * 0.0025, 0, 0.8) : 0;
+    const penalties = r.foul.enabled && r.penalty.enabled ? clampN(fouls * 0.02 * phys, 0, 1.4) : 0;
+    const dist = Number(r.penalty.distanceM) || 11;
+    const conversion = r.penalty.enabled
+      ? clampN(78 - (dist - 11) * 4.2 - (r.penalty.keeperMoveAllowed ? 5 : 0) + (r.penalty.varReview ? 0 : -2) + (tech - 10) * 0.35, 35, 95)
+      : 0;
+    const zoneMod = r.offside.activeZone === "Hücum yarısı" ? 1.25 : r.offside.activeZone === "Ceza sahası" ? 0.6 : 1;
+    const offsides = r.offside.enabled
+      ? clampN((1.2 + pace * 0.055 + (pass - 10) * 0.03) * zoneMod *
+          (1 - Math.min(0.6, (Number(r.offside.toleranceCm) || 0) * 0.004)) *
+          (r.offside.varCheck ? 1.05 : 1), 0, 9)
+      : 0;
+    const corners = r.corner.enabled ? clampN(3.6 + tech * 0.13 + (r.corner.shortCorner ? 0.4 : 0), 1.5, 14) : 0;
+    const throwIns = r.throwIn.enabled
+      ? clampN(17 + pace * 0.3 + (r.throwIn.longThrowAssist ? 1.2 : 0) + (Number(r.throwIn.moveM) || 0) * 0.15, 6, 42)
+      : 0;
+    const penaltyGoals = penalties * conversion / 100;
+    const goals = clampN(1.15 + (ca - 120) * 0.011 + fin * 0.028 + (r.offside.enabled ? 0 : 0.55), 0, 6);
+    const totalGoals = goals + penaltyGoals;
+
+    const events = [
+      { id: "goals", label: "Gol (açık oyundan)", value: goals, max: 5, note: `CA ort. ${Math.round(ca)} · bitiricilik ${fin.toFixed(1)}` },
+      { id: "penaltyGoals", label: "Penaltıdan gol", value: penaltyGoals, max: 1.6, note: `%${Math.round(conversion)} dönüşüm · ${dist} m` },
+      { id: "penalties", label: "Penaltı kararı", value: penalties, max: 1.4, note: r.penalty.enabled ? `${r.penalty.varReview ? "VAR incelemesi açık" : "VAR yok"}` : "penaltı kapalı" },
+      { id: "offsides", label: "Ofsayt", value: offsides, max: 6, note: r.offside.enabled ? `${r.offside.activeZone} · tolerans ${r.offside.toleranceCm} cm` : "ofsayt kapalı" },
+      { id: "corners", label: "Korner", value: corners, max: 12, note: `${r.corner.routine} · yay ${r.corner.arcCm} cm` },
+      { id: "throwIns", label: "Taç", value: throwIns, max: 40, note: `${r.throwIn.holdSeconds} sn içinde kullanılmalı` },
+      { id: "fouls", label: "Faul", value: fouls, max: 22, note: `${physKey} temas · eşik ${r.foul.threshold}` },
+      { id: "yellows", label: "Sarı kart", value: yellows, max: 6, note: `${r.foul.yellowLimit} sarıda kırmızı` },
+      { id: "reds", label: "Kırmızı kart", value: reds, max: 0.8, note: r.foul.redDirect ? "doğrudan kırmızı açık" : "yalnızca ikinci sarı" },
+    ];
+
+    return { fouls, yellows, reds, penalties, conversion, offsides, corners, throwIns, goals, penaltyGoals, totalGoals, events, averages: { aggr, dec, tech, pace, pass, fin, ca } };
+  }
+
+  function addYears(dateStr, n) {
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return dateStr;
+    d.setFullYear(d.getFullYear() + n);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function applyRulePreset(key) {
+    const preset = RULE_PRESETS[key];
+    if (!preset) return;
+    bulk(`Kural profili: ${preset.profile}`, (s) => { s.rules = clone(preset); });
+  }
+
+  function fairOne(i) {
+    const p = S.save.players[i];
+    if (!p) return;
+    S.scope = { path: `players.${i}.contract`, name: p.name };
+    editPath(`players.${i}.contract.wage`, `${p.name} · ücret → piyasa`, fairWage(p, S.save));
+  }
+
+  function salaryOps(id) {
+    ensureModels(S.save);
+    const scale = (k, label) => bulk(label, (s) => {
+      s.players.forEach((p) => {
+        if (!p.contract) p.contract = {};
+        const next = Math.round(((Number(p.contract.wage) || 0) * k) / 1000) * 1000;
+        p.contract.wage = clampN(next, Number(s.salary.minWage) || 0, Number(s.salary.maxWage) || 1e9);
+      });
+    });
+    switch (id) {
+      case "fair":
+        bulk("Ücretleri piyasa değerine çek", (s) => {
+          s.players.forEach((p) => { p.contract.wage = fairWage(p, s); applyBonusRates(p, s.salary); });
+        });
+        break;
+      case "fit":
+        bulk("Maaş bütçesine sığdır", (s) => {
+          const total = s.players.reduce((a, p) => a + (Number(p.contract?.wage) || 0), 0);
+          const target = Math.round((Number(s.club?.finances?.wageBudget) || 0) * 0.95);
+          if (!total || !target) return;
+          const k = target / total;
+          s.players.forEach((p) => {
+            p.contract.wage = Math.max(Number(s.salary.minWage) || 0, Math.round(((Number(p.contract.wage) || 0) * k) / 1000) * 1000);
+          });
+        });
+        break;
+      case "raise": scale(1.1, "Ücretler +%10"); break;
+      case "cut": scale(0.9, "Ücretler −%10"); break;
+      case "bonuses":
+        bulk("Primleri ücret oranlarından yeniden hesapla", (s) => {
+          s.players.forEach((p) => applyBonusRates(p, s.salary));
+        });
+        break;
+      case "min":
+        bulk("Asgari ücretin altındakileri yükselt", (s) => {
+          const floor = Number(s.salary.minWage) || 0;
+          s.players.forEach((p) => {
+            if ((Number(p.contract?.wage) || 0) < floor) p.contract.wage = floor;
+          });
+        });
+        break;
+      case "renew":
+        bulk("Sözleşmeleri yenile (+3 yıl, %5 zam)", (s) => {
+          const years = Number(s.salary.autoRenewYears) || 3;
+          const raise = 1 + (Number(s.salary.annualRaise) || 0) / 100;
+          s.players.forEach((p) => {
+            if (!p.contract) p.contract = {};
+            if (String(p.contract.expiry || "") < s.game.date) p.contract.expiry = addYears(s.game.date, years);
+            else p.contract.expiry = addYears(p.contract.expiry, years);
+            p.contract.wage = Math.round(((Number(p.contract.wage) || 0) * raise) / 1000) * 1000;
+          });
+        });
+        break;
+      default: break;
+    }
+  }
+
   /* ============================ kontroller ============================ */
 
   let CTLS = [];
@@ -266,6 +563,15 @@
     </span>`;
   }
 
+  /** Boolean alanı (kural anahtarları) sahnelemeli olarak bağlar. */
+  function flagRow(label, obj, key, hint = "") {
+    const id = ctl(obj, key, label);
+    return `<div class="switch-row">
+      <span>${esc(label)}${hint ? `<i class="sw-hint">${esc(hint)}</i>` : ""}</span>
+      <label class="switch"><input type="checkbox" data-ctl="${id}" data-path="${esc(CTLS[id].path)}" ${obj[key] ? "checked" : ""} /><span></span></label>
+    </div>`;
+  }
+
   function switchRow(label, flagKey, setter) {
     const holder = { [flagKey]: S.prefs[flagKey] };
     const id = ctl(holder, flagKey, label, { path: `prefs.${flagKey}`, absolute: true });
@@ -334,6 +640,34 @@
 
     const nums = s.players.map((p) => p.registration?.squadNumber).filter((n) => n > 0);
     if (new Set(nums).size !== nums.length) push("info", "Aynı forma numarası birden fazla oyuncuda.", { route: "players" });
+
+    /* ---- maç kuralları ---- */
+    const r = s.rules;
+    if (r && r.foul && r.offside && r.penalty) {
+      const dist = Number(r.penalty.distanceM) || 0;
+      if (dist < 9 || dist > 13) push("err", `Penaltı mesafesi kural dışı (${dist} m · 9–13 m olmalı).`, { route: "rules" });
+      if (!r.foul.enabled && r.penalty.enabled)
+        push("warn", "Faul kapalı ama penaltı açık — penaltı kararı üretilemez.", { route: "rules" });
+      if (!r.offside.enabled) push("info", "Ofsayt kapalı: maç motoru ofsayt üretmiyor, gol beklentisi artıyor.", { route: "rules" });
+      if ((Number(r.foul.yellowLimit) || 5) < 2) push("warn", "Sarı kart limiti 2'nin altında.", { route: "rules" });
+      if (Number(r.offside.toleranceCm) > 50) push("info", `Ofsayt toleransı ${r.offside.toleranceCm} cm — çizgi çok geniş.`, { route: "rules" });
+    }
+
+    /* ---- maaş sistemi ---- */
+    if (s.salary) {
+      const payroll = wages;
+      const budget = Number(s.club.finances.wageBudget) || 0;
+      const usage = budget ? (payroll / budget) * 100 : 0;
+      if (usage > 100) push("err", `Maaş yükü bütçeyi aşıyor: %${usage.toFixed(0)} (${fmt.money(payroll)} / ${fmt.money(budget)}).`, { route: "salary" });
+      else if (usage > 85) push("warn", `Maaş yükü bütçenin %${usage.toFixed(0)}'inde — sınırda.`, { route: "salary" });
+
+      const floor = Number(s.salary.minWage) || 0;
+      const under = s.players.filter((p) => (Number(p.contract?.wage) || 0) < floor);
+      if (under.length) push("warn", `${under.length} oyuncu asgari ücretin (${fmt.money(floor)}) altında.`, { route: "salary" });
+
+      const overpaid = s.players.filter((p) => wageStatus(p, s).ratio > 2);
+      if (overpaid.length) push("info", `${overpaid.length} oyuncu piyasa ücretinin 2 katından fazla kazanıyor.`, { route: "salary" });
+    }
 
     return out;
   }
@@ -417,8 +751,11 @@
     if (!q) {
       out.push({ kind: "Komut", label: "Değişiklikleri kaydet", hint: "Ctrl+S", run: () => saveNow() });
       out.push({ kind: "Komut", label: "Bekleyen değişiklikler", hint: "Ctrl+R", run: () => openReview() });
+      out.push({ kind: "Komut", label: "Maaşları piyasa ücretine çek", hint: "Maaşlar", run: () => salaryOps("fair") });
+      out.push({ kind: "Komut", label: "Maaş bütçesine sığdır", hint: "Maaşlar", run: () => salaryOps("fit") });
+      out.push({ kind: "Komut", label: "Kural profili: VAR Sıkı", hint: "Maç Kuralları", run: () => applyRulePreset("var") });
       TABS.forEach((t) => out.push({ kind: "Bölüm", label: t.label, run: () => { S.route = t.id; paint(); } }));
-      return out.slice(0, 12);
+      return out.slice(0, 16);
     }
     S.save.players.forEach((p) => {
       if (p.name.toLocaleLowerCase("tr").includes(q))
@@ -472,6 +809,8 @@
       const expiring = s.players.filter((p) => String(p.contract?.expiry) < "2027-07-01").length;
       const issues = S.foreign ? [] : validate();
       const wagePct = s.club.finances.wageBudget ? Math.round((wages / s.club.finances.wageBudget) * 100) : 0;
+      const sal = salaryModel(s);
+      const rulesM = rulesModel(s);
 
       return `
         <div class="hero">
@@ -489,6 +828,7 @@
               <span class="chip">İtibar ${fmt.num(s.club.reputation)}</span>
               <span class="chip">Stadyum ${fmt.num(s.club.capacity)}</span>
               <span class="chip gold">${s.players.length} oyuncu</span>
+              <span class="chip">${esc(s.rules?.profile || "Kural profili yok")}</span>
             </div>
           </div>
           <div class="spacer"></div>
@@ -507,6 +847,12 @@
           <div class="stat" style="border-left-color:${wagePct > 100 ? "var(--red)" : wagePct > 85 ? "var(--gold)" : "var(--green)"}">
             <div class="k">Haftalık Maaş</div><div class="v">${fmt.money(wages)}</div><div class="s">Bütçenin %${wagePct}'i</div></div>
           <div class="stat"><div class="k">Sözleşmesi Biten</div><div class="v">${expiring}</div><div class="s">1 yıl içinde</div></div>
+          <div class="stat" style="border-left-color:${sal.usage > 100 ? "var(--red)" : sal.usage > 85 ? "var(--gold)" : "var(--green)"}">
+            <div class="k">Yıllık Maaş Yükü</div><div class="v">${fmt.money(sal.annual)}</div>
+            <div class="s">+ ${fmt.money(sal.bonus)} prim · vergi %${sal.taxRate}</div></div>
+          <div class="stat">
+            <div class="k">Maç Motoru</div><div class="v">${rulesM.totalGoals.toFixed(2)}</div>
+            <div class="s">gol/maç · ${rulesM.offsides.toFixed(1)} ofsayt · ${rulesM.corners.toFixed(0)} korner</div></div>
         </div>
 
         <div style="height:12px"></div>
@@ -783,6 +1129,7 @@
               <div class="chips" style="margin-top:12px">
                 <button class="btn" style="background:#241a3a" data-fix="wage">Bütçeyi kadroya eşitle</button>
                 <button class="btn" style="background:#241a3a" data-fix="maxtransfer">Transfer bütçesi ×2</button>
+                <button class="btn primary" data-route="salary">Maaş tablosu →</button>
               </div>
             </div>
           </div>
@@ -844,6 +1191,239 @@
               </tr>`).join("")}
             </tbody>
           </table>
+        </div>`;
+    },
+
+    rules() {
+      const r = ensureModels(S.save).rules;
+      const m = rulesModel(S.save);
+      S.scope = { path: "rules", name: "Maç kuralları" };
+
+      const section = (key, title, sub, fn) => {
+        S.scope = { path: `rules.${key}`, name: title };
+        const obj = r[key];
+        return `<div class="card rule-card ${obj.enabled ? "" : "off"}" data-rule-card="${key}">
+          <div class="card-head">${esc(title)} <span class="sub">${esc(sub)}</span></div>
+          <div class="card-body">
+            ${flagRow("Kural etkin", obj, "enabled", obj.enabled ? "maç motorunda sayılıyor" : "kapalı")}
+            ${fn(obj)}
+          </div>
+        </div>`;
+      };
+
+      return `
+        <div class="card">
+          <div class="card-head">Kural Profili <span class="sub">${esc(r.profile)}</span></div>
+          <div class="card-body pad">
+            ${selRow("Profil", r, "profile", RULE_PROFILES)}
+            <div class="chips" style="margin-top:10px">
+              <button class="btn" style="background:#241a3a" data-rule-preset="fifa">FIFA Standart</button>
+              <button class="btn" style="background:#241a3a" data-rule-preset="var">VAR Sıkı</button>
+              <button class="btn" style="background:#241a3a" data-rule-preset="street">Ofsaytsız (Sokak)</button>
+              <button class="btn" style="background:#241a3a" data-rule-preset="hard">Sert Lig</button>
+            </div>
+            <div class="hint-box" style="margin-top:10px"><span>ⓘ</span><div>
+              Kurallar maç motorunun ürettiği olayları doğrudan değiştirir: ofsayt toleransı, penaltı mesafesi,
+              faul eşiği ve kart limiti aşağıdaki tahmini etkiler. Tümü sahnelenir; <b>İncele</b> çekmecesinden geri alınır.
+            </div></div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="rules-grid">
+          ${section("offside", "Ofsayt", `${r.offside.activeZone}`, (o) => `
+            ${numRow("Tolerans", o, "toleranceCm", { min: 0, max: 200, step: 5, unit: "cm", hint: true })}
+            ${selRow("Geçerli Bölge", o, "activeZone", OFFISDE_ZONES)}
+            ${flagRow("VAR incelemesi", o, "varCheck")}
+            ${flagRow("Yarı otomatik ofsayt", o, "semiAuto")}
+            ${flagRow("Pasif ofsayt sayılsın", o, "passivePlay")}
+          `)}
+
+          ${section("penalty", "Penaltı", `${r.penalty.distanceM} m`, (o) => `
+            ${numRow("Mesafe", o, "distanceM", { min: 9, max: 13, unit: "m", hint: true })}
+            ${flagRow("VAR incelemesi", o, "varReview")}
+            ${flagRow("Kalecinin erken çıkışına izin", o, "keeperMoveAllowed")}
+            ${flagRow("Ceza sahası ihlalinde tekrar", o, "retakeOnEncroach")}
+            ${flagRow("Uzatmalarda seri penaltı", o, "suddenDeath")}
+          `)}
+
+          ${section("throwIn", "Taç", `${r.throwIn.holdSeconds} sn`, (o) => `
+            ${numRow("Kullanma süresi", o, "holdSeconds", { min: 1, max: 15, unit: "sn", hint: true })}
+            ${numRow("Taç noktası kaydırma", o, "moveM", { min: 0, max: 10, unit: "m" })}
+            ${flagRow("Otomatik taç kararı", o, "autoAward")}
+            ${flagRow("Uzun taç asisti", o, "longThrowAssist")}
+          `)}
+
+          ${section("corner", "Korner", `${r.corner.arcCm} cm`, (o) => `
+            ${numRow("Korner yayı", o, "arcCm", { min: 25, max: 200, step: 5, unit: "cm", hint: true })}
+            ${selRow("Organizasyon", o, "routine", CORNER_ROUTINES)}
+            ${flagRow("Kısa korner serbest", o, "shortCorner")}
+            ${flagRow("Kale çizgisi VAR kontrolü", o, "varGoalLine")}
+          `)}
+
+          ${section("foul", "Faul", r.foul.physicality, (o) => `
+            ${selRow("Temas sertliği", o, "physicality", PHYSICALITY)}
+            ${numRow("Faul eşiği", o, "threshold", { min: 1, max: 10, hint: true })}
+            ${numRow("Sarı limiti", o, "yellowLimit", { min: 2, max: 9, hint: true })}
+            ${flagRow("Doğrudan kırmızı", o, "redDirect")}
+            ${flagRow("Avantaj kuralı", o, "advantage")}
+            ${flagRow("Simülasyon cezası", o, "simulation")}
+          `)}
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="cols tight">
+          <div class="card">
+            <div class="card-head">Maç Motoru <span class="sub">bizim takım · maç başına tahmini</span></div>
+            <div class="card-body">
+              ${m.events.map((e) => `<div class="event-row" data-event="${e.id}" data-value="${e.value.toFixed(2)}">
+                <span class="ev-label">${esc(e.label)}</span>
+                <span class="ev-bar"><i style="width:${Math.min(100, (e.value / e.max) * 100).toFixed(1)}%"></i></span>
+                <span class="ev-val">${e.value.toFixed(1)}</span>
+                <span class="ev-note">${esc(e.note)}</span>
+              </div>`).join("")}
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">Maç Sonucu Tahmini <span class="sub">bizim takım</span></div>
+            <div class="card-body pad">
+              <div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr))">
+                <div class="stat"><div class="k">Gol / maç</div><div class="v">${m.totalGoals.toFixed(2)}</div><div class="s">penaltı dahil</div></div>
+                <div class="stat"><div class="k">Kart / maç</div><div class="v">${(m.yellows + m.reds).toFixed(1)}</div><div class="s">${m.reds.toFixed(2)} kırmızı</div></div>
+                <div class="stat"><div class="k">Korner / Taç</div><div class="v">${m.corners.toFixed(1)} · ${m.throwIns.toFixed(0)}</div><div class="s">bizim takım</div></div>
+                <div class="stat"><div class="k">Ofsayt / maç</div><div class="v">${m.offsides.toFixed(1)}</div><div class="s">${r.offside.enabled ? "etkin" : "kapalı"}</div></div>
+              </div>
+              <div class="hint-box" style="margin-top:12px"><span>Σ</span><div>
+                Tahminler kadronun ortalama niteliklerinden üretilir:
+                agresiflik <b>${m.averages.aggr.toFixed(1)}</b>, karar verme <b>${m.averages.dec.toFixed(1)}</b>,
+                hız <b>${m.averages.pace.toFixed(1)}</b>, pas <b>${m.averages.pass.toFixed(1)}</b>,
+                bitiricilik <b>${m.averages.fin.toFixed(1)}</b> (1–20), CA ort. <b>${Math.round(m.averages.ca)}</b>.
+              </div></div>
+            </div>
+          </div>
+        </div>`;
+    },
+
+    salary() {
+      const sal = ensureModels(S.save).salary;
+      const m = salaryModel(S.save);
+      S.scope = { path: "salary", name: "Maaş ayarları" };
+
+      const rows = m.rows
+        .filter((row) => S.salaryFilter === "all" ? true : S.salaryFilter === "problem" ? row.key !== "ok" : row.key === S.salaryFilter)
+        .sort((a, b) => {
+          if (S.salarySort === "gap") return b.ratio - a.ratio;
+          if (S.salarySort === "age") return (a.p.age || 0) - (b.p.age || 0);
+          if (S.salarySort === "ca") return (b.p.ca || 0) - (a.p.ca || 0);
+          return (Number(b.p.contract?.wage) || 0) - (Number(a.p.contract?.wage) || 0);
+        });
+
+      const wageCell = (row) => {
+        S.scope = { path: `players.${row.i}.contract`, name: row.p.name };
+        const id = ctl(row.p.contract, "wage", "Haftalık ücret", { min: 0, max: 100000000 });
+        return `<span class="stepper">
+          <button type="button" data-step="-50000" data-ctl="${id}" tabindex="-1">−</button>
+          <input type="number" data-ctl="${id}" data-path="${esc(CTLS[id].path)}" value="${Number(row.p.contract.wage) || 0}" min="0" step="50000" style="width:104px" />
+          <button type="button" data-step="50000" data-ctl="${id}" tabindex="-1">+</button>
+        </span>`;
+      };
+
+      const chip = (key, label, filter) => `<button class="btn ${S.salaryFilter === filter ? "primary" : ""}" style="background:${S.salaryFilter === filter ? "#4c2a86" : "#241a3a"}" data-sal-filter="${filter}">${esc(label)}</button>`;
+      const sortChip = (key, label) => `<button class="btn ${S.salarySort === key ? "primary" : ""}" style="background:${S.salarySort === key ? "#4c2a86" : "#241a3a"}" data-sal-sort="${key}">${esc(label)}</button>`;
+
+      return `
+        <div class="stats">
+          <div class="stat" style="border-left-color:${m.usage > 100 ? "var(--red)" : m.usage > 85 ? "var(--gold)" : "var(--green)"}">
+            <div class="k">Haftalık Maaş</div><div class="v">${fmt.money(m.weekly)}</div>
+            <div class="s">Bütçenin %${m.usage.toFixed(0)}'i · ${fmt.money(m.budget)}</div>
+          </div>
+          <div class="stat"><div class="k">Yıllık Maaş</div><div class="v">${fmt.money(m.annual)}</div><div class="s">52 hafta</div></div>
+          <div class="stat"><div class="k">Prim Yükü</div><div class="v">${fmt.money(m.bonus)}</div><div class="s">maç başı + gol + gol yememe</div></div>
+          <div class="stat"><div class="k">Vergi (%${m.taxRate})</div><div class="v">${fmt.money(m.tax)}</div><div class="s">işveren maliyeti ${fmt.money(m.employer)}</div></div>
+          <div class="stat"><div class="k">Ortalama Ücret</div><div class="v">${fmt.money(m.avgWage)}</div><div class="s">${m.rows.length} oyuncu</div></div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="cols tight">
+          <div class="card">
+            <div class="card-head">Maaş Ayarları</div>
+            <div class="card-body">
+              ${numRow("Gelir Vergisi", sal, "taxRate", { min: 0, max: 60, unit: "%", hint: true })}
+              ${numRow("Maç Başı Prim", sal, "appearanceBonusRate", { min: 0, max: 30, unit: "% ücret" })}
+              ${numRow("Gol Primi", sal, "goalBonusRate", { min: 0, max: 50, unit: "% ücret" })}
+              ${numRow("Gol Yememe Primi", sal, "cleanSheetBonusRate", { min: 0, max: 30, unit: "% ücret" })}
+              ${numRow("Sadakat Primi", sal, "loyaltyBonusRate", { min: 0, max: 100, unit: "% ücret" })}
+              ${moneyRow("Asgari Ücret", sal, "minWage")}
+              ${moneyRow("Azami Ücret", sal, "maxWage")}
+              ${numRow("Yıllık Zam", sal, "annualRaise", { min: 0, max: 50, unit: "%" })}
+              ${numRow("Yenileme", sal, "autoRenewYears", { min: 1, max: 5, unit: "yıl" })}
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">Toplu İşlemler <span class="sub">sahnelenir</span></div>
+            <div class="card-body pad">
+              <div class="chips">
+                <button class="btn primary" data-sal="fair">Piyasa ücretine çek</button>
+                <button class="btn" style="background:#241a3a" data-sal="fit">Bütçeye sığdır</button>
+                <button class="btn" style="background:#241a3a" data-sal="bonuses">Primleri yeniden hesapla</button>
+                <button class="btn" style="background:#241a3a" data-sal="raise">+%10</button>
+                <button class="btn" style="background:#241a3a" data-sal="cut">−%10</button>
+                <button class="btn" style="background:#241a3a" data-sal="min">Asgariye tamamla</button>
+                <button class="btn" style="background:#241a3a" data-sal="renew">Sözleşme yenile</button>
+              </div>
+              <div class="gauge ${m.usage > 100 ? "bad" : m.usage > 85 ? "warn" : ""}" style="margin-top:14px"><i style="width:${Math.min(100, m.usage)}%"></i></div>
+              <div class="hint-box" style="margin-top:10px"><span>ⓘ</span><div>
+                <b>Adil ücret</b> = piyasa değeri (45 %) + CA eğrisi (55 %) × kulüp itibarı × yaş düzeltmesi.
+                Tüm işlemler tek bir toplu düzenleme olarak inceleme çekmecesinde görünür ve geri alınabilir.
+              </div></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="card">
+          <div class="card-head">Ücret Tablosu
+            <span class="sub">${rows.length} / ${m.rows.length} oyuncu</span>
+          </div>
+          <div class="sal-toolbar">
+            <span class="sal-group">${chip("all", "Tümü", "all")}${chip("problem", "Sorunlu", "problem")}${chip("high", "Yüksek", "high")}${chip("low", "Düşük", "low")}</span>
+            <span class="sal-group">${sortChip("wage", "Ücrete göre")}${sortChip("gap", "Farka göre")}${sortChip("ca", "CA'ya göre")}${sortChip("age", "Yaşa göre")}</span>
+          </div>
+          <div class="sal-scroll">
+          <table class="grid sal-table">
+            <thead><tr>
+              <th>Oyuncu</th><th>Poz</th><th class="num">Yaş</th><th class="num">CA</th>
+              <th class="num">Haftalık Ücret</th><th class="num">Adil Ücret</th><th class="num">Fark</th>
+              <th>Durum</th><th class="num">Prim</th><th class="num">Yıllık Maliyet</th><th class="num">Pay</th><th></th>
+            </tr></thead>
+            <tbody>
+              ${rows.map((row) => {
+                const p = row.p;
+                return `<tr data-sal-row="${row.i}">
+                  <td><b>${esc(p.name)}</b><div class="muted" style="font-size:10px">${esc(p.club || S.save.club.name)}</div></td>
+                  <td><span class="badge-pos ${esc(p.position)}">${esc(p.position)}</span></td>
+                  <td class="num">${p.age}</td>
+                  <td class="num" style="color:${abilityColor(p.ca)}">${p.ca}</td>
+                  <td class="num">${wageCell(row)}</td>
+                  <td class="num muted">${fmt.money(row.fair)}</td>
+                  <td class="num" style="color:${row.ratio > 1.15 ? "var(--red)" : row.ratio < 0.85 ? "var(--gold)" : "var(--green)"}">
+                    ${row.ratio >= 1 ? "+" : ""}${Math.round((row.ratio - 1) * 100)}%</td>
+                  <td><span class="sal-badge ${row.key}" data-sal-badge="${row.key}">${esc(row.label)}</span></td>
+                  <td class="num muted">${fmt.money(row.bonus)}</td>
+                  <td class="num">${fmt.money(row.annual + row.bonus + row.tax)}</td>
+                  <td class="num muted">${m.weekly ? ((Number(p.contract?.wage) || 0) / m.weekly * 100).toFixed(1) : "0.0"}%</td>
+                  <td class="act"><button class="btn" style="height:20px;background:#241a3a;font-size:10px" data-sal-fair="${row.i}" title="Bu oyuncuyu piyasa ücretine çek">eşitle</button></td>
+                </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+          </div>
         </div>`;
     },
 
@@ -1509,7 +2089,7 @@
     const nPlayers = Array.isArray(S.save?.players) ? S.save.players.length : 0;
     $("#statusRight").textContent = S.foreign
       ? `${clubLabel} · yabancı şema · ${Object.keys(S.save || {}).length} üst düzey alan`
-      : `${clubLabel} · ${season} · ${nPlayers} oyuncu · CA/PA 1–200 · nitelikler 1–20`;
+      : `${clubLabel} · ${season} · ${nPlayers} oyuncu · CA/PA 1–200 · nitelikler 1–20 · maaş %${(salaryModel(S.save).usage || 0).toFixed(0)}`;
   }
 
   /* ============================ olaylar ============================ */
@@ -1619,6 +2199,20 @@
       const bulkBtn = t.closest("[data-bulk]");
       if (bulkBtn) { bulkOps(bulkBtn.dataset.bulk); return; }
 
+      // ---- maç kuralları ----
+      const presetBtn = t.closest("[data-rule-preset]");
+      if (presetBtn) { applyRulePreset(presetBtn.dataset.rulePreset); return; }
+
+      // ---- maaş ----
+      const salBtn = t.closest("[data-sal]");
+      if (salBtn) { salaryOps(salBtn.dataset.sal); return; }
+      const salFairBtn = t.closest("[data-sal-fair]");
+      if (salFairBtn) { fairOne(Number(salFairBtn.dataset.salFair)); return; }
+      const salFilter = t.closest("[data-sal-filter]");
+      if (salFilter) { S.salaryFilter = salFilter.dataset.salFilter; paint(); return; }
+      const salSort = t.closest("[data-sal-sort]");
+      if (salSort) { S.salarySort = salSort.dataset.salSort; paint(); return; }
+
       const fixBtn = t.closest("[data-fix]");
       if (fixBtn) { bulkOps(fixBtn.dataset.fix === "wage" ? "wages" : "budget"); return; }
 
@@ -1686,7 +2280,7 @@
       if (t.closest("#exportBtn")) { exportJson(); return; }
       if (t.closest("#resetBtn")) {
         if (!confirm("Demo kayda dönülsün mü? Düzenlemeler kaybolur.")) return;
-        S.save = clone(S.demo); S.patches = []; S.history = [];
+        S.save = ensureModels(clone(S.demo)); S.patches = []; S.history = [];
         S.foreign = false;
         S.baseline = clone(S.save);
         localStorage.removeItem(LS_KEY);
@@ -1953,6 +2547,7 @@
     S.baseline = clone(data);
     S.foreign = !Array.isArray(data?.players);
     if (S.foreign) S.route = "free";
+    else ensureModels(S.save);
     try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (_) { /* kota */ }
     paint();
   }
@@ -1984,7 +2579,7 @@
       S.demo = await loadDemo();
       let local = null;
       try { local = JSON.parse(localStorage.getItem(LS_KEY) || "null"); } catch (_) { local = null; }
-      S.save = local || clone(S.demo);
+      S.save = ensureModels(local || clone(S.demo));
       S.baseline = clone(S.save);
       try {
         const storedPrefs = JSON.parse(localStorage.getItem(`${LS_KEY}-prefs`) || "null");

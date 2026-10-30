@@ -86,7 +86,7 @@ echo "==> [4/6] APK paketleniyor"
      -R "$BUILD/res.zip" \
      --manifest "$APK_DIR/AndroidManifest.xml" \
      --min-sdk-version 24 --target-sdk-version 34 \
-     --version-code 3 --version-name "1.2"
+     --version-code 4 --version-name "1.3"
 
 cp "$BUILD/dex/classes.dex" "$BUILD/classes.dex"
 ( cd "$BUILD" && zip -q base.apk classes.dex && zip -qr base.apk assets )

@@ -29,14 +29,14 @@
     "juniorCoaching": 10,
     "trainingGround": "Kartal Tesisleri",
     "finances": {
-      "balance": 18450000,
-      "transferBudget": 6200000,
-      "wageBudget": 1450000,
-      "sponsorship": 2400000,
+      "balance": 184500000,
+      "transferBudget": 62000000,
+      "wageBudget": 20100000,
+      "sponsorship": 240000000,
       "debt": 0,
       "seasonTicketPrice": 420,
-      "projectedIncome": 28000000,
-      "projectedExpenditure": 21500000
+      "projectedIncome": 1020000000,
+      "projectedExpenditure": 918000000
     },
     "colours": {
       "primary": "#5b21b6",
@@ -137,7 +137,7 @@
       "contract": {
         "type": "Profesyonel",
         "expiry": "2029-06-30",
-        "wage": 1724449,
+        "wage": 2673000,
         "signingBonus": 6897796,
         "releaseClause": 1268784698,
         "status": "Satılık Değil"
@@ -648,7 +648,7 @@
       "contract": {
         "type": "Profesyonel",
         "expiry": "2031-01-31",
-        "wage": 387372,
+        "wage": 213000,
         "signingBonus": 1549488,
         "releaseClause": 276493142,
         "status": "Listede"
@@ -2046,7 +2046,7 @@
       "contract": {
         "type": "Profesyonel",
         "expiry": "2029-01-31",
-        "wage": 266467,
+        "wage": 466000,
         "signingBonus": 1065868,
         "releaseClause": 253830514,
         "status": "Satılık Değil"
@@ -2561,7 +2561,7 @@
       "contract": {
         "type": "Genç Sözleşmesi",
         "expiry": "2029-01-31",
-        "wage": 454846,
+        "wage": 318000,
         "signingBonus": 1819384,
         "releaseClause": 472959675,
         "status": "Listede"

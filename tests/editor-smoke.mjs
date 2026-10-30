@@ -57,7 +57,7 @@ const section = (t) => console.log(`\n${t}`);
 
 /* ---------------------------------------------------------------- */
 section("Sekmeler ve görünümler");
-const ROUTES = ["overview", "club", "players", "staff", "finances", "competitions", "sandbox", "free", "preferences"];
+const ROUTES = ["overview", "club", "players", "staff", "finances", "competitions", "rules", "salary", "sandbox", "free", "preferences"];
 for (const r of ROUTES) {
   click(`[data-route="${r}"]`);
   check(`sekme: ${r}`, d.querySelector("#view").children.length > 0);
@@ -160,6 +160,96 @@ fire('[data-filter="caMin"]', "input", "160");
 const filtered = d.querySelectorAll("[data-player]").length;
 check("CA ≥ 160 filtresi daralttı", filtered > 0 && filtered < 25, `${filtered} oyuncu`);
 fire('[data-filter="caMin"]', "input", "");
+
+section("Maç kuralları");
+// önceki bölümlerden kalan sahnelemeyi temizle → sayımlar deterministik olsun
+if (d.querySelector("#reviewBtn").textContent.includes("bekleyen")) click("#saveBtn");
+click('[data-route="rules"]');
+check("5 kural kartı", d.querySelectorAll("[data-rule-card]").length === 5);
+check("9 olay satırı", d.querySelectorAll("[data-event]").length === 9);
+const ev = (id) => Number(d.querySelector(`[data-event="${id}"]`)?.dataset.value);
+check("faul üretiliyor", ev("fouls") > 5, `${ev("fouls")} faul/maç`);
+check("korner + taç üretiliyor", ev("corners") > 0 && ev("throwIns") > 0, `${ev("corners")} korner · ${ev("throwIns")} taç`);
+check("penaltı kararı üretiliyor", ev("penalties") > 0 && ev("penaltyGoals") <= ev("penalties"), `${ev("penalties")} penaltı · ${ev("penaltyGoals")} gol`);
+
+const offBox = d.querySelector('[data-path="rules.offside.enabled"]');
+offBox.checked = false;
+offBox.dispatchEvent(new window.Event("change", { bubbles: true }));
+check("ofsaytı kapatma sahnelendi", d.querySelector("#reviewBtn").textContent.includes("1 bekleyen"));
+check("ofsayt olayı sıfırlandı", ev("offsides") === 0);
+click("#undoBtn");
+check("ofsayt geri alındı", d.querySelector('[data-path="rules.offside.enabled"]')?.checked === true && ev("offsides") > 0);
+
+const convBefore = ev("penaltyGoals");
+fire('[data-path="rules.penalty.distanceM"]', "change", "13");
+check("penaltı mesafesi 13 m", d.querySelector('[data-path="rules.penalty.distanceM"]').value === "13");
+check("uzak mesafe dönüşümü düşürdü", ev("penaltyGoals") < convBefore, `${convBefore} → ${ev("penaltyGoals")}`);
+click("#undoBtn");
+check("mesafe geri alındı", ev("penaltyGoals") === convBefore);
+
+fire('[data-path="rules.foul.yellowLimit"]', "change", "3");
+const yellowTight = ev("yellows");
+click("#undoBtn");
+fire('[data-path="rules.foul.yellowLimit"]', "change", "9");
+check("sarı limiti kart sayısını değiştiriyor", ev("yellows") < yellowTight, `${yellowTight} → ${ev("yellows")}`);
+click("#undoBtn");
+
+click('[data-rule-preset="street"]');
+check("sokak profili ofsaytı kapattı", d.querySelector('[data-path="rules.offside.enabled"]').checked === false);
+check("profil değişikliği tek toplu kayıt", d.querySelector("#reviewBtn").textContent.includes("1 bekleyen"));
+check("profil etiketi güncellendi", d.querySelector('[data-path="rules.profile"]')?.value === "Ofsaytsız (Sokak)");
+click("#undoBtn");
+check("profil geri alındı", d.querySelector('[data-path="rules.offside.enabled"]').checked === true);
+
+section("Maaş sistemi");
+click('[data-route="salary"]');
+check("25 ücret satırı", d.querySelectorAll("[data-sal-row]").length === 25);
+const badges = [...d.querySelectorAll("[data-sal-badge]")].map((b) => b.dataset.salBadge);
+check("ücret durumu rozetleri (düşük/uygun/yüksek/çok)", new Set(badges).size >= 3, [...new Set(badges)].join(","));
+check("adil ücret sütunu dolu", [...d.querySelectorAll("[data-sal-row]")].every((tr) => tr.children[5].textContent.includes("€")));
+
+const money = window.FM.fmt.money;
+const wageInputs = () => [...d.querySelectorAll('.sal-table input[data-path$=".contract.wage"]')];
+const domSum = wageInputs().reduce((a, el) => a + Number(el.value), 0);
+const grandTotal = [...d.querySelectorAll(".stat")].map((s2) => s2.textContent).find((t) => t.includes("Haftalık Maaş"));
+check("haftalık toplam = satır toplamı", grandTotal.includes(money(domSum)), `${money(domSum)}`);
+
+const wageInput0 = wageInputs()[0];
+fire(`[data-path="${wageInput0.dataset.path}"]`, "change", String(Number(wageInput0.value) + 100000));
+check("ücret düzenlemesi sahnelendi", d.querySelector("#reviewBtn").textContent.includes("1 bekleyen"));
+check("toplam yeniden hesaplandı", [...d.querySelectorAll(".stat")].map((s2) => s2.textContent).find((t) => t.includes("Haftalık Maaş")).includes(money(domSum + 100000)));
+click("#undoBtn");
+
+click('[data-sal="fair"]');
+const fairBadges = [...d.querySelectorAll("[data-sal-badge]")].map((b) => b.dataset.salBadge);
+check("piyasa ücretine çekme tüm satırları eşitledi", fairBadges.every((b) => b === "ok"), [...new Set(fairBadges)].join(","));
+check("toplu maaş işlemi tek kayıt", d.querySelector("#reviewBtn").textContent.includes("1 bekleyen"));
+click("#undoBtn");
+
+click('[data-sal="fit"]');
+const fitStat = [...d.querySelectorAll(".stat")].map((s2) => s2.textContent.replace(/\s+/g, " ")).find((t) => t.includes("Haftalık Maaş"));
+const fitPct = Number((fitStat.match(/%([\d.]+)/) || [])[1]);
+check("bütçeye sığdır ≤ %100", fitPct > 0 && fitPct <= 100, fitStat);
+click("#undoBtn");
+
+click('[data-sal-filter="problem"]');
+const problemRows = d.querySelectorAll("[data-sal-row]").length;
+check("sorunlu filtre daralttı", problemRows > 0 && problemRows < 25, `${problemRows} satır`);
+click('[data-sal-filter="all"]');
+check("filtre sıfırlandı", d.querySelectorAll("[data-sal-row]").length === 25);
+
+click('[data-sal-sort="ca"]');
+const caOrder = [...d.querySelectorAll("[data-sal-row]")].map((tr) => Number(tr.children[3].textContent));
+check("CA sıralaması azalan", caOrder.every((v, i) => i === 0 || caOrder[i - 1] >= v), caOrder.slice(0, 5).join(">"));
+click('[data-sal-sort="wage"]');
+
+fire('[data-path="salary.taxRate"]', "change", "30");
+check("vergi oranı yansıdı", [...d.querySelectorAll(".stat")].some((s2) => s2.textContent.includes("Vergi (%30)")));
+click("#undoBtn");
+
+click("[data-sal-fair='0']");
+check("tek oyuncu eşitleme sahnelendi", d.querySelector("#reviewBtn").textContent.includes("1 bekleyen"));
+click("#undoBtn");
 
 section("Doğrulama");
 click('[data-route="overview"]');
