@@ -1,6 +1,6 @@
 APK doğrulama: /home/runner/work/SoccerChampsSandbox/SoccerChampsSandbox/apk/out/wsc-editor.apk
 Boyut: 79254 bayt
-SHA-256: d5f6314859ece365bd039ef9d03edde23b84a5a9aeb909db6aee3cdf6cd6c4f2
+SHA-256: 390a548a828c0a32493cbc85b13f8d6bfe4a23338d9fb16d227587355f774081
 
 [1] Paket bilgisi (aapt2 dump badging)
     package: name='com.wsc.editor' versionCode='3' versionName='1.2' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
@@ -42,13 +42,14 @@ SHA-256: d5f6314859ece365bd039ef9d03edde23b84a5a9aeb909db6aee3cdf6cd6c4f2
   ✓ assets/styles.css (32908 bayt)
   ✓ assets/demo-save.json (83242 bayt)
   ✓ assets/demo-save.js (50735 bayt)
+  ✓ assets/detect.js (6595 bayt)
   ✓ classes.dex (12868 bayt)
 
 [4] İmza (apksigner)
     V3.0 Signer: certificate DN: CN=WSC In-Game Editor, OU=Sandbox, O=WSC, L=Istanbul, C=TR
-    V3.0 Signer: certificate SHA-256 digest: d553f5ac693e8586de6796cf8ee7b159331a9b927b51cd27c65dfe17f3f99568
-    V3.0 Signer: certificate SHA-1 digest: 205b822ad7e9eca580bb37e09e88bf2575c12dd3
-    V3.0 Signer: certificate MD5 digest: 7bca261053750a1751dcc84ff351fdb2
+    V3.0 Signer: certificate SHA-256 digest: dbd478f55389c487f3f5ea977a93d00fc4e8451790667f9518f588a213616f02
+    V3.0 Signer: certificate SHA-1 digest: 4bbb11f4110f63a3ae6a4212c3ce81f25b962a9b
+    V3.0 Signer: certificate MD5 digest: 1d9f259d6e30f30f65945edc72e9a1bc
   ✓ imza geçerli
 
 [5] Hizalama (zipalign)
