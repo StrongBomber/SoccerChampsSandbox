@@ -1,6 +1,6 @@
 APK: apk/out/wsc-editor.apk
-Boyut: 66474 bayt
-SHA-256: ab374eff2990dca29e58f70f86b5a0cc9efe03fe4bde1e36a3c928f6acd45d3d
+Boyut: 70570 bayt
+SHA-256: 3fdd3aabd646e7393e35512085d36dd5f7386a2b683cbeb3632f9a37fb207eb3
 
 === içerik ===
 Archive:  apk/out/wsc-editor.apk
@@ -8,21 +8,21 @@ Archive:  apk/out/wsc-editor.apk
 ---------  ---------- -----   ----
      2228  1980-01-01 00:00   AndroidManifest.xml
        40  1980-01-01 00:00   resources.arsc
-    12868  2026-10-30 12:27   classes.dex
-    26006  2026-10-30 12:27   assets/styles.css
-    50735  2026-10-30 12:27   assets/demo-save.js
-    83242  2026-10-30 12:27   assets/demo-save.json
-     5470  2026-10-30 12:27   assets/data.js
-     2276  2026-10-30 12:27   assets/index.html
-    74358  2026-10-30 12:27   assets/app.js
-      945  2026-10-30 12:27   META-INF/WSC.SF
-     1337  2026-10-30 12:27   META-INF/WSC.RSA
-      818  2026-10-30 12:27   META-INF/MANIFEST.MF
+    12868  2026-10-30 12:34   classes.dex
+    30515  2026-10-30 12:34   assets/styles.css
+    50735  2026-10-30 12:34   assets/demo-save.js
+    83242  2026-10-30 12:34   assets/demo-save.json
+     5470  2026-10-30 12:34   assets/data.js
+     2572  2026-10-30 12:34   assets/index.html
+    85833  2026-10-30 12:34   assets/app.js
+      945  2026-10-30 12:34   META-INF/WSC.SF
+     1337  2026-10-30 12:34   META-INF/WSC.RSA
+      818  2026-10-30 12:34   META-INF/MANIFEST.MF
 ---------                     -------
-   260323                     12 files
+   276603                     12 files
 
 === imza ===
 V3.0 Signer: certificate DN: CN=WSC In-Game Editor, OU=Sandbox, O=WSC, L=Istanbul, C=TR
-V3.0 Signer: certificate SHA-256 digest: f9aba2a949aa7b50f908a60bcee1c3890cafb47bca47399a79924a4194c53aa4
-V3.0 Signer: certificate SHA-1 digest: 006d43e25794817534ac38f3b5e290b175bcf367
-V3.0 Signer: certificate MD5 digest: 38bd09c99336a486ec4b6da3a61aff00
+V3.0 Signer: certificate SHA-256 digest: baeb223844eda3709f0a28f99815d1563ca8d71a00412addc932e4057e0122fd
+V3.0 Signer: certificate SHA-1 digest: a06352482b3eef613f29102ae8963aaafc34401f
+V3.0 Signer: certificate MD5 digest: 26f197cb15d4fa58106026db29b25109

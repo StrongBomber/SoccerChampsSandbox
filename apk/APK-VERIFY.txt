@@ -1,0 +1,5 @@
+APK doğrulama: apk/out/wsc-editor.apk
+Boyut:  bayt
+SHA-256: 
+
+[1] Paket bilgisi (aapt2 dump badging)
