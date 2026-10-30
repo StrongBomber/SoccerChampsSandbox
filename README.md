@@ -1,27 +1,66 @@
 # SoccerChampsSandbox
 
-## World Soccer Champs 2026.12 (XAPK)
+World Soccer Champs (2026.12) için **sandbox mod menü** ve **Football Manager tarzı oyun içi editör**.
 
-Drive'daki `World+Soccer+Champs_2026.12_APKPure-1.xapk` dosyasi GitHub'a alindi.
+## İçerik
 
-| | |
+| Klasör | Ne var |
 |---|---|
-| **Indirme** | https://github.com/StrongBomber/SoccerChampsSandbox/releases/download/wsc-2026.12/World%2BSoccer%2BChamps_2026.12_APKPure-1.xapk |
-| **Release** | https://github.com/StrongBomber/SoccerChampsSandbox/releases/tag/wsc-2026.12 |
-| **Boyut** | 237.511.212 bayt (~226 MB) |
-| **SHA-256** | `4198930c006dd294e1e444d489a1df78d42b3e46c2c4c5b1e454ff672c7f3112` |
+| `sandbox-editor/` | **Sandbox Editor** — bağımlılıksız web uygulaması: kadro, finans, transfer, personel düzenleme + sandbox araçları |
+| `modmenu/` | Frida ile **oyun içi overlay mod menü** (root'lu cihaz/emülatör) |
+| `tools/` | `wsc-save.sh` (kayıt çek/geri yaz), `frida-run.sh` |
+| `analysis/` | REA statik analiz çıktıları |
+| `docs/` | `REA-ANALYSIS.md` (teknik rapor), `ROOTSUZ-KURULUM.md` (root'suz yollar) |
 
-Git 100 MB uzerindeki dosyalari depo agacina kabul etmedigi icin dosya
-**release asset** olarak yayinlandi (GitHub'in buyuk ikili dosyalar icin onerdigi yol).
+## Hızlı başlangıç — Sandbox Editor
 
-### Nasil indirildi
+```bash
+cd sandbox-editor
+python3 -m http.server 8080
+# → http://localhost:8080
+```
 
-Dosya 100 MB'lik calisma alani limitini astigi ve sandbox'tan Google Drive'a
-dogrudan erisim kapali oldugu icin indirme islemi GitHub Actions runner'inda yapildi:
+Editör açılışta **demo bir kariyer** yükler (25 oyuncu, 6 personel, 4 transfer hedefi),
+böylece hiçbir şey kurmadan tüm özellikleri deneyebilirsin.
 
-1. `scripts/download_drive.sh` — Drive dosyasini (buyuk dosyalardaki "virus scan"
-   onay sayfasini da asarak) indirir.
-2. `.github/workflows/fetch-xapk.yml` — boyutu ve arsiv butunlugunu dogrular,
-   SHA-256 uretir, sonucu `wsc-2026.12` release'ine asset olarak yukler.
+- **Kadro**: yaş / OVR / POT / değer / maaş / sözleşme / moral / form alanlarını satır içi düzenle,
+  sırala, filtrele, transfer listesine al.
+- **Finans**: bakiye, transfer ve maaş bütçesi; maaş yükü göstergesi.
+- **Transferler**: oyuncu sat (bütçeye %90'ı eklenir), scout hedefi imzala, ilgi artır.
+- **Sandbox Araçları**: Sınırsız Bütçe, Maaş Yükünü Sıfırla, Süper Kadro, Mutlu Soyunma Odası,
+  Sözleşme Kilidi, Piyasa Değeri ×2, Altyapı Full, Transfer Listesini Temizle.
+- **Değişiklik günlüğü**: her işlem alan bazında diff ile listelenir, tek tek geri alınabilir (Ctrl+Z).
+- **İçe/Dışa Al**: gerçek kayıt JSON'unu yükle, düzenle, indir.
 
-Yeniden calistirmak icin workflow dosyasinda veya scriptte bir degisiklik push etmek yeterli.
+## Hızlı başlangıç — oyun içi menü
+
+```bash
+tools/frida-run.sh /yol/frida-server-android-arm   # root'lu cihaz veya root açık emülatör
+```
+
+Oyunda sağ üstte **◢ SANDBOX** düğmesi çıkar: değer tara → daralt → yaz / dondur.
+Ayrıntı: [`modmenu/README.md`](modmenu/README.md)
+
+## Neden APK modlanmıyor?
+
+REA analizi (bkz. `docs/REA-ANALYSIS.md`) oyunun **Cocos2d-x + native C++**, kütüphanesinin
+**stripped** ve **PairIP** (`SignatureCheck`, `VMRunner`) + Play Integrity ile korunduğunu gösterdi.
+Yeniden imzalanan APK imza kontrolüne takılır. Bu yüzden iki güvenli yol seçildi:
+
+1. **Kayıt verisi / bellek** üzerinden düzenleme (APK'ya dokunmaz),
+2. Kalıcı veri için **Sandbox Editor**.
+
+Root'suz cihazda neler yapılabileceği: [`docs/ROOTSUZ-KURULUM.md`](docs/ROOTSUZ-KURULUM.md)
+
+## Depodaki diğer dosyalar
+
+- `scripts/download_drive.sh` — Google Drive'dan büyük dosya indirme (XAPK'nın kaynağı)
+- `.github/workflows/fetch-xapk.yml` — XAPK'yı indirip release asset olarak yayınlar
+- `.github/workflows/analyze-xapk.yml` — REA analizini çalıştırır, `analysis/` altına commit eder
+
+## Yasal not
+
+Bu araçlar yalnızca **kendi cihazında, tek oyunculu kariyerinde** kullanım için hazırlandı.
+Çok oyunculu/online modda, satışa sunulan hesaplarda veya başkasının cihazında kullanmak
+oyunun kullanım koşullarını ihlal eder. Oyun kodu tersine mühendislik için incelenmedi;
+hiçbir koruma atlatma tekniği içermiyor.

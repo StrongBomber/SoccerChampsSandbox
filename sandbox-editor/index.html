@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sandbox Editor — World Soccer Champs</title>
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div id="app">
+  <aside class="rail">
+    <div class="rail-brand">
+      <div class="crest">WSC</div>
+      <div>
+        <strong>Sandbox</strong>
+        <span>Editor</span>
+      </div>
+    </div>
+    <nav id="nav" class="rail-nav"></nav>
+    <div class="rail-foot">
+      <span class="dot" id="saveDot"></span>
+      <span id="saveState">Demo kayıt yüklü</span>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <header class="topbar">
+      <div class="club">
+        <div class="club-crest" id="clubCrest">KRT</div>
+        <div class="club-meta">
+          <h1 id="clubName">—</h1>
+          <p id="clubSub">—</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span class="chip" id="changeChip">0 değişiklik</span>
+        <button class="btn ghost" id="undoBtn" title="Son değişikliği geri al (Ctrl+Z)">↶ Geri Al</button>
+        <button class="btn ghost" id="diffBtn">Δ Değişiklikler</button>
+        <label class="btn ghost" for="importFile">↧ İçe Al</label>
+        <input type="file" id="importFile" accept=".json,application/json" hidden />
+        <button class="btn primary" id="exportBtn">↥ Dışa Aktar</button>
+      </div>
+    </header>
+
+    <section id="view" class="view"></section>
+  </main>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<div id="drawer" class="drawer" hidden>
+  <div class="drawer-head">
+    <h2>Değişiklik Günlüğü</h2>
+    <button class="btn ghost" id="drawerClose">✕</button>
+  </div>
+  <div id="drawerBody" class="drawer-body"></div>
+</div>
+
+<script src="./schema.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
