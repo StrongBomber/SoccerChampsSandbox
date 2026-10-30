@@ -157,6 +157,56 @@ function firstScan(value, type) {
   return hits;
 }
 
+/** Bulunan adreslerin şu anki değerleri (okunamayanlar atlanır). */
+function liveValues(hits, type) {
+  const t = TYPES[type] || TYPES.int32;
+  const out = [];
+  (hits || []).forEach((h) => {
+    try {
+      const v = t.read(h.addr);
+      if (Number.isFinite(v)) out.push(v);
+    } catch (_) { /* atla */ }
+  });
+  return out;
+}
+
+/** Compound V: her doz, bulunan adreslerin değerini +5 artırır (100'de durur). */
+function compoundV(hits, type, doses = 1) {
+  const t = TYPES[type] || TYPES.int32;
+  let n = 0;
+  (hits || []).forEach((h) => {
+    try {
+      const cur = t.read(h.addr);
+      if (!Number.isFinite(cur)) return;
+      const next = cur + 5 * doses;
+      t.write(h.addr, Math.min(100, next));
+      n++;
+    } catch (_) { /* atla */ }
+  });
+  return n;
+}
+
+/** Ortalama istatistiğe karşılık gelen The Boys sıralaması. */
+const RANKS = [
+  [100, "Homelander", "The Seven'in zirvesi"],
+  [95, "Soldier Boy", "Vought'un ilk süper askeri"],
+  [90, "Black Noir", "Sessiz infazcı"],
+  [85, "Starlight", "The Seven"],
+  [80, "A-Train", "The Seven — hız"],
+  [70, "Kimiko", "The Boys — dayanıklılık"],
+  [60, "Frenchie", "The Boys — teknik"],
+  [50, "Hughie", "The Boys — sıradan insan"],
+  [-Infinity, "The Deep", "The Seven'in dibi"],
+];
+
+function rankFor(avg) {
+  if (!Number.isFinite(avg)) return null;
+  for (const [min, name, note] of RANKS) {
+    if (avg >= min) return { name, note, avg };
+  }
+  return null;
+}
+
 /** Sonraki tarama: adayları oyundaki değişime göre süzer. */
 function nextScan(mode, type) {
   const t = TYPES[type] || TYPES.int32;
@@ -627,6 +677,30 @@ function buildUi() {
   });
   boysPage.addView(voughtRow);
 
+  const powerRow = box(LinearLayout.HORIZONTAL.getValue());
+  const vDose = { n: 0 };
+  button(powerRow, "Compound V (+5 · 100'de durur)", () => {
+    if (!S.hits.length) { setStatus("önce Tara'da değer ara"); return; }
+    const targets = S.selected ? [S.selected] : S.hits;
+    const n = compoundV(targets, S.type, 1);
+    vDose.n++;
+    renderResults();
+    const avg = liveValues(targets, S.type).reduce((a, b) => a + b, 0) / Math.max(1, targets.length);
+    const r = rankFor(avg);
+    setStatus(`Compound V doz ${vDose.n}: ${n} adres +5 → ${r ? r.name : "?"}`);
+  });
+  button(powerRow, "Sıralamam", () => {
+    if (!S.hits.length) { setStatus("önce Tara'da değer ara"); return; }
+    const targets = S.selected ? [S.selected] : S.hits;
+    const vals = liveValues(targets, S.type);
+    if (!vals.length) { setStatus("değer okunamadı"); return; }
+    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const r = rankFor(avg);
+    setStatus(r ? `${r.name} — ${r.note} (ortalama ${Math.round(avg)})` : "sıralama hesaplanamadı");
+  });
+  boysPage.addView(powerRow);
+
+  boysPage.addView(text("Vought: istatistiklerini süper seviyeye çek, sıralamada yerini gör.", 8, "#b8a8d8"));
   boysPage.addView(text("Not: bu bir istatistik şablonudur. Oyuna yeni bölüm/karakter verisi eklemez.", 8, "#6f6f85"));
 
   /* ---------------- İSTATİSTİK ---------------- */
@@ -865,7 +939,7 @@ globalThis.BOYS = {
   S, TYPES, TYPE_ORDER, PRESETS, CHARACTERS, VOUGHT_MONEY,
   firstScan, nextScan, writeOne, writeAll, freezeAll,
   saveList, saveRead, saveWrite, saveBackup,
-  findRuleFields, setByPath, isTargetActivity,
+  findRuleFields, setByPath, isTargetActivity, liveValues, compoundV, rankFor, RANKS,
   candidateRanges, startWatcher, stopWatcher,
 };
 

@@ -98,6 +98,21 @@ check("interval kuruldu", rt.calls.intervals >= 1);
 const cleared = MOD.freezeAll(0, false, "int32");
 check("çözme temizledi", cleared === 1 && MOD.S.frozen.size === 0 && rt.calls.cleared >= 1);
 
+section("Compound V ve sıralama");
+rt.plant.int32(0x900, 40);
+rt.plant.int32(0x904, 60);
+const vHits = [{ addr: new rt.NativePointer(0x900) }, { addr: new rt.NativePointer(0x904) }];
+check("canlı değerler okundu", JSON.stringify(MOD.liveValues(vHits, "int32")) === "[40,60]");
+check("Compound V +5", MOD.compoundV(vHits, "int32", 1) === 2 && rt.plant.readInt32(0x900) === 45);
+MOD.compoundV(vHits, "int32", 20);
+check("100'de duruyor", rt.plant.readInt32(0x900) === 100 && rt.plant.readInt32(0x904) === 100);
+check("sıralama: 100 → Homelander", MOD.rankFor(100).name === "Homelander");
+check("sıralama: 85 → Starlight", MOD.rankFor(85).name === "Starlight");
+check("sıralama: 50 → Hughie", MOD.rankFor(50).name === "Hughie");
+check("sıralama: 10 → The Deep", MOD.rankFor(10).name === "The Deep");
+check("sıralama: NaN → null", MOD.rankFor(NaN) === null);
+check("sıralama merdiveni azalan", MOD.RANKS.slice(0, -1).every((r, i) => r[0] > MOD.RANKS[i + 1][0]));
+
 section("Oyunun kendi kayıt dosyaları (BitLife)");
 check("Java yokken liste boş (çökmez)", Array.isArray(MOD.saveList()) && MOD.saveList().length === 0);
 check("okuma hatayı yutar", String(MOD.saveRead("/yok/dosya", 100)).startsWith("HATA"));

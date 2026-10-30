@@ -109,7 +109,7 @@ check("para 2 adreste bulundu", BOYS.S.hits.length === 2, `${BOYS.S.hits.length}
 section("The Boys karakter paketleri");
 byText("The Boys")[0].click();
 const charButtons = walk(pages[1]).filter((n) => n.kind === "Button");
-check("10 karakter + 2 Vought düğmesi", charButtons.length === 12, `${charButtons.length}`);
+check("10 karakter + 2 Vought + 2 güç düğmesi", charButtons.length === 14, `${charButtons.length}`);
 check("Homelander düğmesi", charButtons.some((b) => b.text.startsWith("Homelander · 100")));
 
 const homelander = charButtons.find((b) => b.text.startsWith("Homelander"));
@@ -132,6 +132,17 @@ freeze.click();
 check("Vought Modu kilitledi", BOYS.S.frozen.size === 2, `${BOYS.S.frozen.size}`);
 freeze.click();
 check("Vought Modu kapandı", BOYS.S.frozen.size === 0);
+
+section("Compound V ve sıralama (arayüz)");
+charButtons.find((b) => b.text.startsWith("Hughie")).click();
+check("Hughie 70 → taban", rt.plant.readInt32(0x200) === 70);
+const cv = charButtons.find((b) => b.text.startsWith("Compound V"));
+cv.click();
+check("Compound V +5 yazdı", rt.plant.readInt32(0x200) === 75, String(rt.plant.readInt32(0x200)));
+check("doz sayacı durum satırında", /doz 1/.test(BOYS.S.status.text), BOYS.S.status.text);
+check("sıralama durum satırında", /Kimiko/.test(BOYS.S.status.text), BOYS.S.status.text);
+charButtons.find((b) => b.text === "Sıralamam").click();
+check("Sıralamam 75 → Kimiko", /Kimiko/.test(BOYS.S.status.text), BOYS.S.status.text);
 
 section("Oyunun kendi kayıt dosyaları");
 const saveButtons = walk(pages[3]).filter((n) => n.kind === "Button");

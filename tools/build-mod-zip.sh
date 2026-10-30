@@ -19,8 +19,8 @@ OUT_DIR="$ROOT/dist"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-VERSION="${MOD_VERSION:-1.0}"
-VERSION_CODE="${MOD_VERSION_CODE:-1}"
+VERSION="${MOD_VERSION:-1.1}"
+VERSION_CODE="${MOD_VERSION_CODE:-2}"
 PKG="com.candywriter.bitlife"
 PORT=27042
 
