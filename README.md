@@ -3,6 +3,18 @@
 **Hedef: World Soccer Champs'in kendisini modlamak.** Ayrı bir uygulama değil — mod, oyunun
 kendi sürecinde çalışır: Frida ile canlı bellek modu veya oyunun kendi kayıt dosyası.
 
+## Mod paketi (kurulabilir)
+
+**İndir:** https://github.com/StrongBomber/SoccerChampsSandbox/releases/download/wsc-mod/wsc-mod-magisk.zip
+(15,8 MB · frida-server + mod ajanı · Magisk/KernelSU)
+
+Magisk → Modules → Install → zip. Açılışta frida-server kendiliğinden başlar; oyunu açıp
+PC'den `tools/game-mod.sh --attach` çalıştırınca oyunun **kendi penceresinde** `◢ MOD` belirir.
+
+> **Neden APK değil?** Oyunun APK'sı yeniden imzalanamaz (`com.pairip.SignatureCheck` +
+> `libpairipcore.so` + Play Integrity) — yeniden imzalanan APK açılmaz. Bu yüzden mod
+> **çalışma anında** enjekte edilir; dağıtım biçimi flash'lanan pakettir.
+
 ## Modu çalıştır (tek komut)
 
 ```bash
@@ -69,20 +81,22 @@ tutarsızlığı (ör. penaltı mesafesi 9–13 m dışı), asgari ücret altı 
 ## Mod ajanı testi
 
 ```bash
-node tests/game-mod-test.mjs     # sahte Frida ortamı: 27 iddia, cihaz gerekmez
+node tests/game-mod-test.mjs     # Frida çalışma zamanı taklidi: 27 iddia
+node tests/android-ui-test.mjs   # Android çerçeve taklidi: 46 iddia (menü, tarama, kayıt, kurallar)
 ```
 
-Tarama, daraltma, yazma, dondurma ve kayıt API'si gerçek cihaz olmadan sınanır.
-Dürüst sınırlar: [`docs/GAME-MOD.md`](docs/GAME-MOD.md) §4.
+Arayüz testi ajanın **gerçek kod yolunu** çalıştırır: Activity hook → `buildUi()` → sekmeler →
+tarama → yazma → dondurma → oyunun kayıt dosyası listesi/okuma/yedekleme → ofsayt/taç alanını
+1↔0 çevirip geri yazma. Gerçek emülatör bu ortamda yok; sınırlar: [`docs/GAME-MOD.md`](docs/GAME-MOD.md) §5–6.
 
 ## Diğer klasörler
 
 | Klasör | Ne var |
 |---|---|
-| `tools/` | `game-mod.sh` (tek komut mod menüsü), `wsc-save.sh` (kayıt çek/geri yaz), `save-scan.mjs` (kayıt biçimi + yama) |
+| `tools/` | `game-mod.sh` (tek komut mod menüsü), `build-mod-zip.sh` (Magisk paketi), `wsc-save.sh`, `save-scan.mjs` |
 | `analysis/` | REA statik analiz çıktıları |
 | `apk/` | Android APK kaynakları (`build.sh`, `verify-apk.sh`, Java, manifest, ikon) |
-| `tests/` | `game-mod-test.mjs` — 27 iddialık Frida ajan testi · `editor-smoke.mjs` — 89 · `detect-test.mjs` — 19 |
+| `tests/` | `game-mod-test.mjs` (27) · `android-ui-test.mjs` (46) · `editor-smoke.mjs` (89) · `detect-test.mjs` (19) |
 | `docs/` | `APK.md`, `EDITOR.md`, `REA-ANALYSIS.md`, `ROOTSUZ-KURULUM.md` |
 | `.github/workflows/` | XAPK indirme + REA analiz iş akışları |
 

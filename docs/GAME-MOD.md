@@ -31,7 +31,27 @@ Bu yüzden mod, **APK'ya dokunmadan** uygulanır. İki yol var:
 
 ---
 
-## 2. Yol A — oyun içi mod menüsü (tek komut)
+## 2. Kurulabilir mod paketi (Magisk / KernelSU)
+
+**İndir:** https://github.com/StrongBomber/SoccerChampsSandbox/releases/download/wsc-mod/wsc-mod-magisk.zip
+(15,8 MB · frida-server + mod ajanı · sha256 dosyası yanında)
+
+| İçerik | Görev |
+|---|---|
+| `system/bin/frida-server` | Cihazda çalışır, açılışta kendiliğinden başlar |
+| `agent/game-mod.js` | Mod menüsü (oyunun penceresine `◢ MOD`) |
+| `post-fs-data.sh` / `service.sh` | Önyüklemede başlat + düşerse yeniden başlat |
+| `customize.sh` | Ajanı `/data/adb/wscmod/game-mod.js` konumuna kopyalar |
+
+> **Neden APK değil?** Oyunun APK'sını modlayıp yeniden imzalamak bu oyunda çalışmaz:
+> `com.pairip.SignatureCheck` + `libpairipcore.so` + Play Integrity. Yeniden imzalanan
+> APK açılmaz — bu bir tercih değil, teknik sınır (kanıt: `analysis/05-probe.txt`).
+> Bu yüzden mod **çalışma anında** uygulanır ve dağıtım biçimi **flash'lanan paket**tir.
+> APK biçiminde "mod" vermek, açılmayan bir oyun dosyası vermek olurdu.
+
+Kurulum: Magisk/KernelSU → Modules → Install → zip. Oyunu aç, PC'den `tools/game-mod.sh --attach`.
+
+## 3. Yol A — oyun içi mod menüsü (tek komut)
 
 ```bash
 tools/game-mod.sh --check                          # cihaz / root / mimari raporu
@@ -67,7 +87,24 @@ değiştir → **Değişti** → kalan adreslere `20` yaz.
 
 ---
 
-## 3. Yol B — kayıt dosyası modu (ayrı uygulama olmadan)
+### Kurallar (ofsayt / taç / penaltı / korner / faul)
+
+Menüde **Kayıt → Kuralları bul**: seçtiğin kayıt dosyasında kural benzeri alanları
+(`offside`, `throwIn`, `penalty`, `corner`, `foul`, `yellow`…) listeler. Bir satıra dokununca
+değer 0 ↔ 1 çevrilir, **Geri Yaz** ile oyunun kendi dosyasına işlenir.
+
+Bu, kuralları **veri olarak** değiştirmenin tek dürüst yolu:
+
+| Durum | Sonuç |
+|---|---|
+| Kural alanları kayıtta varsa | Doğrudan değiştirilir, oyun okur |
+| Alan yoksa | Menü bunu söyler; kurallar oyunun **native maç motorunda** (stripped C++) demektir |
+
+Native maç motorunun içine "ofsayt kuralı eklemek" için kaynak/offset gerekir; kütüphane
+**stripped** (sembol yok) ve 15,9 MB. Bu proje o noktada **abartı yapmaz**: kural değiştirmek
+isteyen için pratik yol, maç sırasında `Tara` sekmesiyle ilgili değeri bulup yazmaktır.
+
+## 4. Yol B — kayıt dosyası modu (ayrı uygulama olmadan)
 
 ```bash
 # 1) çek
@@ -92,7 +129,31 @@ açıkça söyler, dosyayı zorla dönüştürmez.
 
 ---
 
-## 4. Dürüst sınırlar
+## 5. Emülatör testi — ne yapıldı, ne yapılamadı
+
+Bu ortamda **gerçek Android emülatörü çalıştırılamıyor** (KVM yok, sistem imajı yok, ağ kısıtlı).
+Bu yüzden ajanın **tamamı** iki taklit katmanı üzerinde koşturuldu:
+
+| Test | Katman | İddia |
+|---|---|---|
+| `tests/android-ui-test.mjs` | **Android çerçeve taklidi** (`tests/android-mock.mjs`): TextView, LinearLayout, LayoutParams, OnClickListener, Activity.addContentView, java.io.File… | **46** |
+| `tests/game-mod-test.mjs` | **Frida çalışma zamanı taklidi** (`tests/frida-mock.mjs`): Process, Module, NativePointer, Interceptor | **27** |
+
+Arayüz testi gerçekten şunları yapar: `AppActivity.onCreate` hook'lanır → `buildUi()` çalışır →
+3 sekme açılır → hazır mod düğmeleri tıklanır → bellek taranır → satıra dokunulur → değer yazılır →
+dondurulur → **oyunun kayıt dosyaları listelenir, okunur, yedeklenir, kural alanı 1↔0 çevrilip
+geri yazılır.** Yani cihazda çalışacak kod yolu, cihazsız olarak yürütüldü.
+
+Gerçek emülatörde 3 komut:
+
+```bash
+# LDPlayer / MuMu: ayarlardan root açık olsun
+tools/game-mod.sh --emulator                    # adb connect 127.0.0.1:5555
+tools/game-mod.sh --check                       # root/oyun/mimari doğrula
+tools/game-mod.sh --server /yol/frida-server-arm
+```
+
+## 6. Dürüst sınırlar
 
 - **Bu ortamda cihaz/emülatör yok.** Ajan, test edilebilir kısmıyla kanıtlandı:
   `node tests/game-mod-test.mjs` → **27 iddia** (tarama, daraltma, yazma, int64/float/double,
