@@ -1,386 +1,554 @@
-=== native kutuphane ===
-(libWorldSoccerChamps.so yok)
+=== native kutuphaneler ===
+-rw-r--r-- 1 runner runner 15951256 Jan  1  1981 out/probe/libWorldSoccerChamps.so
+-rw-r--r-- 1 runner runner    85512 Jan  1  1981 out/probe/libapminsighta.so
+-rw-r--r-- 1 runner runner   100368 Jan  1  1981 out/probe/libapminsightb.so
+-rw-r--r-- 1 runner runner   500664 Jan  1  1981 out/probe/libapplovin-native-crash-reporter.so
+-rw-r--r-- 1 runner runner     6580 Jan  1  1981 out/probe/libbuffer_pgl.so
+-rw-r--r-- 1 runner runner   534284 Jan  1  1981 out/probe/libcrashlytics-common.so
+-rw-r--r-- 1 runner runner   126356 Jan  1  1981 out/probe/libcrashlytics-handler.so
+-rw-r--r-- 1 runner runner     3424 Jan  1  1981 out/probe/libcrashlytics-trampoline.so
+-rw-r--r-- 1 runner runner   132976 Jan  1  1981 out/probe/libcrashlytics.so
+-rw-r--r-- 1 runner runner     4416 Jan  1  1981 out/probe/libdatastore_shared_counter.so
+-rw-r--r-- 1 runner runner     4704 Jan  1  1981 out/probe/libfile_lock_pgl.so
+-rw-r--r-- 1 runner runner   200952 Jan  1  1981 out/probe/libnms.so
+-rw-r--r-- 1 runner runner   599404 Jan  1  1981 out/probe/libpairipcore.so
+-rw-r--r-- 1 runner runner    47100 Jan  1  1981 out/probe/libpglarmor.so
+-rw-r--r-- 1 runner runner    12080 Jan  1  1981 out/probe/libsentry-android.so
+-rw-r--r-- 1 runner runner   468380 Jan  1  1981 out/probe/libsentry.so
+-rw-r--r-- 1 runner runner   342084 Jan  1  1981 out/probe/libtt_ugen_layout.so
 
-=== dex: paket/uygulama siniflari ===
---- out/probe/classes.dex
-com/applovin/shadow
-com/appodeal/ads
-com/google/common
-com/mbridge/msdk
-com/pairip/SignatureCheck
-com/pairip/StartupLauncher
-com/pairip/Utils
-com/pairip/VMRunner
-com/pairip/VmDecryptor
-com/zmaticoo/sdk
-org/bidon/mintegral
-org/cocos2dx/cpp
-org/conscrypt/Conscrypt
-org/json/JSONArray
-org/json/JSONException
-org/json/JSONObject
-org/openjsse/net
-org/xmlpull/v1
---- out/probe/classes10.dex
-com/amazon/device
-com/apm/insight
-com/applovin/adview
-com/applovin/impl
-com/applovin/mediation
-com/applovin/sdk
-com/appodeal/ads
-com/appodeal/advertising
-com/appodeal/consent
-com/bykv/vk
-com/bytedance/adsdk
-com/chartboost/sdk
-com/explorestack/protobuf
-com/facebook/ads
-com/google/api
-com/google/common
-com/google/protobuf
-com/google/rpc
-com/inmobi/ads
-com/inmobi/sdk
-com/mbridge/msdk
-com/mobilefuse/sdk
-com/my/target
-com/ogury/sdk
-com/smaato/sdk
-com/unity3d/ads
-com/vungle/ads
-io/bidmachine/AdContentType
-io/bidmachine/AdListener
-io/bidmachine/AdRequest
-io/bidmachine/AdView
-io/bidmachine/BannerAdSize
-io/bidmachine/BidMachine
-io/bidmachine/BidMachineAd
-io/bidmachine/CustomParams
-io/bidmachine/ExternalUserId
-io/bidmachine/FullScreenAd
-io/bidmachine/IAd
-io/bidmachine/MediaAssetType
-io/bidmachine/TargetingParams
---- out/probe/classes11.dex
-com/applovin/adview
-com/applovin/impl
-com/bytedance/adsdk
-com/explorestack/protobuf
-com/facebook/ads
-com/fyber/inneractive
-com/google/ads
-com/google/android
-com/google/common
-org/json/JSONArray
-org/json/JSONException
-org/json/JSONObject
-org/w3c/dom
-org/xml/sax
-org/xmlpull/v1
---- out/probe/classes12.dex
-com/applovin/impl
-com/bytedance/adsdk
-com/google/android
-com/google/common
-com/pairip/VMRunner
-org/chromium/net
-org/json/JSONArray
-org/json/JSONException
-org/json/JSONObject
-org/xmlpull/v1
---- out/probe/classes13.dex
-com/applovin/adview
-com/applovin/sdk
-com/bytedance/adsdk
-com/facebook/ads
-com/google/common
-com/google/firebase
-com/google/geo
-com/google/gson
-com/google/protobuf
-com/google/rpc
-com/google/type
-com/iab/omid
-com/iabtcf/decoder
-com/iabtcf/utils
-com/iabtcf/v2
-com/inmobi/ads
-com/inmobi/media
-com/inmobi/sdk
-com/ironsource/A
-com/ironsource/A0
-com/ironsource/A1
-com/ironsource/A2
-com/ironsource/A3
-com/ironsource/A4
-com/ironsource/A5
-com/ironsource/A6
-com/ironsource/A7
-com/ironsource/A8
-com/ironsource/A9
-com/ironsource/Aa
-com/ironsource/Ab
-com/ironsource/Ac
-com/ironsource/Ad
-com/ironsource/Ae
-com/ironsource/Af
-com/ironsource/Ag
-com/ironsource/B
-com/ironsource/B0
-com/ironsource/B1
-com/ironsource/B2
+--- out/probe/libWorldSoccerChamps.so
+  ELF: ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, BuildID[sha1]=d4e5e11b548f09009013793131f0d000fcea4911, stripped
+  cocos/box2d/tolua izleri:
+(IILjava/lang/String;I)Lorg/cocos2dx/lib/Cocos2dxDownloader;
+(Lorg/cocos2dx/lib/Cocos2dxDownloader;)V
+(Lorg/cocos2dx/lib/Cocos2dxDownloader;ILjava/lang/String;Ljava/lang/String;)V
+../../../../../../../../cocos2d/cocos/2d/CCAction.h
+../../../../../../../../cocos2d/cocos/2d/CCActionInterval.h
+../../../../../../../../cocos2d/cocos/audio/AudioEngine.cpp
+../../../../../../../../cocos2d/cocos/base/CCAsyncTaskPool.h
+../../../../../../../../cocos2d/cocos/base/CCAutoreleasePool.cpp
+../../../../../../../../cocos2d/cocos/renderer/CCRenderer.cpp
+../../../../../../../../cocos2d/cocos/renderer/CCTexture2D.cpp
+../../../../../../../../cocos2d/cocos/renderer/CCTextureCache.cpp
+../../../../../../../../cocos2d/extensions/spine-cocos2dx/spine-cocos2dx/src/spine/SkeletonAnimation.cpp
+../../../../../../../../cocos2d/extensions/spine-cocos2dx/spine-cocos2dx/src/spine/SkeletonRendererCocos2dX.cpp
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/include/spine/Array.h
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/include/spine/BlockAllocator.h
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/include/spine/Map.h
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/include/spine/Pool.h
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/include/spine/SkeletonBinary.h
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/include/spine/SpineString.h
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/src/spine/AnimationState.cpp
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/src/spine/Atlas.cpp
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/src/spine/AtlasAttachmentLoader.cpp
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/src/spine/BoundingBoxAttachment.cpp
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/src/spine/ClippingAttachment.cpp
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/src/spine/Extension.cpp
 sort: write failed: 'standard output': Broken pipe
 sort: write error
---- out/probe/classes2.dex
-com/applovin/impl
-com/explorestack/protobuf
-com/facebook/ads
-com/fyber/inneractive
-com/google/common
-com/pairip/VMRunner
-org/json/JSONArray
-org/json/JSONException
-org/json/JSONObject
-org/xmlpull/v1
---- out/probe/classes3.dex
-com/amazon/aps
-com/amazon/device
-com/applovin/adview
-com/applovin/impl
-com/applovin/mediation
-com/applovin/sdk
-com/chartboost/sdk
-com/explorestack/protobuf
-com/facebook/ads
-com/five_corp/ad
-com/fyber/FairBid
-com/fyber/inneractive
-com/google/protobuf
-com/inmobi/ads
-com/inmobi/sdk
-com/ironsource/A3
-com/ironsource/A5
-com/ironsource/A7
-com/ironsource/Ac
-com/ironsource/Ag
-com/ironsource/B1
-com/ironsource/B3
-com/ironsource/Be
-com/ironsource/C7
-com/ironsource/Cf
-com/ironsource/D1
-com/ironsource/D3
-com/ironsource/Da
-com/ironsource/Dc
-com/ironsource/E9
-com/ironsource/Ee
-com/ironsource/F2
-com/ironsource/F4
-com/ironsource/F5
-com/ironsource/Fe
-com/ironsource/Ff
-com/ironsource/G1
-com/ironsource/G9
-com/ironsource/Gb
-com/ironsource/Ge
---- out/probe/classes4.dex
-com/android/volley
-com/applovin/impl
-com/applovin/sdk
-com/cocos/lib
-com/google/gson
-com/google/protobuf
-com/huawei/hmf
-com/huawei/hms
-com/ironsource/A5
-com/ironsource/Ca
-com/ironsource/Cb
-com/ironsource/Fd
-com/ironsource/Gd
-com/ironsource/I7
-com/ironsource/Ib
-com/ironsource/Kd
-com/ironsource/O2
-com/ironsource/O9
-com/ironsource/P2
-com/ironsource/P9
-com/ironsource/S7
-com/ironsource/V2
-com/ironsource/W9
-com/ironsource/Za
-com/ironsource/cb
-com/ironsource/d1
-com/ironsource/e1
-com/ironsource/e3
-com/ironsource/f6
-com/ironsource/fe
-com/ironsource/g
-com/ironsource/gc
-com/ironsource/h
-com/ironsource/h8
-com/ironsource/h9
-com/ironsource/j9
-com/ironsource/k0
-com/ironsource/m2
-com/ironsource/mediationsdk
-com/ironsource/n0
---- out/probe/classes5.dex
-com/amazon/device
-com/explorestack/protobuf
-com/facebook/ads
-com/google/common
-com/google/protobuf
-com/mbridge/msdk
-com/my/target
-com/startapp/sdk
-com/taurusx/tax
-com/unity3d/ads
-com/vungle/ads
-io/bidmachine/AdContentType
-io/bidmachine/AdFormat
-io/bidmachine/AdListener
-io/bidmachine/AdObjectImpl
-io/bidmachine/AdRequest
-io/bidmachine/AdResponse
-io/bidmachine/AdView
-io/bidmachine/AdsFormat
-io/bidmachine/AdsType
-io/bidmachine/ApiRequest
-io/bidmachine/AppParams
-io/bidmachine/BannerAdSize
-io/bidmachine/BidMachine
-io/bidmachine/BidMachineAd
-io/bidmachine/BidToken
-io/bidmachine/BlockedParams
-io/bidmachine/BuildConfig
-io/bidmachine/BuildInfo
-io/bidmachine/Constants
-io/bidmachine/ContextProvider
-io/bidmachine/CreativeFormat
-io/bidmachine/CustomParams
-io/bidmachine/Debugger
-io/bidmachine/DeviceInfo
-io/bidmachine/DeviceInfoKt
-io/bidmachine/DeviceParams
-io/bidmachine/Executable
-io/bidmachine/ExternalUserId
-io/bidmachine/Framework
---- out/probe/classes6.dex
---- out/probe/classes7.dex
-com/amazon/device
-com/applovin/adview
-com/applovin/impl
-com/applovin/mediation
-com/applovin/sdk
-com/applovin/shadow
-com/chartboost/sdk
-com/explorestack/protobuf
-com/facebook/ads
-com/inmobi/ads
-com/inmobi/sdk
-io/bidmachine/AdContentType
-io/bidmachine/AdFormat
-io/bidmachine/AdListener
-io/bidmachine/AdRequest
-io/bidmachine/AdView
-io/bidmachine/AdsType
-io/bidmachine/ApiRequest
-io/bidmachine/BannerAdSize
-io/bidmachine/BidMachine
-io/bidmachine/BidMachineAd
-io/bidmachine/ContextProvider
-io/bidmachine/CustomParams
-io/bidmachine/FullScreenAd
-io/bidmachine/Function
-io/bidmachine/GeneralParams
-io/bidmachine/IAd
-io/bidmachine/MediaAssetType
-io/bidmachine/NetworkAdUnit
-io/bidmachine/NetworkAdapter
-io/bidmachine/SessionAdParams
-io/bidmachine/TargetingParams
-io/bidmachine/TrackEventType
-io/bidmachine/media3
-io/ktor/utils
-io/sentry/ILogger
-io/sentry/a
-io/sentry/a0
-io/sentry/a1
-io/sentry/a2
---- out/probe/classes8.dex
-org/json/JSONArray
-org/json/JSONException
-org/json/JSONObject
-org/w3c/dom
-org/xml/sax
---- out/probe/classes9.dex
-com/amazon/aps
-com/amazon/device
-com/android/installreferrer
-com/android/volley
-com/apm/insight
-com/applovin/adview
-com/applovin/impl
-com/applovin/mediation
-com/applovin/sdk
-com/chartboost/sdk
-com/facebook/ads
-com/google/common
-com/iabtcf/decoder
-com/iabtcf/utils
-com/iabtcf/v2
-com/inmobi/ads
-com/inmobi/sdk
-com/mbridge/msdk
-com/mobilefuse/sdk
-com/moloco/sdk
-com/my/target
-com/ogury/ad
-com/ogury/core
-com/ogury/sdk
-com/pairip/VMRunner
-com/smaato/sdk
-com/unity3d/ads
-com/vungle/ads
-io/bidmachine/AdListener
-io/bidmachine/AdRequest
-io/bidmachine/AdView
-io/bidmachine/AdsFormat
-io/bidmachine/BidMachine
-io/bidmachine/BidMachineAd
-io/bidmachine/FullScreenAd
-io/bidmachine/IAd
-io/bidmachine/ImageData
-io/bidmachine/MediaAssetType
-net/pubnative/lite
-org/bidon/mintegral
+  kayit/yol izleri:
+../../../../../../../../Data/Classes/Career.cpp
+../../../../../../../../Data/Classes/CareerManager.cpp
+../../../../../../../../Data/Classes/Competition.cpp
+../../../../../../../../Data/Classes/CompetitionAux.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsConfig.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsConfig_Before2020.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsConfig_E_After2024.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsConfig_E_Before2024.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsInfo.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsInfo_E.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsInfo_SA.cpp
+../../../../../../../../Data/Classes/ContinentalLeaguesSimulation.cpp
+../../../../../../../../Data/Classes/CountryLeaguesSimulation.cpp
+../../../../../../../../Data/Classes/DataAccess.cpp
+../../../../../../../../Data/Classes/DataManager.cpp
+../../../../../../../../Data/Classes/DataPackManager.cpp
+../../../../../../../../Data/Classes/DataPlayer.cpp
+../../../../../../../../Data/Classes/DataPlayer.h
+../../../../../../../../Data/Classes/DataScout.cpp
+../../../../../../../../Data/Classes/DataUtils.cpp
+../../../../../../../../Data/Classes/DrawStrategy.cpp
+../../../../../../../../Data/Classes/Fixture.cpp
+../../../../../../../../Data/Classes/FriendlyStage.cpp
+../../../../../../../../Data/Classes/Group.cpp
+../../../../../../../../Data/Classes/GroupStage.cpp
+../../../../../../../../Data/Classes/KnockOutStage.cpp
+../../../../../../../../Data/Classes/Localization.cpp
+../../../../../../../../Data/Classes/MatchSimulation/GoalAttribution.cpp
+../../../../../../../../Data/Classes/MatchSimulation/MatchSimulation.cpp
+../../../../../../../../Data/Classes/MatchSimulation/MatchSimulationBase.cpp
+../../../../../../../../Data/Classes/MatchSimulation/MatchSimulationTeam.cpp
+../../../../../../../../Data/Classes/NationalTeamRosters.cpp
+../../../../../../../../Data/Classes/News/ClubNearWinningLeagueNews.cpp
+../../../../../../../../Data/Classes/News/CompetitionFinalNews.cpp
+../../../../../../../../Data/Classes/News/CountryCoefficientRankingChangeNews.cpp
+../../../../../../../../Data/Classes/News/CupTitleNews.cpp
+../../../../../../../../Data/Classes/News/HatTrickNews.cpp
+../../../../../../../../Data/Classes/News/HostCountryNews.cpp
+../../../../../../../../Data/Classes/News/KnockOutAdvanceNews.cpp
+../../../../../../../../Data/Classes/News/KnockOutEliminationNews.cpp
+../../../../../../../../Data/Classes/News/KnockOutUnderdogNews.cpp
+../../../../../../../../Data/Classes/News/LeagueTitleNews.cpp
+../../../../../../../../Data/Classes/News/NewsBase.cpp
+../../../../../../../../Data/Classes/News/PlayerAnnouncingRetirementNews.cpp
+../../../../../../../../Data/Classes/News/PlayerPerformanceNews.cpp
+../../../../../../../../Data/Classes/News/PlayerRetiredNews.cpp
+../../../../../../../../Data/Classes/News/PopularPlayerTransferNews.cpp
+../../../../../../../../Data/Classes/News/RivalsMatchPreviewNews.cpp
+../../../../../../../../Data/Classes/News/RivalsMatchResultNews.cpp
+../../../../../../../../Data/Classes/News/TemplateNews.cpp
+../../../../../../../../Data/Classes/News/TopScorerAssisterNews.cpp
+../../../../../../../../Data/Classes/PlayerAppearanceGenerator.cpp
+../../../../../../../../Data/Classes/PlayerHelpers.cpp
+../../../../../../../../Data/Classes/PlayerMarketValue.cpp
+../../../../../../../../Data/Classes/RandomEventsManager.cpp
+../../../../../../../../Data/Classes/RandomNameGeneration.cpp
+../../../../../../../../Data/Classes/RetirementsManager.cpp
+../../../../../../../../Data/Classes/ScoutsDataManager.cpp
+../../../../../../../../Data/Classes/Season.cpp
+../../../../../../../../Data/Classes/SeasonPlayerAwards.cpp
+  oyun ekonomi anahtarlari:
+Club
+ClubAcceptedPlayerOffer
+ClubChangeXPMilestone
+ClubId
+ClubName
+ClubNearWinningLeagueNews
+ClubRejectedPlayerOffer
+ClubRejectedPlayerOfferAgain
+ClubRivals
+Player
+PlayerAnnouncingRetirementNews
+PlayerAwardXPMilestone
+PlayerAwardsIntroScene
+PlayerBodyElements
+PlayerBodySpriteFrameNaming
+PlayerCounterOfferAccepted
+PlayerLoans
+PlayerNationalityPerLeague
+PlayerOfferAbandoned
+PlayerOfferIsFinalOffer
+PlayerOfferRejected
+PlayerOfferTitle
+PlayerPerformanceNews
+PlayerPosition
+PlayerRetiredNews
+PlayerRetirementStars
+PlayerRetirements
+PlayerRetiresMessage
+PlayerRetiresTitle
+PlayerScores
+PlayerSearchFilter
+PlayerSearchFilter_MyLeague
+PlayerSearchFilter_None
+PlayerSearchFilter_Substitute
+PlayerShadowSpriteFrameNaming
+PlayerSoldMessage
+PlayerSoldTitle
+TransferBudget
+TransferListed
+TransferResultsFound
+Transfers
+club_logos
+clubs_without_gk
+player_of_the_year
+player_reduction
+player_sold
+playersToRelocate
+  toplam string: 183800
+--- out/probe/libWorldSoccerChamps.so
+  ELF: ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, BuildID[sha1]=d4e5e11b548f09009013793131f0d000fcea4911, stripped
+  cocos/box2d/tolua izleri:
+(IILjava/lang/String;I)Lorg/cocos2dx/lib/Cocos2dxDownloader;
+(Lorg/cocos2dx/lib/Cocos2dxDownloader;)V
+(Lorg/cocos2dx/lib/Cocos2dxDownloader;ILjava/lang/String;Ljava/lang/String;)V
+../../../../../../../../cocos2d/cocos/2d/CCAction.h
+../../../../../../../../cocos2d/cocos/2d/CCActionInterval.h
+../../../../../../../../cocos2d/cocos/audio/AudioEngine.cpp
+../../../../../../../../cocos2d/cocos/base/CCAsyncTaskPool.h
+../../../../../../../../cocos2d/cocos/base/CCAutoreleasePool.cpp
+../../../../../../../../cocos2d/cocos/renderer/CCRenderer.cpp
+../../../../../../../../cocos2d/cocos/renderer/CCTexture2D.cpp
+../../../../../../../../cocos2d/cocos/renderer/CCTextureCache.cpp
+../../../../../../../../cocos2d/extensions/spine-cocos2dx/spine-cocos2dx/src/spine/SkeletonAnimation.cpp
+../../../../../../../../cocos2d/extensions/spine-cocos2dx/spine-cocos2dx/src/spine/SkeletonRendererCocos2dX.cpp
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/include/spine/Array.h
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/include/spine/BlockAllocator.h
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/include/spine/Map.h
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/include/spine/Pool.h
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/include/spine/SkeletonBinary.h
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/include/spine/SpineString.h
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/src/spine/AnimationState.cpp
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/src/spine/Atlas.cpp
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/src/spine/AtlasAttachmentLoader.cpp
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/src/spine/BoundingBoxAttachment.cpp
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/src/spine/ClippingAttachment.cpp
+../../../../../../../../cocos2d/extensions/spine-runtimes/spine-cpp/spine-cpp/src/spine/Extension.cpp
+sort: write failed: 'standard output': Broken pipe
+sort: write error
+  kayit/yol izleri:
+../../../../../../../../Data/Classes/Career.cpp
+../../../../../../../../Data/Classes/CareerManager.cpp
+../../../../../../../../Data/Classes/Competition.cpp
+../../../../../../../../Data/Classes/CompetitionAux.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsConfig.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsConfig_Before2020.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsConfig_E_After2024.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsConfig_E_Before2024.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsInfo.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsInfo_E.cpp
+../../../../../../../../Data/Classes/ContinentalCompetitionsConfig/ContinentalCompetitionsInfo_SA.cpp
+../../../../../../../../Data/Classes/ContinentalLeaguesSimulation.cpp
+../../../../../../../../Data/Classes/CountryLeaguesSimulation.cpp
+../../../../../../../../Data/Classes/DataAccess.cpp
+../../../../../../../../Data/Classes/DataManager.cpp
+../../../../../../../../Data/Classes/DataPackManager.cpp
+../../../../../../../../Data/Classes/DataPlayer.cpp
+../../../../../../../../Data/Classes/DataPlayer.h
+../../../../../../../../Data/Classes/DataScout.cpp
+../../../../../../../../Data/Classes/DataUtils.cpp
+../../../../../../../../Data/Classes/DrawStrategy.cpp
+../../../../../../../../Data/Classes/Fixture.cpp
+../../../../../../../../Data/Classes/FriendlyStage.cpp
+../../../../../../../../Data/Classes/Group.cpp
+../../../../../../../../Data/Classes/GroupStage.cpp
+../../../../../../../../Data/Classes/KnockOutStage.cpp
+../../../../../../../../Data/Classes/Localization.cpp
+../../../../../../../../Data/Classes/MatchSimulation/GoalAttribution.cpp
+../../../../../../../../Data/Classes/MatchSimulation/MatchSimulation.cpp
+../../../../../../../../Data/Classes/MatchSimulation/MatchSimulationBase.cpp
+../../../../../../../../Data/Classes/MatchSimulation/MatchSimulationTeam.cpp
+../../../../../../../../Data/Classes/NationalTeamRosters.cpp
+../../../../../../../../Data/Classes/News/ClubNearWinningLeagueNews.cpp
+../../../../../../../../Data/Classes/News/CompetitionFinalNews.cpp
+../../../../../../../../Data/Classes/News/CountryCoefficientRankingChangeNews.cpp
+../../../../../../../../Data/Classes/News/CupTitleNews.cpp
+../../../../../../../../Data/Classes/News/HatTrickNews.cpp
+../../../../../../../../Data/Classes/News/HostCountryNews.cpp
+../../../../../../../../Data/Classes/News/KnockOutAdvanceNews.cpp
+../../../../../../../../Data/Classes/News/KnockOutEliminationNews.cpp
+../../../../../../../../Data/Classes/News/KnockOutUnderdogNews.cpp
+../../../../../../../../Data/Classes/News/LeagueTitleNews.cpp
+../../../../../../../../Data/Classes/News/NewsBase.cpp
+../../../../../../../../Data/Classes/News/PlayerAnnouncingRetirementNews.cpp
+../../../../../../../../Data/Classes/News/PlayerPerformanceNews.cpp
+../../../../../../../../Data/Classes/News/PlayerRetiredNews.cpp
+../../../../../../../../Data/Classes/News/PopularPlayerTransferNews.cpp
+../../../../../../../../Data/Classes/News/RivalsMatchPreviewNews.cpp
+../../../../../../../../Data/Classes/News/RivalsMatchResultNews.cpp
+../../../../../../../../Data/Classes/News/TemplateNews.cpp
+../../../../../../../../Data/Classes/News/TopScorerAssisterNews.cpp
+../../../../../../../../Data/Classes/PlayerAppearanceGenerator.cpp
+../../../../../../../../Data/Classes/PlayerHelpers.cpp
+../../../../../../../../Data/Classes/PlayerMarketValue.cpp
+../../../../../../../../Data/Classes/RandomEventsManager.cpp
+../../../../../../../../Data/Classes/RandomNameGeneration.cpp
+../../../../../../../../Data/Classes/RetirementsManager.cpp
+../../../../../../../../Data/Classes/ScoutsDataManager.cpp
+../../../../../../../../Data/Classes/Season.cpp
+../../../../../../../../Data/Classes/SeasonPlayerAwards.cpp
+  oyun ekonomi anahtarlari:
+Club
+ClubAcceptedPlayerOffer
+ClubChangeXPMilestone
+ClubId
+ClubName
+ClubNearWinningLeagueNews
+ClubRejectedPlayerOffer
+ClubRejectedPlayerOfferAgain
+ClubRivals
+Player
+PlayerAnnouncingRetirementNews
+PlayerAwardXPMilestone
+PlayerAwardsIntroScene
+PlayerBodyElements
+PlayerBodySpriteFrameNaming
+PlayerCounterOfferAccepted
+PlayerLoans
+PlayerNationalityPerLeague
+PlayerOfferAbandoned
+PlayerOfferIsFinalOffer
+PlayerOfferRejected
+PlayerOfferTitle
+PlayerPerformanceNews
+PlayerPosition
+PlayerRetiredNews
+PlayerRetirementStars
+PlayerRetirements
+PlayerRetiresMessage
+PlayerRetiresTitle
+PlayerScores
+PlayerSearchFilter
+PlayerSearchFilter_MyLeague
+PlayerSearchFilter_None
+PlayerSearchFilter_Substitute
+PlayerShadowSpriteFrameNaming
+PlayerSoldMessage
+PlayerSoldTitle
+TransferBudget
+TransferListed
+TransferResultsFound
+Transfers
+club_logos
+clubs_without_gk
+player_of_the_year
+player_reduction
+player_sold
+playersToRelocate
+  toplam string: 183800
 
-=== dex: koruma/guc izleri ===
- Lcom/pairip/InitContextProvider;
-$Lcom/pairip/application/Application;
-'Lcom/pairip/VMRunner$VMRunnerException;
-6Lcom/pairip/SignatureCheck$SignatureTamperedException;
-=Lcom/applovin/shadow/okhttp3/internal/SuppressSignatureCheck;
-FRIDAY
-Lcom/pairip/SignatureCheck;
-Lcom/pairip/StartupLauncher;
-Lcom/pairip/Utils$1;
-Lcom/pairip/Utils;
-Lcom/pairip/VMRunner$1;
-Lcom/pairip/VMRunner;
-Lcom/pairip/VmDecryptor;
-Q(?:(?:(?:aaa|aarp|abb|abbott|abbvie|abc|able|abogado|abudhabi|academy|accenture|accountant|accountants|aco|actor|ads|adult|aeg|aero|aetna|afl|africa|agakhan|agency|aig|airbus|airforce|airtel|akdn|alibaba|alipay|allfinanz|allstate|ally|alsace|alstom|amazon|americanexpress|americanfamily|amex|amfam|amica|amsterdam|analytics|android|anquan|anz|aol|apartments|app|apple|aquarelle|arab|aramco|archi|army|arpa|art|arte|asda|asia|associates|athleta|attorney|auction|audi|audible|audio|auspost|author|auto|autos|avianca|aws|axa|azure|a[cdefgilmoqrstuwxz])|(?:baby|baidu|banamex|bananarepublic|band|bank|bar|barcelona|barclaycard|barclays|barefoot|bargains|baseball|basketball|bauhaus|bayern|bbc|bbt|bbva|bcg|bcn|beats|beauty|beer|bentley|berlin|best|bestbuy|bet|bharti|bible|bid|bike|bing|bingo|bio|biz|black|blackfriday|blockbuster|blog|bloomberg|blue|bms|bmw|bnpparibas|boats|boehringer|bofa|bom|bond|boo|book|booking|bosch|bostik|boston|bot|boutique|box|bradesco|bridgestone|broadway|broker|brother|brussels|build|builders|business|buy|buzz|bzh|b[abdefghijmnorstvwyz])|(?:cab|cafe|cal|call|calvinklein|cam|camera|camp|canon|capetown|capital|capitalone|car|caravan|cards|care|career|careers|cars|casa|case|cash|casino|cat|catering|catholic|cba|cbn|cbre|cbs|center|ceo|cern|cfa|cfd|chanel|channel|charity|chase|chat|cheap|chintai|christmas|chrome|church|cipriani|circle|cisco|citadel|citi|citic|city|cityeats|claims|cleaning|click|clinic|clinique|clothing|cloud|club|clubmed|coach|codes|coffee|college|cologne|com|comcast|commbank|community|company|compare|computer|comsec|condos|construction|consulting|contact|contractors|cooking|cool|coop|corsica|country|coupon|coupons|courses|cpa|credit|creditcard|creditunion|cricket|crown|crs|cruise|cruises|cuisinella|cymru|cyou|c[acdfghiklmnoruvwxyz])|(?:dabur|dad|dance|data|date|dating|datsun|day|dclk|dds|deal|dealer|deals|degree|delivery|dell|deloitte|delta|democrat|dental|dentist|desi|design|dev|dhl|diamonds|diet|digital|direct|directory|discount|discover|dish|diy|dnp|docs|doctor|dog|domains|dot|download|drive|dtv|dubai|dunlop|dupont|durban|dvag|dvr|d[ejkmoz])|(?:earth|eat|eco|edeka|edu|education|email|emerck|energy|engineer|engineering|enterprises|epson|equipment|ericsson|erni|esq|estate|etisalat|eurovision|eus|events|exchange|expert|exposed|express|extraspace|e[cegrstu])|(?:fage|fail|fairwinds|faith|family|fan|fans|farm|farmers|fashion|fast|fedex|feedback|ferrari|ferrero|fidelity|fido|film|final|finance|financial|fire|firestone|firmdale|fish|fishing|fit|fitness|flickr|flights|flir|florist|flowers|fly|foo|food|football|ford|forex|forsale|forum|foundation|fox|free|fresenius|frl|frogans|frontdoor|frontier|ftr|fujitsu|fun|fund|furniture|futbol|fyi|f[ijkmor])|(?:gal|gallery|gallo|gallup|game|games|gap|garden|gay|gbiz|gdn|gea|gent|genting|george|ggee|gift|gifts|gives|giving|glass|gle|global|globo|gmail|gmbh|gmo|gmx|godaddy|gold|goldpoint|golf|goo|goodyear|goog|google|gop|got|gov|grainger|graphics|gratis|green|gripe|grocery|group|guardian|gucci|guge|guide|guitars|guru|g[abdefghilmnpqrstuwy])|(?:hair|hamburg|hangout|haus|hbo|hdfc|hdfcbank|health|healthcare|help|helsinki|here|hermes|hiphop|hisamitsu|hitachi|hiv|hkt|hockey|holdings|holiday|homedepot|homegoods|homes|homesense|honda|horse|hospital|host|hosting|hot|hotels|hotmail|house|how|hsbc|hughes|hyatt|hyundai|h[kmnrtu])|(?:ibm|icbc|ice|icu|ieee|ifm|ikano|imamat|imdb|immo|immobilien|inc|industries|infiniti|info|ing|ink|institute|insurance|insure|int|international|intuit|investments|ipiranga|irish|ismaili|ist|istanbul|itau|itv|i[delmnoqrst])|(?:jaguar|java|jcb|jeep|jetzt|jewelry|jio|jll|jmp|jnj|jobs|joburg|jot|joy|jpmorgan|jprs|juegos|juniper|j[emop])|(?:kaufen|kddi|kerryhotels|kerrylogistics|kerryproperties|kfh|kia|kids|kim|kinder|kindle|kitchen|kiwi|koeln|komatsu|kosher|kpmg|kpn|krd|kred|kuokgroup|kyoto|k[eghimnprwyz])|(?:lacaixa|lamborghini|lamer|lancaster|land|landrover|lanxess|lasalle|lat|latino|latrobe|law|lawyer|lds|lease|leclerc|lefrak|legal|lego|lexus|lgbt|lidl|life|lifeinsurance|lifestyle|lighting|like|lilly|limited|limo|lincoln|link|lipsy|live|living|llc|llp|loan|loans|locker|locus|lol|london|lotte|lotto|love|lpl|lplfinancial|ltd|ltda|lundbeck|luxe|luxury|l[abcikrstuvy])|(?:madrid|maif|maison|makeup|man|management|mango|map|market|marketing|markets|marriott|marshalls|mattel|mba|mckinsey|med|media|meet|melbourne|meme|memorial|men|menu|merckmsd|miami|microsoft|mil|mini|mint|mit|mitsubishi|mlb|mls|mma|mobi|mobile|moda|moe|moi|mom|monash|money|monster|mormon|mortgage|moscow|moto|motorcycles|mov|movie|msd|mtn|mtr|museum|music|m[acdeghklmnopqrstuvwxyz])|(?:nab|nagoya|name|natura|navy|nba|nec|net|netbank|netflix|network|neustar|new|news|next|nextdirect|nexus|nfl|ngo|nhk|nico|nike|nikon|ninja|nissan|nissay|nokia|norton|now|nowruz|nowtv|nra|nrw|ntt|nyc|n[acefgilopruz])|(?:obi|observer|office|okinawa|olayan|olayangroup|oldnavy|ollo|omega|one|ong|onl|online|ooo|open|oracle|orange|org|organic|origins|osaka|otsuka|ott|ovh|om)|(?:page|panasonic|paris|pars|partners|parts|party|pay|pccw|pet|pfizer|pharmacy|phd|philips|phone|photo|photography|photos|physio|pics|pictet|pictures|pid|pin|ping|pink|pioneer|pizza|place|play|playstation|plumbing|plus|pnc|pohl|poker|politie|porn|post|pramerica|praxi|press|prime|pro|prod|productions|prof|progressive|promo|properties|property|protection|pru|prudential|pub|pwc|p[aefghklmnrstwy])|(?:qpon|quebec|quest|qa)|(?:racing|radio|read|realestate|realtor|realty|recipes|red|redstone|redumbrella|rehab|reise|reisen|reit|reliance|ren|rent|rentals|repair|report|republican|rest|restaurant|review|reviews|rexroth|rich|richardli|ricoh|ril|rio|rip|rocher|rocks|rodeo|rogers|room|rsvp|rugby|ruhr|run|rwe|ryukyu|r[eosuw])|(?:saarland|safe|safety|sakura|sale|salon|samsclub|samsung|sandvik|sandvikcoromant|sanofi|sap|sarl|sas|save|saxo|sbi|sbs|sca|scb|schaeffler|schmidt|scholarships|school|schule|schwarz|science|scot|search|seat|secure|security|seek|select|sener|services|seven|sew|sex|sexy|sfr|shangrila|sharp|shaw|shell|shia|shiksha|shoes|shop|shopping|shouji|show|showtime|silk|sina|singles|site|ski|skin|sky|skype|sling|smart|smile|sncf|soccer|social|softbank|software|sohu|solar|solutions|song|sony|soy|spa|space|sport|spot|srl|stada|staples|star|statebank|statefarm|stc|stcgroup|stockholm|storage|store|stream|studio|study|style|sucks|supplies|supply|support|surf|surgery|suzuki|swatch|swiss|sydney|systems|s[abcdeghijklmnorstuvxyz])|(?:tab|taipei|talk|taobao|target|tatamotors|tatar|tattoo|tax|taxi|tci|tdk|team|tech|technology|tel|temasek|tennis|teva|thd|theater|theatre|tiaa|tickets|tienda|tips|tires|tirol|tjmaxx|tjx|tkmaxx|tmall|today|tokyo|tools|top|toray|toshiba|total|tours|town|toyota|toys|trade|trading|training|travel|travelers|travelersinsurance|trust|trv|tube|tui|tunes|tushu|tvs|t[cdfghjklmnortvwz])|(?:ubank|ubs|unicom|university|uno|uol|ups|u[agksyz])|(?:vacations|vana|vanguard|vegas|ventures|verisign|versicherung|vet|viajes|video|vig|viking|villas|vin|vip|virgin|visa|vision|viva|vivo|vlaanderen|vodka|volkswagen|volvo|vote|voting|voto|voyage|v[aceginu])|(?:wales|walmart|walter|wang|wanggou|watch|watches|weather|weatherchannel|webcam|weber|website|wed|wedding|weibo|weir|whoswho|wien|wiki|williamhill|win|windows|wine|winners|wme|wolterskluwer|woodside|work|works|world|wow|wtc|wtf|w[fs])|(?:
-Q(?:(?:aaa|aarp|abb|abbott|abbvie|abc|able|abogado|abudhabi|academy|accenture|accountant|accountants|aco|actor|ads|adult|aeg|aero|aetna|afl|africa|agakhan|agency|aig|airbus|airforce|airtel|akdn|alibaba|alipay|allfinanz|allstate|ally|alsace|alstom|amazon|americanexpress|americanfamily|amex|amfam|amica|amsterdam|analytics|android|anquan|anz|aol|apartments|app|apple|aquarelle|arab|aramco|archi|army|arpa|art|arte|asda|asia|associates|athleta|attorney|auction|audi|audible|audio|auspost|author|auto|autos|avianca|aws|axa|azure|a[cdefgilmoqrstuwxz])|(?:baby|baidu|banamex|bananarepublic|band|bank|bar|barcelona|barclaycard|barclays|barefoot|bargains|baseball|basketball|bauhaus|bayern|bbc|bbt|bbva|bcg|bcn|beats|beauty|beer|bentley|berlin|best|bestbuy|bet|bharti|bible|bid|bike|bing|bingo|bio|biz|black|blackfriday|blockbuster|blog|bloomberg|blue|bms|bmw|bnpparibas|boats|boehringer|bofa|bom|bond|boo|book|booking|bosch|bostik|boston|bot|boutique|box|bradesco|bridgestone|broadway|broker|brother|brussels|build|builders|business|buy|buzz|bzh|b[abdefghijmnorstvwyz])|(?:cab|cafe|cal|call|calvinklein|cam|camera|camp|canon|capetown|capital|capitalone|car|caravan|cards|care|career|careers|cars|casa|case|cash|casino|cat|catering|catholic|cba|cbn|cbre|cbs|center|ceo|cern|cfa|cfd|chanel|channel|charity|chase|chat|cheap|chintai|christmas|chrome|church|cipriani|circle|cisco|citadel|citi|citic|city|cityeats|claims|cleaning|click|clinic|clinique|clothing|cloud|club|clubmed|coach|codes|coffee|college|cologne|com|comcast|commbank|community|company|compare|computer|comsec|condos|construction|consulting|contact|contractors|cooking|cool|coop|corsica|country|coupon|coupons|courses|cpa|credit|creditcard|creditunion|cricket|crown|crs|cruise|cruises|cuisinella|cymru|cyou|c[acdfghiklmnoruvwxyz])|(?:dabur|dad|dance|data|date|dating|datsun|day|dclk|dds|deal|dealer|deals|degree|delivery|dell|deloitte|delta|democrat|dental|dentist|desi|design|dev|dhl|diamonds|diet|digital|direct|directory|discount|discover|dish|diy|dnp|docs|doctor|dog|domains|dot|download|drive|dtv|dubai|dunlop|dupont|durban|dvag|dvr|d[ejkmoz])|(?:earth|eat|eco|edeka|edu|education|email|emerck|energy|engineer|engineering|enterprises|epson|equipment|ericsson|erni|esq|estate|etisalat|eurovision|eus|events|exchange|expert|exposed|express|extraspace|e[cegrstu])|(?:fage|fail|fairwinds|faith|family|fan|fans|farm|farmers|fashion|fast|fedex|feedback|ferrari|ferrero|fidelity|fido|film|final|finance|financial|fire|firestone|firmdale|fish|fishing|fit|fitness|flickr|flights|flir|florist|flowers|fly|foo|food|football|ford|forex|forsale|forum|foundation|fox|free|fresenius|frl|frogans|frontdoor|frontier|ftr|fujitsu|fun|fund|furniture|futbol|fyi|f[ijkmor])|(?:gal|gallery|gallo|gallup|game|games|gap|garden|gay|gbiz|gdn|gea|gent|genting|george|ggee|gift|gifts|gives|giving|glass|gle|global|globo|gmail|gmbh|gmo|gmx|godaddy|gold|goldpoint|golf|goo|goodyear|goog|google|gop|got|gov|grainger|graphics|gratis|green|gripe|grocery|group|guardian|gucci|guge|guide|guitars|guru|g[abdefghilmnpqrstuwy])|(?:hair|hamburg|hangout|haus|hbo|hdfc|hdfcbank|health|healthcare|help|helsinki|here|hermes|hiphop|hisamitsu|hitachi|hiv|hkt|hockey|holdings|holiday|homedepot|homegoods|homes|homesense|honda|horse|hospital|host|hosting|hot|hotels|hotmail|house|how|hsbc|hughes|hyatt|hyundai|h[kmnrtu])|(?:ibm|icbc|ice|icu|ieee|ifm|ikano|imamat|imdb|immo|immobilien|inc|industries|infiniti|info|ing|ink|institute|insurance|insure|int|international|intuit|investments|ipiranga|irish|ismaili|ist|istanbul|itau|itv|i[delmnoqrst])|(?:jaguar|java|jcb|jeep|jetzt|jewelry|jio|jll|jmp|jnj|jobs|joburg|jot|joy|jpmorgan|jprs|juegos|juniper|j[emop])|(?:kaufen|kddi|kerryhotels|kerrylogistics|kerryproperties|kfh|kia|kids|kim|kinder|kindle|kitchen|kiwi|koeln|komatsu|kosher|kpmg|kpn|krd|kred|kuokgroup|kyoto|k[eghimnprwyz])|(?:lacaixa|lamborghini|lamer|lancaster|land|landrover|lanxess|lasalle|lat|latino|latrobe|law|lawyer|lds|lease|leclerc|lefrak|legal|lego|lexus|lgbt|lidl|life|lifeinsurance|lifestyle|lighting|like|lilly|limited|limo|lincoln|link|lipsy|live|living|llc|llp|loan|loans|locker|locus|lol|london|lotte|lotto|love|lpl|lplfinancial|ltd|ltda|lundbeck|luxe|luxury|l[abcikrstuvy])|(?:madrid|maif|maison|makeup|man|management|mango|map|market|marketing|markets|marriott|marshalls|mattel|mba|mckinsey|med|media|meet|melbourne|meme|memorial|men|menu|merckmsd|miami|microsoft|mil|mini|mint|mit|mitsubishi|mlb|mls|mma|mobi|mobile|moda|moe|moi|mom|monash|money|monster|mormon|mortgage|moscow|moto|motorcycles|mov|movie|msd|mtn|mtr|museum|music|m[acdeghklmnopqrstuvwxyz])|(?:nab|nagoya|name|natura|navy|nba|nec|net|netbank|netflix|network|neustar|new|news|next|nextdirect|nexus|nfl|ngo|nhk|nico|nike|nikon|ninja|nissan|nissay|nokia|norton|now|nowruz|nowtv|nra|nrw|ntt|nyc|n[acefgilopruz])|(?:obi|observer|office|okinawa|olayan|olayangroup|oldnavy|ollo|omega|one|ong|onl|online|ooo|open|oracle|orange|org|organic|origins|osaka|otsuka|ott|ovh|om)|(?:page|panasonic|paris|pars|partners|parts|party|pay|pccw|pet|pfizer|pharmacy|phd|philips|phone|photo|photography|photos|physio|pics|pictet|pictures|pid|pin|ping|pink|pioneer|pizza|place|play|playstation|plumbing|plus|pnc|pohl|poker|politie|porn|post|pramerica|praxi|press|prime|pro|prod|productions|prof|progressive|promo|properties|property|protection|pru|prudential|pub|pwc|p[aefghklmnrstwy])|(?:qpon|quebec|quest|qa)|(?:racing|radio|read|realestate|realtor|realty|recipes|red|redstone|redumbrella|rehab|reise|reisen|reit|reliance|ren|rent|rentals|repair|report|republican|rest|restaurant|review|reviews|rexroth|rich|richardli|ricoh|ril|rio|rip|rocher|rocks|rodeo|rogers|room|rsvp|rugby|ruhr|run|rwe|ryukyu|r[eosuw])|(?:saarland|safe|safety|sakura|sale|salon|samsclub|samsung|sandvik|sandvikcoromant|sanofi|sap|sarl|sas|save|saxo|sbi|sbs|sca|scb|schaeffler|schmidt|scholarships|school|schule|schwarz|science|scot|search|seat|secure|security|seek|select|sener|services|seven|sew|sex|sexy|sfr|shangrila|sharp|shaw|shell|shia|shiksha|shoes|shop|shopping|shouji|show|showtime|silk|sina|singles|site|ski|skin|sky|skype|sling|smart|smile|sncf|soccer|social|softbank|software|sohu|solar|solutions|song|sony|soy|spa|space|sport|spot|srl|stada|staples|star|statebank|statefarm|stc|stcgroup|stockholm|storage|store|stream|studio|study|style|sucks|supplies|supply|support|surf|surgery|suzuki|swatch|swiss|sydney|systems|s[abcdeghijklmnorstuvxyz])|(?:tab|taipei|talk|taobao|target|tatamotors|tatar|tattoo|tax|taxi|tci|tdk|team|tech|technology|tel|temasek|tennis|teva|thd|theater|theatre|tiaa|tickets|tienda|tips|tires|tirol|tjmaxx|tjx|tkmaxx|tmall|today|tokyo|tools|top|toray|toshiba|total|tours|town|toyota|toys|trade|trading|training|travel|travelers|travelersinsurance|trust|trv|tube|tui|tunes|tushu|tvs|t[cdfghjklmnortvwz])|(?:ubank|ubs|unicom|university|uno|uol|ups|u[agksyz])|(?:vacations|vana|vanguard|vegas|ventures|verisign|versicherung|vet|viajes|video|vig|viking|villas|vin|vip|virgin|visa|vision|viva|vivo|vlaanderen|vodka|volkswagen|volvo|vote|voting|voto|voyage|v[aceginu])|(?:wales|walmart|walter|wang|wanggou|watch|watches|weather|weatherchannel|webcam|weber|website|wed|wedding|weibo|weir|whoswho|wien|wiki|williamhill|win|windows|wine|winners|wme|wolterskluwer|woodside|work|works|world|wow|wtc|wtf|w[fs])|(?:
-Signature check ok
-SignatureCheck
-SignatureCheck.java
-]]]){0,1}\.)+(?:(?:(?:aaa|aarp|abb|abbott|abbvie|abc|able|abogado|abudhabi|academy|accenture|accountant|accountants|aco|actor|ads|adult|aeg|aero|aetna|afl|africa|agakhan|agency|aig|airbus|airforce|airtel|akdn|alibaba|alipay|allfinanz|allstate|ally|alsace|alstom|amazon|americanexpress|americanfamily|amex|amfam|amica|amsterdam|analytics|android|anquan|anz|aol|apartments|app|apple|aquarelle|arab|aramco|archi|army|arpa|art|arte|asda|asia|associates|athleta|attorney|auction|audi|audible|audio|auspost|author|auto|autos|avianca|aws|axa|azure|a[cdefgilmoqrstuwxz])|(?:baby|baidu|banamex|bananarepublic|band|bank|bar|barcelona|barclaycard|barclays|barefoot|bargains|baseball|basketball|bauhaus|bayern|bbc|bbt|bbva|bcg|bcn|beats|beauty|beer|bentley|berlin|best|bestbuy|bet|bharti|bible|bid|bike|bing|bingo|bio|biz|black|blackfriday|blockbuster|blog|bloomberg|blue|bms|bmw|bnpparibas|boats|boehringer|bofa|bom|bond|boo|book|booking|bosch|bostik|boston|bot|boutique|box|bradesco|bridgestone|broadway|broker|brother|brussels|build|builders|business|buy|buzz|bzh|b[abdefghijmnorstvwyz])|(?:cab|cafe|cal|call|calvinklein|cam|camera|camp|canon|capetown|capital|capitalone|car|caravan|cards|care|career|careers|cars|casa|case|cash|casino|cat|catering|catholic|cba|cbn|cbre|cbs|center|ceo|cern|cfa|cfd|chanel|channel|charity|chase|chat|cheap|chintai|christmas|chrome|church|cipriani|circle|cisco|citadel|citi|citic|city|cityeats|claims|cleaning|click|clinic|clinique|clothing|cloud|club|clubmed|coach|codes|coffee|college|cologne|com|comcast|commbank|community|company|compare|computer|comsec|condos|construction|consulting|contact|contractors|cooking|cool|coop|corsica|country|coupon|coupons|courses|cpa|credit|creditcard|creditunion|cricket|crown|crs|cruise|cruises|cuisinella|cymru|cyou|c[acdfghiklmnoruvwxyz])|(?:dabur|dad|dance|data|date|dating|datsun|day|dclk|dds|deal|dealer|deals|degree|delivery|dell|deloitte|delta|democrat|dental|dentist|desi|design|dev|dhl|diamonds|diet|digital|direct|directory|discount|discover|dish|diy|dnp|docs|doctor|dog|domains|dot|download|drive|dtv|dubai|dunlop|dupont|durban|dvag|dvr|d[ejkmoz])|(?:earth|eat|eco|edeka|edu|education|email|emerck|energy|engineer|engineering|enterprises|epson|equipment|ericsson|erni|esq|estate|etisalat|eurovision|eus|events|exchange|expert|exposed|express|extraspace|e[cegrstu])|(?:fage|fail|fairwinds|faith|family|fan|fans|farm|farmers|fashion|fast|fedex|feedback|ferrari|ferrero|fidelity|fido|film|final|finance|financial|fire|firestone|firmdale|fish|fishing|fit|fitness|flickr|flights|flir|florist|flowers|fly|foo|food|football|ford|forex|forsale|forum|foundation|fox|free|fresenius|frl|frogans|frontdoor|frontier|ftr|fujitsu|fun|fund|furniture|futbol|fyi|f[ijkmor])|(?:gal|gallery|gallo|gallup|game|games|gap|garden|gay|gbiz|gdn|gea|gent|genting|george|ggee|gift|gifts|gives|giving|glass|gle|global|globo|gmail|gmbh|gmo|gmx|godaddy|gold|goldpoint|golf|goo|goodyear|goog|google|gop|got|gov|grainger|graphics|gratis|green|gripe|grocery|group|guardian|gucci|guge|guide|guitars|guru|g[abdefghilmnpqrstuwy])|(?:hair|hamburg|hangout|haus|hbo|hdfc|hdfcbank|health|healthcare|help|helsinki|here|hermes|hiphop|hisamitsu|hitachi|hiv|hkt|hockey|holdings|holiday|homedepot|homegoods|homes|homesense|honda|horse|hospital|host|hosting|hot|hotels|hotmail|house|how|hsbc|hughes|hyatt|hyundai|h[kmnrtu])|(?:ibm|icbc|ice|icu|ieee|ifm|ikano|imamat|imdb|immo|immobilien|inc|industries|infiniti|info|ing|ink|institute|insurance|insure|int|international|intuit|investments|ipiranga|irish|ismaili|ist|istanbul|itau|itv|i[delmnoqrst])|(?:jaguar|java|jcb|jeep|jetzt|jewelry|jio|jll|jmp|jnj|jobs|joburg|jot|joy|jpmorgan|jprs|juegos|juniper|j[emop])|(?:kaufen|kddi|kerryhotels|kerrylogistics|kerryproperties|kfh|kia|kids|kim|kinder|kindle|kitchen|kiwi|koeln|komatsu|kosher|kpmg|kpn|krd|kred|kuokgroup|kyoto|k[eghimnprwyz])|(?:lacaixa|lamborghini|lamer|lancaster|land|landrover|lanxess|lasalle|lat|latino|latrobe|law|lawyer|lds|lease|leclerc|lefrak|legal|lego|lexus|lgbt|lidl|life|lifeinsurance|lifestyle|lighting|like|lilly|limited|limo|lincoln|link|lipsy|live|living|llc|llp|loan|loans|locker|locus|lol|london|lotte|lotto|love|lpl|lplfinancial|ltd|ltda|lundbeck|luxe|luxury|l[abcikrstuvy])|(?:madrid|maif|maison|makeup|man|management|mango|map|market|marketing|markets|marriott|marshalls|mattel|mba|mckinsey|med|media|meet|melbourne|meme|memorial|men|menu|merckmsd|miami|microsoft|mil|mini|mint|mit|mitsubishi|mlb|mls|mma|mobi|mobile|moda|moe|moi|mom|monash|money|monster|mormon|mortgage|moscow|moto|motorcycles|mov|movie|msd|mtn|mtr|museum|music|m[acdeghklmnopqrstuvwxyz])|(?:nab|nagoya|name|natura|navy|nba|nec|net|netbank|netflix|network|neustar|new|news|next|nextdirect|nexus|nfl|ngo|nhk|nico|nike|nikon|ninja|nissan|nissay|nokia|norton|now|nowruz|nowtv|nra|nrw|ntt|nyc|n[acefgilopruz])|(?:obi|observer|office|okinawa|olayan|olayangroup|oldnavy|ollo|omega|one|ong|onl|online|ooo|open|oracle|orange|org|organic|origins|osaka|otsuka|ott|ovh|om)|(?:page|panasonic|paris|pars|partners|parts|party|pay|pccw|pet|pfizer|pharmacy|phd|philips|phone|photo|photography|photos|physio|pics|pictet|pictures|pid|pin|ping|pink|pioneer|pizza|place|play|playstation|plumbing|plus|pnc|pohl|poker|politie|porn|post|pramerica|praxi|press|prime|pro|prod|productions|prof|progressive|promo|properties|property|protection|pru|prudential|pub|pwc|p[aefghklmnrstwy])|(?:qpon|quebec|quest|qa)|(?:racing|radio|read|realestate|realtor|realty|recipes|red|redstone|redumbrella|rehab|reise|reisen|reit|reliance|ren|rent|rentals|repair|report|republican|rest|restaurant|review|reviews|rexroth|rich|richardli|ricoh|ril|rio|rip|rocher|rocks|rodeo|rogers|room|rsvp|rugby|ruhr|run|rwe|ryukyu|r[eosuw])|(?:saarland|safe|safety|sakura|sale|salon|samsclub|samsung|sandvik|sandvikcoromant|sanofi|sap|sarl|sas|save|saxo|sbi|sbs|sca|scb|schaeffler|schmidt|scholarships|school|schule|schwarz|science|scot|search|seat|secure|security|seek|select|sener|services|seven|sew|sex|sexy|sfr|shangrila|sharp|shaw|shell|shia|shiksha|shoes|shop|shopping|shouji|show|showtime|silk|sina|singles|site|ski|skin|sky|skype|sling|smart|smile|sncf|soccer|social|softbank|software|sohu|solar|solutions|song|sony|soy|spa|space|sport|spot|srl|stada|staples|star|statebank|statefarm|stc|stcgroup|stockholm|storage|store|stream|studio|study|style|sucks|supplies|supply|support|surf|surgery|suzuki|swatch|swiss|sydney|systems|s[abcdeghijklmnorstuvxyz])|(?:tab|taipei|talk|taobao|target|tatamotors|tatar|tattoo|tax|taxi|tci|tdk|team|tech|technology|tel|temasek|tennis|teva|thd|theater|theatre|tiaa|tickets|tienda|tips|tires|tirol|tjmaxx|tjx|tkmaxx|tmall|today|tokyo|tools|top|toray|toshiba|total|tours|town|toyota|toys|trade|trading|training|travel|travelers|travelersinsurance|trust|trv|tube|tui|tunes|tushu|tvs|t[cdfghjklmnortvwz])|(?:ubank|ubs|unicom|university|uno|uol|ups|u[agksyz])|(?:vacations|vana|vanguard|vegas|ventures|verisign|versicherung|vet|viajes|video|vig|viking|villas|vin|vip|virgin|visa|vision|viva|vivo|vlaanderen|vodka|volkswagen|volvo|vote|voting|voto|voyage|v[aceginu])|(?:wales|walmart|walter|wang|wanggou|watch|watches|weather|weatherchannel|webcam|weber|website|wed|wedding|weibo|weir|whoswho|wien|wiki|williamhill|win|windows|wine|winners|wme|wolterskluwer|woodside|work|works|world|wow|wtc|wtf|w[fs])|(?:
-pairipcore
+=== assets veri dosyalari (boyutlu, ilk 200) ===
+171601 assets/0n3YXwQPM3YclTP6
+173690 assets/2HSiXqNUHJicSTqV
+172276 assets/5EtVnOvWfOfoZl7O
+171080 assets/5zlRnU78Sak7qiI7
+171543 assets/8q2hErUIlwQCTtzA
+173090 assets/DGa8EByblqwldb2W
+173672 assets/G2RJ6ZSlreKasFVg
+135456 assets/IHIOMMfiKsGJ43YZ
+173126 assets/KMwflUSaJ7y7XLaf
+277613 assets/MVaYcsgd85oNQil0
+171089 assets/Oo2WI61gnRpM7ct2
+3515 assets/PubMatic_Logo.svg
+171659 assets/Ru5c9z7aY75o2UJ7
+171657 assets/UPCoDF6X1VfhkYah
+280243 assets/WFSoroef43mrzHqF
+171815 assets/X9ODV87wlsX56PJz
+171671 assets/Y3h9sAqicifhq8Mw
+1357 assets/a.json
+68100 assets/ad-viewer/omid-session-client-v1.js
+43924 assets/ad-viewer/omsdk-v1.js
+16164 assets/ad.html
+26445 assets/ad_flow_config.json
+10422 assets/android_bridge.js
+11529 assets/aps-mraid.js
+391 assets/aps_mobile_client_config.json
+57076 assets/audience_network/classes.dex
+5237600 assets/audience_network/classes2.dex
+122 assets/bm_networks/amazon.bmnetwork
+106 assets/bm_networks/gam.bmnetwork
+122 assets/bm_networks/gam_dynamic.bmnetwork
+142 assets/bm_networks/meta_audience.bmnetwork
+133 assets/bm_networks/mintegral.bmnetwork
+130 assets/bm_networks/my_target.bmnetwork
+120 assets/bm_networks/vungle.bmnetwork
+17240 assets/com.moloco.sdk.xenoss.sdkdevkit.mraid.js
+1749 assets/components.json
+8697 assets/dexopt/baseline.prof
+854 assets/dexopt/baseline.profm
+4016 assets/dic
+13200 assets/dsa_page.html
+82880 assets/dtb-m.js
+171597 assets/eS6uL9PNcyUQhI2h
+170531 assets/ekUS7NKhNXApddSn
+520 assets/fyb_iframe_endcard_tmpl.html
+3350 assets/fyb_static_endcard_tmpl.html
+402965 assets/hkNuWnxCRDKsyxX5
+968 assets/ia_js_load_monitor.txt
+28630 assets/ia_mraid_bridge.txt
+25224 assets/mbridge_download_dialog_view.xml
+510 assets/mobilefuse/ad_template.html
+28612 assets/mobilefuse/mraid.js
+21954 assets/mobilefuse/mraid.src.js
+5228 assets/mobilefuse/mraid_close_controls.js
+3416 assets/mobilefuse/mraid_close_controls.src.js
+3168 assets/mobilefuse/mraid_controls.html
+17265 assets/mobilefuse/vast.js
+11524 assets/mobilefuse/vast.src.js
+10453 assets/mobilefuse/vast_controls.html
+832 assets/mobilefuse/vast_static_resource.html
+7969 assets/mraid-bridge.js
+14400 assets/mraid.js
+34522 assets/mraid3.js
+27410 assets/mraid_v1.js
+28786 assets/mraid_v2.js
+45691 assets/omsdk-v1.js
+89 assets/origin_r.bin
+171586 assets/p7rUIQfwnN8J3fcR
+171668 assets/pdHyRTl8FHK8LWQg
+334 assets/pob_info_button.svg
+30232 assets/pob_mraid.js
+643 assets/pob_person_button.svg
+2072 assets/rv_binddatas.xml
+1860 assets/splash/logo.atlas
+62929 assets/splash/logo.json
+231376 assets/splash/logo.png
+59184 assets/splash/logo_2.png
+34577 assets/taurusx_mraid.js
+2294 assets/template/customWebview/Root_1.xml
+2294 assets/template/customWebview/Root_2.xml
+15289 assets/template/ec404/Root_1.xml
+16894 assets/template/ec404/Root_2.xml
+1279 assets/template/ec404/more_offer_item.xml
+7764 assets/template/ecPlayable/Root_1.xml
+7763 assets/template/ecPlayable/Root_2.xml
+554 assets/template/metadata.json
+17685 assets/template/video202/Root_1.xml
+17639 assets/template/video202/Root_2.xml
+17483 assets/template/video904/Root_1.xml
+17435 assets/template/video904/Root_2.xml
+1038 assets/template_styles/default.json
+171576 assets/u3QoPctDcf4Mpwx4
+4073 assets/ui.js
+171120 assets/ujJtKPl36DK7wmRW
+171563 assets/xa6YmotY0dC7lWGt
+
+=== kucuk asset icerikleri ===
+[a.json] {
+[a.json]     "a": [112,-33,-80,23,59,-73,37,4,-44,-115,-58,-52,-82,-74,1,3,-105,-51,-63,-111,-23,-72,22,64,-55,-103,-109,-61,-72,-68,16,16,-103,-104,-98,-109,-19,-67,20,19,-50,-98,-107,-109,-76,-70,18,64,-115,-125,-123,-58,-6,-82,27,1,-115,-55,-106,-107,-70,-65,67,68,-97,-104,-63,-97,-65,-76,16,24,-106,-102,-105,-62,-19,-24,64,17,-50,-104,-98,-109,-23,-17,20,25,-101,-115,-117,-123,-23,-25,3,27,-113,-115,-60,-110,-68,-19,16,69,-53,-54,-105,-106,-71,-22,19,64,-97,-51,-106,-108,-65,-71,21,64,-102,-103,-60,-61,-76,-24,64,64,-50,-55,-123,-117,-82,-23,87,3,-107,-113,-123,-97,-66,-72,17,69,-52,-50,-105,-59,[components.json] {
+[components.json]   "components": [
+[components.json]     {
+[components.json]       "class": "com.zmaticoo.sdk.flow.components.CacheVerifyComponent",
+[components.json]       "enabled": true
+[components.json]     },
+[components.json]     {
+[components.json]       "class": "com.zmaticoo.sdk.flow.components.LoadAdComponent",
+[components.json]       "enabled": true
+[components.json]     },
+[components.json]     {
+[components.json]       "class": "com.zmaticoo.sdk.flow.components.AssetDownloadComponent",
+[components.json]       "enabled": true
+[components.json]     },
+[components.json]     {
+[components.json]       "class": "com.zmaticoo.sdk.flow.components.TemplatePlayComponent",
+[components.json]       "enabled": true
+[components.json]     },
+[components.json]     {
+[components.json]       "class": "com.zmaticoo.sdk.flow.components.AdRequestComponent",
+[components.json]       "enabled": true
+[components.json]     },
+[components.json]     {
+[components.json]       "class": "com.zmaticoo.sdk.flow.compo
+=== assets/dic (ilk 400 bayt) ===
+00000000: 1b2c 2f22 6862 6569 6364 6963 6469 6364  .,/"hbeicdicdicd
+00000010: 6a63 6769 6264 6963 346c 6364 5d63 6469  jcgibdic4lcd]cdi
+00000020: c36f 6963 6469 6364 5d63 4469 6864 4163  .oicdicd]cDihdAc
+00000030: 7e69 7a64 6f63 6469 5764 6963 5069 6364  ~izdocdiWdicPicd
+00000040: 5d63 6469 0365 6963 0468 6364 6d63 6469  ]cdi.eic.hcdmcdi
+00000050: 6764 6963 6769 6364 fd62 6469 f765 6963  gdicgicd.bdi.eic
+00000060: f068 6364 7a63 6469 7064 6963 6069 6364  .hcdzcdipdic`icd
+00000070: 6863 6469 6264 6963 6469 6364 6963 6469  hcdibdicdicdicdi
+00000080: 6364 6963 c461 6364 c96b 6469 6664 6963  cdic.acd.kdifdic
+00000090: 6479 6364 6863 6469 c36c 6963 c471 6364  dycdhcdi.lic.qcd
+000000a0: c97b 6469 2765 6963 2068 6364 6f63 6469  .{di'eic hcdocdi
+000000b0: 6374 6963 6569 6364 8d6a 6469 874d 6963  cticeicd.jdi.Mic
+000000c0: 8040 6364 6963 6469 6664 6963 6269 6364  .@cdicdifdicbicd
+000000d0: 6973 6469 6164 6963 dc61 6364 d17b 6469  isdiadic.acd.{di
+000000e0: db7c 6963 6468 6364 6962 6469 6564 6963  .|icdhcdibdiedic
+000000f0: 6069 6364 3b86 100d c36c 6963 c471 6364  `icd;....lic.qcd
+00000100: c97b 6469 2765 6963 046e 6364 6d63 6469  .{di'eic.ncdmcdi
+00000110: 6264 6963 348c 1700 8960 6469 8367 6963  bdic4....`di.gic
+00000120: 846a 6364 2d63 6469 2764 6963 6069 6364  .jcd-cdi'dic`icd
+00000130: 6d63 6469 3281 1d07 6469 6364 6963 6469  mcdi2...dicdicdi
+
+=== XAPK manifest.json ===
+{"xapk_version":2,"package_name":"com.monkeyibrow.worldsoccerchamps","name":"World Soccer Champs","version_code":"468","version_name":"2026.12","min_sdk_version":"24","target_sdk_version":"36","permissions":["android.permission.INTERNET","android.permission.WRITE_EXTERNAL_STORAGE","android.permission.ACCESS_NETWORK_STATE","com.android.vending.CHECK_LICENSE","com.google.android.gms.permission.AD_ID","android.permission.ACCESS_WIFI_STATE","com.android.vending.BILLING","android.permission.VIBRATE","android.permission.ACCESS_ADSERVICES_TOPICS","android.permission.ACCESS_ADSERVICES_ATTRIBUTION","android.permission.READ_EXTERNAL_STORAGE","android.permission.WAKE_LOCK","com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE","android.permission.ACCESS_ADSERVICES_AD_ID","android.permission.RECEIVE_BOOT_COMPLETED","android.permission.FOREGROUND_SERVICE","com.monkeyibrow.worldsoccerchamps.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION","com.amazon.privacypass.ATTEST"],"split_configs":["asset_pack","config.en","config.zh","config.de","config.in","config.ko","config.pt","config.it","config.ja","config.th","asset_pack.config.astc","config.ar","config.armeabi_v7a","config.es","config.hdpi","config.tr","config.fr","config.hi","config.my","config.ru","config.vi"],"total_size":237485553,"icon":"icon.png","split_apks":[{"file":"com.monkeyibrow.worldsoccerchamps.apk","id":"base"},{"file":"asset_pack.apk","id":"asset_pack"},{"file":"config.en.apk","id":"config.en"},{"file":"config.zh.apk","id":"config.zh"},{"file":"config.de.apk","id":"config.de"},{"file":"config.in.apk","id":"config.in"},{"file":"config.ko.apk","id":"config.ko"},{"file":"config.pt.apk","id":"config.pt"},{"file":"config.it.apk","id":"config.it"},{"file":"config.ja.apk","id":"config.ja"},{"file":"config.th.apk","id":"config.th"},{"file":"asset_pack.config.astc.apk","id":"asset_pack.config.astc"},{"file":"config.ar.apk","id":"config.ar"},{"file":"config.armeabi_v7a.apk","id":"config.armeabi_v7a"},{"file":"config.es.apk","id":"config.es"},{"file":"config.hdpi.apk","id":"config.hdpi"},{"file":"config.tr.apk","id":"config.tr"},{"file":"config.fr.apk","id":"config.fr"},{"file":"config.hi.apk","id":"config.hi"},{"file":"config.my.apk","id":"config.my"},{"file":"config.ru.apk","id":"config.ru"},{"file":"config.vi.apk","id":"config.vi"}]}
+=== dex: uygulama siniflari (monkeyibrow / oyun) ===
+Lcom/zmaticoo/sdk/BuildConfig;
+Lcom/zmaticoo/sdk/R$attr;
+Lcom/zmaticoo/sdk/R$bool;
+Lcom/zmaticoo/sdk/R$color;
+Lcom/zmaticoo/sdk/R$dimen;
+Lcom/zmaticoo/sdk/R$drawable;
+Lcom/zmaticoo/sdk/R$id;
+Lcom/zmaticoo/sdk/R$layout;
+Lcom/zmaticoo/sdk/R$mipmap;
+Lcom/zmaticoo/sdk/R$raw;
+Lcom/zmaticoo/sdk/R$string;
+Lcom/zmaticoo/sdk/R$styleable;
+Lcom/zmaticoo/sdk/R$xml;
+Lcom/zmaticoo/sdk/R;
+Lcom/zmaticoo/sdk/ads/banner/a;
+Lcom/zmaticoo/sdk/callbacks/a;
+Lcom/zmaticoo/sdk/callbacks/b;
+Lcom/zmaticoo/sdk/callbacks/c;
+Lcom/zmaticoo/sdk/callbacks/d;
+Lorg/cocos2dx/cpp/AppActivity;
+Lcom/zmaticoo/sdk/R$color;
+Lcom/zmaticoo/sdk/R$id;
+Lcom/zmaticoo/sdk/R$layout;
+Lcom/zmaticoo/sdk/R$mipmap;
+Lcom/zmaticoo/sdk/R$string;
+Lcom/zmaticoo/sdk/ads/banner/a;
+Lcom/zmaticoo/sdk/callbacks/a;
+Lcom/zmaticoo/sdk/callbacks/b;
+Lcom/zmaticoo/sdk/callbacks/c;
+Lcom/zmaticoo/sdk/callbacks/d;
+Lcom/zmaticoo/sdk/callbacks/e;
+Lcom/zmaticoo/sdk/flow/a;
+Lcom/zmaticoo/sdk/flow/api/a;
+Lcom/zmaticoo/sdk/flow/api/b;
+Lcom/zmaticoo/sdk/flow/api/c;
+Lcom/zmaticoo/sdk/flow/api/d;
+Lcom/zmaticoo/sdk/flow/api/e;
+Lcom/zmaticoo/sdk/flow/api/f;
+Lcom/zmaticoo/sdk/flow/api/g;
+Lcom/zmaticoo/sdk/flow/api/h;
+Lcom/zmaticoo/sdk/flow/api/i;
+Lcom/zmaticoo/sdk/flow/api/j;
+Lcom/zmaticoo/sdk/flow/api/k;
+Lcom/zmaticoo/sdk/flow/api/l;
+Lcom/zmaticoo/sdk/flow/api/m;
+Lcom/zmaticoo/sdk/flow/api/n;
+Lcom/zmaticoo/sdk/flow/b;
+Lcom/zmaticoo/sdk/flow/c;
+Lcom/zmaticoo/sdk/flow/d;
+Lcom/zmaticoo/sdk/flow/e;
+Lcom/zmaticoo/sdk/R$raw;
+Lcom/zmaticoo/sdk/R$styleable;
+Lcom/zmaticoo/sdk/ads/banner/a;
+Lcom/zmaticoo/sdk/callbacks/a;
+Lcom/zmaticoo/sdk/callbacks/b;
+Lcom/zmaticoo/sdk/callbacks/c;
+Lcom/zmaticoo/sdk/callbacks/e;
+Lcom/zmaticoo/sdk/flow/model/d;
+Lcom/zmaticoo/sdk/track/f;
+Lcom/zmaticoo/sdk/track/l;
+Lcom/zmaticoo/sdk/utils/a;
+Lorg/cocos2dx/cpp/AppActivity;
+Lorg/cocos2dx/cpp/a$a;
+Lorg/cocos2dx/cpp/a;
+Lorg/cocos2dx/lib/DownloadTask;
+Lorg/cocos2dx/lib/R;
+Lorg/cocos2dx/lib/ResizeLayout;
+Lcom/zmaticoo/sdk/video/exo/a0;
+Lcom/zmaticoo/sdk/video/exo/a1;
+Lcom/zmaticoo/sdk/video/exo/a2;
+Lcom/zmaticoo/sdk/video/exo/a;
+Lcom/zmaticoo/sdk/video/exo/b0;
+Lcom/zmaticoo/sdk/video/exo/b1;
+Lcom/zmaticoo/sdk/video/exo/b2;
+Lcom/zmaticoo/sdk/video/exo/b;
+Lcom/zmaticoo/sdk/video/exo/c0;
+Lcom/zmaticoo/sdk/video/exo/c1;
+Lcom/zmaticoo/sdk/video/exo/c2;
+Lcom/zmaticoo/sdk/video/exo/c;
+Lcom/zmaticoo/sdk/video/exo/d0;
+Lcom/zmaticoo/sdk/video/exo/d1;
+Lcom/zmaticoo/sdk/video/exo/d2;
+Lcom/zmaticoo/sdk/video/exo/d;
+Lcom/zmaticoo/sdk/video/exo/e0;
+Lcom/zmaticoo/sdk/video/exo/e1;
+Lcom/zmaticoo/sdk/video/exo/e2;
+Lcom/zmaticoo/sdk/video/exo/e;
+Lcom/zmaticoo/sdk/video/exo/f0;
+Lcom/zmaticoo/sdk/video/exo/f1;
+Lcom/zmaticoo/sdk/video/exo/f2;
+Lcom/zmaticoo/sdk/video/exo/f;
+Lcom/zmaticoo/sdk/video/exo/g0;
+Lcom/zmaticoo/sdk/video/exo/g1;
+Lcom/zmaticoo/sdk/video/exo/g2;
+Lcom/zmaticoo/sdk/video/exo/g;
+Lcom/zmaticoo/sdk/video/exo/h0;
+Lcom/zmaticoo/sdk/video/exo/h1;
+
+=== dex: PairIP / koruma ===
  (https://developer.android.com/google/play/integrity/reference/com/google/android/play/core/integrity/model/IntegrityErrorCode.html#
  (https://developer.android.com/google/play/integrity/reference/com/google/android/play/core/integrity/model/StandardIntegrityErrorCode.html#
  INTEGRITY_TOKEN_PROVIDER_INVALID
  IntegrityDialogRequest{typeCode=
+ Lcom/pairip/InitContextProvider;
  integrityDialogWrapper
  integrityResponse
  playcore.integrity.version.major
@@ -388,69 +556,21 @@ pairipcore
  playcore.integrity.version.patch
  requestExpressIntegrityToken(%s)
  standardIntegrityResponse
+!getWebViewMediaIntegrityApiStatus
+!setWebViewMediaIntegrityApiStatus
+"WEBVIEW_MEDIA_INTEGRITY_API_STATUS
+#WEBVIEW_MEDIA_INTEGRITY_API_ENABLED
+$Lcom/pairip/application/Application;
+$WEBVIEW_MEDIA_INTEGRITY_API_DISABLED
 &Standard Integrity API error (%d): %s.
+'Lcom/pairip/VMRunner$VMRunnerException;
 (StandardIntegrityDialogRequest{typeCode=
+(getWebViewMediaIntegrityApiDefaultStatus
+(getWebViewMediaIntegrityApiOverrideRules
 (requestExpressIntegrityToken(%s, %s, %s)
+)Lokhttp3/internal/SuppressSignatureCheck;
 *Lcom/google/android/play/core/integrity/a;
 *Lcom/google/android/play/core/integrity/b;
 *Lcom/google/android/play/core/integrity/c;
 *Lcom/google/android/play/core/integrity/d;
 *Lcom/google/android/play/core/integrity/e;
-*Lcom/google/android/play/core/integrity/f;
-FRIDAY
-FRIDAY_VALUE
-Lcom/pairip/VMRunner;
-@Lcom/google/android/play/core/integrity/IntegrityManagerFactory;
-ALcom/google/android/play/core/integrity/StandardIntegrityManager;
-Lcom/pairip/VMRunner;
-XLcom/google/android/play/core/integrity/StandardIntegrityManager$StandardIntegrityToken;
-^Lcom/google/android/play/core/integrity/StandardIntegrityManager$PrepareIntegrityTokenRequest;
-_Lcom/google/android/play/core/integrity/StandardIntegrityManager$StandardIntegrityTokenRequest;
-`Lcom/google/android/play/core/integrity/StandardIntegrityManager$StandardIntegrityTokenProvider;
-fLcom/google/android/play/core/integrity/StandardIntegrityManager$PrepareIntegrityTokenRequest$Builder;
-gLcom/google/android/play/core/integrity/StandardIntegrityManager$StandardIntegrityTokenRequest$Builder;
-prepareIntegrityToken
-Lcom/pairip/VMRunner;
-Theme_PlayCore_Transparent
-!setWebViewMediaIntegrityApiStatus
-"(((Mon|Tue|Wed|Thu|Fri|Sat|Sun), (\d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4}) (\d{2}:\d{2}:\d{2}) GMT)|((Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), (\d{2}-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{2}) (\d{2}:\d{2}:\d{2}) GMT)|((Mon|Tue|Wed|Thu|Fri|Sat|Sun) ((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ( |\d)\d) (\d{2}:\d{2}:\d{2}) \d{4}))"
-((Mon|Tue|Wed|Thu|Fri|Sat|Sun), (\d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4}) (\d{2}:\d{2}:\d{2}) GMT)|((Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), (\d{2}-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{2}) (\d{2}:\d{2}:\d{2}) GMT)|((Mon|Tue|Wed|Thu|Fri|Sat|Sun) ((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) ( |\d)\d) (\d{2}:\d{2}:\d{2}) \d{4})
-(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), (\d{2}-(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-\d{2}) (\d{2}:\d{2}:\d{2}) GMT
-(getWebViewMediaIntegrityApiDefaultStatus
-(getWebViewMediaIntegrityApiOverrideRules
-8Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday
-WebViewMediaIntegrityApiStatus
-_Lorg/chromium/support_lib_boundary/WebSettingsBoundaryInterface$WebViewMediaIntegrityApiStatus;
-FRIDAY
-)Lokhttp3/internal/SuppressSignatureCheck;
-FRIDAY
-!getWebViewMediaIntegrityApiStatus
-!setWebViewMediaIntegrityApiStatus
-"WEBVIEW_MEDIA_INTEGRITY_API_STATUS
-#WEBVIEW_MEDIA_INTEGRITY_API_ENABLED
-$WEBVIEW_MEDIA_INTEGRITY_API_DISABLED
-(getWebViewMediaIntegrityApiDefaultStatus
-(getWebViewMediaIntegrityApiOverrideRules
-/com.android.vending.licensing.ILicensingService
-4com.android.vending.licensing.ILicenseResultListener
-6Landroidx/webkit/WebViewMediaIntegrityApiStatusConfig;
-8WEBVIEW_MEDIA_INTEGRITY_API_ENABLED_WITHOUT_APP_IDENTITY
->Landroidx/webkit/WebViewMediaIntegrityApiStatusConfig$Builder;
-Lcom/pairip/VMRunner;
-Room cannot verify the data integrity. Looks like you've changed schema but forgot to update the version number. You can simply fix this by increasing the version number. Expected identity hash: 
-SIGNATURE_CHECK_SIZE
-WEBVIEW_INTEGRITY_API_STATUS
-bLandroidx/room/AutoClosingRoomOpenHelper$AutoClosingSupportSQLiteDatabase$isDatabaseIntegrityOk$1;
-isDatabaseIntegrityOk
-
-=== asset veri dosyalari (db/json/csv/sav) ===
-DebugProbesKt.bin
-assets/a.json
-assets/ad_flow_config.json
-assets/aps_mobile_client_config.json
-assets/components.json
-assets/origin_r.bin
-assets/splash/logo.json
-assets/template/metadata.json
-assets/template_styles/default.json
-res/raw/applovin_consent_flow_unified_cmp.json

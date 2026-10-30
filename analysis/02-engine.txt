@@ -2,8 +2,8 @@
 
 === tum split'ler ===
 total 232020
-drwxr-xr-x 2 runner runner     4096 Oct 30 09:34 .
-drwxr-xr-x 8 runner runner     4096 Oct 30 09:34 ..
+drwxr-xr-x 2 runner runner     4096 Oct 30 09:36 .
+drwxr-xr-x 8 runner runner     4096 Oct 30 09:36 ..
 -rw-r--r-- 1 runner runner 65526427 Dec 31  1979 asset_pack.apk
 -rw-r--r-- 1 runner runner 53355939 Dec 31  1979 asset_pack.config.astc.apk
 -rw-r--r-- 1 runner runner 97667762 Dec 31  1979 com.monkeyibrow.worldsoccerchamps.apk
