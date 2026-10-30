@@ -14,9 +14,9 @@ World Soccer Champs:
 Sonuç: root'suz bir telefonda **oyunun içine kod enjekte etmek** veya **belleğini okumak**
 mümkün değil. Root'suz yapılabilecekler aşağıda.
 
-## Seçenek 1 — Sandbox Editor (kayıt dosyası, önerilen)
+## Seçenek 1 — kayıt dosyası (root'suz, önerilen)
 
-`sandbox-editor/` uygulaması kayıt verisini JSON olarak düzenler.
+Ayrı uygulama gerekmez: kayıt dosyasını çek, **komut satırından** yamala, geri yaz.
 
 **Kayıt dosyasını nasıl elde edersin?**
 
@@ -28,25 +28,23 @@ mümkün değil. Root'suz yapılabilecekler aşağıda.
 | Bulut yedeği | Telefon üreticisinin yedekleme aracı (ör. Samsung Smart Switch) uygulama verisini dışa aktarabilir |
 | Root'suz, hepsi kapalı | Kayıt dosyası elde edilemez → Seçenek 2 |
 
-Düzenleme:
-
 ```bash
 # 1) dosyaları çek
 tools/wsc-save.sh pull saves/
 
-# 2) editörü aç (yerelde)
-cd sandbox-editor && python3 -m http.server 8080
-#   → http://localhost:8080  → "İçe Al" ile saves/ içindeki JSON'u yükle
+# 2) biçimi gör, aday alanları listele
+node tools/save-scan.mjs saves/<dosya>
 
-# 3) düzenle, "Dışa Aktar" ile kaydet
-# 4) geri yaz
+# 3) yamala
+node tools/save-scan.mjs saves/<dosya> --patch "transferBudget=200000000,ca=200" --out saves/yeni.json
+
+# 4) geri yaz (oyun tamamen kapalıyken)
 tools/wsc-save.sh push saves/
 ```
 
-> Gerçek kayıt JSON şeması birebir doğrulanmadı. Editör bilinen alan adlarını
-> (`players`, `finances`, `club`, `contract`…) arar; bulamazsa **Ham JSON** sekmesinden
-> her alanı elle düzenleyebilirsin. Alan adları REA ile `libWorldSoccerChamps.so`
-> içinden çıkarıldı (`docs/REA-ANALYSIS.md` §4).
+> Kayıt dosyası JSON ise yama doğrudan çalışır. JSON değilse (binary/plist) araç bunu
+> söyler ve **Frida** yolunu önerir — dosyayı zorla dönüştürmez.
+> Alan adları `libWorldSoccerChamps.so` içinden çıkarıldı (`docs/REA-ANALYSIS.md` §4).
 
 ## Seçenek 2 — Emülatör (root açık, PC'de)
 
@@ -54,10 +52,11 @@ Bilgisayarda LDPlayer / MuMu / BlueStacks kur, ayarlardan root'u aç:
 
 ```bash
 adb connect 127.0.0.1:5555
-tools/frida-run.sh /yol/frida-server-android-x86
+tools/game-mod.sh --server /yol/frida-server-android-x86
 ```
 
-Bu artık "telefonda root" gerektirmez; emülatörde tam mod menü deneyimi verir.
+Bu artık "telefonda root" gerektirmez; emülatörde tam mod menü deneyimi verir
+(`◢ MOD`: değer taraması + oyunun kendi kayıt dosyası).
 Oyun yalnızca `armeabi-v7a` içerdiği için emülatörde ARM çeviri katmanı açık olmalı
 (LDPlayer'da varsayılan).
 
@@ -70,6 +69,6 @@ uygulamalarını etkiler. Karar senin.
 
 | Yol | Root | Kalıcı düzenleme | Zorluk |
 |---|---|---|---|
-| Sandbox Editor (kayıt dosyası) | Android 10↓ veya emülatör/root | ✅ (dosyaya yazılır) | Kolay |
-| Frida overlay | Gerekli | ✅ (bellekte, oturumluk) | Orta |
+| Kayıt dosyası (`wsc-save.sh` + `save-scan.mjs`) | Android 10↓ veya emülatör/root | ✅ (dosyaya yazılır) | Kolay |
+| Frida mod menüsü (`game-mod.sh`) | Gerekli | ✅ (bellekte; Kayıt sekmesinden dosyaya) | Orta |
 | APK yeniden paketleme | — | ❌ | PairIP engelliyor |

@@ -1,21 +1,43 @@
-# SoccerChampsSandbox
+# SoccerChampsSandbox — World Soccer Champs modu
 
-World Soccer Champs (2026.12) için **Football Manager oyun içi editörünün (In-Game Editor) birebir muadili**
-ve root'lu cihazlar için **Frida overlay mod menüsü**.
+**Hedef: World Soccer Champs'in kendisini modlamak.** Ayrı bir uygulama değil — mod, oyunun
+kendi sürecinde çalışır: Frida ile canlı bellek modu veya oyunun kendi kayıt dosyası.
 
-## Android APK
-
-**İndir:** https://github.com/StrongBomber/SoccerChampsSandbox/releases/download/editor-apk/wsc-editor.apk
-(85 KB · v1.3 · minSdk 24 · imzalı · çevrimdışı · kurulabilirlik doğrulandı)
+## Modu çalıştır (tek komut)
 
 ```bash
-adb install wsc-editor.apk          # veya telefona kopyalayıp dokun
+tools/game-mod.sh --check                           # cihaz / root / mimari raporu
+tools/game-mod.sh --server /yol/frida-server-arm    # oyunu mod menüsüyle aç
 ```
 
-Uygulama, editörü WebView içinde gömer; kayıtlar sistem dosya seçicisiyle içe/dışa aktarılır.
-Ayrıntı: [`docs/APK.md`](docs/APK.md) · Derleme: `bash apk/build.sh`
+Oyunun kendi penceresine `◢ MOD` düğmesi eklenir:
 
-## In-Game Editor (sandbox-editor/)
+| Sekme | İçerik |
+|---|---|
+| **Tara** | int32/int64/float/double tarama · *İlk Ara → Değişti/Aynı/Arttı/Azaldı* · Seçilene Yaz · Tümüne Yaz · Dondur/Çöz · dosya izleyici |
+| **Hazır** | transfer/maaş bütçesi, bakiye, CA, PA, nitelik, piyasa değeri, itibar şablonları |
+| **Kayıt** | oyunun kendi `files/` dizini: listele, oku, yedekle, JSON'u düzenleyip geri yaz |
+
+Root yoksa (Android ≤10) kayıt dosyası yolu:
+
+```bash
+tools/wsc-save.sh pull saves/
+node tools/save-scan.mjs saves/<dosya> --patch "transferBudget=200000000" --out saves/yeni.json
+tools/wsc-save.sh push saves/
+```
+
+Ayrıntı: [`docs/GAME-MOD.md`](docs/GAME-MOD.md) · Ajan: [`modmenu/game-mod.js`](modmenu/game-mod.js)
+
+## Neden "modlanmış APK" dağıtılmıyor?
+
+`com.pairip.SignatureCheck`, `libpairipcore.so` ve Play Integrity: yeniden imzalanan APK açılmaz
+(kanıt: `analysis/05-probe.txt`). Bu yüzden mod **çalışma anında** uygulanır; oyunun orijinal
+kurulumu korunur. Ayrıntı: [`docs/GAME-MOD.md`](docs/GAME-MOD.md) §1.
+
+## İsteğe bağlı: kayıt dosyası yardımcısı (sandbox-editor/)
+
+> Hedef bu değil. Çekilen kayıt JSON'unu PC'de elle düzenlemek isteyenler için tarayıcı arayüzü;
+> mod menüsü ve `tools/save-scan.mjs` onsuz da çalışır.
 
 ```bash
 cd sandbox-editor && python3 -m http.server 8080   # → http://localhost:8080
@@ -44,32 +66,36 @@ Kaydedilmemişken sekmeyi kapatmak uyarı verir. `CA > PA`, geçmiş sözleşme,
 tutarsızlığı (ör. penaltı mesafesi 9–13 m dışı), asgari ücret altı oyuncu gibi durumlar
 **doğrulama** panelinde canlı gösterilir ve ilgili ekrana/oyuncuya atlar.
 
-## Oyun içi mod menü (modmenu/)
+## Mod ajanı testi
 
 ```bash
-tools/frida-run.sh /yol/frida-server-android-arm   # root'lu cihaz veya root açık emülatör
+node tests/game-mod-test.mjs     # sahte Frida ortamı: 27 iddia, cihaz gerekmez
 ```
 
-Sağ üstte **◢ SANDBOX** düğmesi: değer tara → daralt → yaz / dondur. Ayrıntı: [`modmenu/README.md`](modmenu/README.md)
+Tarama, daraltma, yazma, dondurma ve kayıt API'si gerçek cihaz olmadan sınanır.
+Dürüst sınırlar: [`docs/GAME-MOD.md`](docs/GAME-MOD.md) §4.
 
 ## Diğer klasörler
 
 | Klasör | Ne var |
 |---|---|
-| `tools/` | `wsc-save.sh` (kayıt çek/geri yaz), `frida-run.sh` |
+| `tools/` | `game-mod.sh` (tek komut mod menüsü), `wsc-save.sh` (kayıt çek/geri yaz), `save-scan.mjs` (kayıt biçimi + yama) |
 | `analysis/` | REA statik analiz çıktıları |
 | `apk/` | Android APK kaynakları (`build.sh`, `verify-apk.sh`, Java, manifest, ikon) |
-| `tests/` | `editor-smoke.mjs` — 89 iddialık jsdom duman testi · `detect-test.mjs` — 19 iddialık şema algılama testi |
+| `tests/` | `game-mod-test.mjs` — 27 iddialık Frida ajan testi · `editor-smoke.mjs` — 89 · `detect-test.mjs` — 19 |
 | `docs/` | `APK.md`, `EDITOR.md`, `REA-ANALYSIS.md`, `ROOTSUZ-KURULUM.md` |
 | `.github/workflows/` | XAPK indirme + REA analiz iş akışları |
 
-## Neden APK modlanmıyor?
+## Teknik özet
 
-REA analizi (`docs/REA-ANALYSIS.md`): oyun **Cocos2d-x + native C++**, kütüphane **stripped**,
-**PairIP** (`SignatureCheck`, `VMRunner`) + Play Integrity korumalı → yeniden imzalanan APK çalışmaz.
-Bu yüzden iki güvenli yol: **kayıt verisi düzenleme** (In-Game Editor) ve **bellek taraması** (Frida menü).
+| Katman | Bulgu |
+|---|---|
+| Motor | **Cocos2d-x**, native C++ (`libWorldSoccerChamps.so`, 15,9 MB, **stripped**) |
+| Koruma | `com.pairip.SignatureCheck`, `VMRunner`, `libpairipcore.so`, `libpglarmor.so` + Play Integrity |
+| Sonuç | Sabit offset / sembol yok → **değer taraması**; yeniden imzalama yok → **runtime mod** |
 
-Root'suz cihaz için yollar: [`docs/ROOTSUZ-KURULUM.md`](docs/ROOTSUZ-KURULUM.md)
+Ayrıntılı analiz: [`docs/REA-ANALYSIS.md`](docs/REA-ANALYSIS.md) · Root'suz seçenekler:
+[`docs/ROOTSUZ-KURULUM.md`](docs/ROOTSUZ-KURULUM.md)
 
 ## Yasal not
 

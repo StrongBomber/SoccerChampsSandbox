@@ -1,0 +1,107 @@
+/**
+ * modmenu/game-mod.js — Frida ajanı mantık testi (gerçek cihaz gerekmez).
+ *
+ * Ajan Node içinde sahte Frida çalışma zamanıyla yüklenir; tarama, daraltma,
+ * yazma, dondurma ve kayıt dosyası API'leri sınanır. Amaç: cihaza gitmeden
+ * ajanın çökmeyeceğini ve tarama matematiğinin doğru olduğunu kanıtlamak.
+ *
+ *   node tests/game-mod-test.mjs
+ */
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { createRuntime } from "./frida-mock.mjs";
+
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const src = fs.readFileSync(path.join(ROOT, "modmenu", "game-mod.js"), "utf8");
+
+const rt = createRuntime();
+const logs = [];
+const fakeConsole = { log: (m) => logs.push(String(m)), warn: () => {}, error: (m) => logs.push("ERR " + m) };
+
+const factory = new Function(
+  "Process", "Module", "Interceptor", "Int64", "setInterval", "clearInterval", "console",
+  src + "\nreturn globalThis.MOD;",
+);
+const MOD = factory(
+  rt.Process, rt.Module, rt.Interceptor, rt.Int64,
+  rt.setIntervalMock, rt.clearIntervalMock, fakeConsole,
+);
+
+let pass = 0;
+let fail = 0;
+const check = (name, cond, detail = "") => {
+  if (cond) { pass++; console.log(`  ✓ ${name}${detail ? " — " + detail : ""}`); }
+  else { fail++; console.error(`  ✗ ${name}${detail ? " — " + detail : ""}`); }
+};
+const section = (t) => console.log(`\n${t}`);
+
+/* ---------------------------------------------------------------- */
+section("Ajan yükleme");
+check("MOD API yüklendi", !!MOD && typeof MOD.firstScan === "function");
+check("ajan çökmeden sonlandı", logs.some((l) => l.includes("test modu")), logs.slice(-1)[0]);
+check("4 tarama tipi", Object.keys(MOD.TYPES).length === 4, Object.keys(MOD.TYPES).join(","));
+check("varsayılan tip int32", MOD.S.type === "int32");
+
+section("Hazır modlar");
+check("8 hazır mod", MOD.PRESETS.length === 8, MOD.PRESETS.map((p) => p.id).join(","));
+check("her hazır mod geçerli tipte", MOD.PRESETS.every((p) => !!MOD.TYPES[p.type]));
+check("CA/PA 1–200 notu var", MOD.PRESETS.filter((p) => p.id === "ca" || p.id === "pa").every((p) => /1–200/.test(p.note)));
+
+section("Değer tarama (int32)");
+rt.plant.int32(0x100, 4200000);
+rt.plant.int32(0x200, 4200000);
+rt.plant.int32(0x300, 4200000);
+rt.plant.int32(0x400, 999);
+const hits = MOD.firstScan(4200000, "int32");
+check("3 adres bulundu", hits.length === 3, `${hits.length} adres`);
+check("adresler doğru", hits.every((h) => [0x100, 0x200, 0x300].includes(h.addr.offset)));
+
+section("Daraltma (değişti / aynı)");
+MOD.S.hits = hits;
+rt.plant.int32(0x200, 1234567); // oyunda değer değişti
+const kept = MOD.nextScan("changed", "int32");
+check("değişen tek adres kaldı", kept === 1 && MOD.S.hits[0].addr.offset === 0x200, `${kept} adres`);
+check("son değer güncellendi", MOD.S.hits[0].last === 1234567);
+
+section("Yazma");
+const changed = MOD.writeAll(7777777, "int32");
+check("tüm adreslere yazıldı", changed === 1);
+check("bellekte yeni değer", rt.plant.readInt32(0x200) === 7777777);
+const one = MOD.writeOne(MOD.S.hits[0], 8888888, "int32");
+check("tek adres yazma", one === true && rt.plant.readInt32(0x200) === 8888888);
+
+section("Float / double / int64");
+rt.plant.float(0x500, 1.5);
+rt.plant.double(0x600, 6200000.5);
+rt.plant.int64(0x700, 9876543210);
+const fh = MOD.firstScan(1.5, "float");
+check("float tarama", fh.length === 1 && fh[0].addr.offset === 0x500);
+const dh = MOD.firstScan(6200000.5, "double");
+check("double tarama", dh.length === 1 && dh[0].addr.offset === 0x600);
+const ih = MOD.firstScan(9876543210, "int64");
+check("int64 tarama", ih.length === 1 && ih[0].addr.offset === 0x700, `${ih.length}`);
+MOD.writeOne(ih[0], 12345678901, "int64");
+check("int64 yazma", rt.plant.readInt64(0x700) === 12345678901);
+
+section("Dondurma");
+MOD.S.hits = [{ addr: new rt.NativePointer(0x200), last: 0 }];
+const n = MOD.freezeAll(5555, true, "int32");
+check("dondurma kaydı", n === 1 && MOD.S.frozen.size === 1);
+check("interval kuruldu", rt.calls.intervals >= 1);
+const cleared = MOD.freezeAll(0, false, "int32");
+check("çözme temizledi", cleared === 1 && MOD.S.frozen.size === 0 && rt.calls.cleared >= 1);
+
+section("Oyunun kendi kayıt dosyaları");
+check("Java yokken liste boş (çökmez)", Array.isArray(MOD.saveList()) && MOD.saveList().length === 0);
+check("okuma hatayı yutar", String(MOD.saveRead("/yok/dosya", 100)).startsWith("HATA"));
+check("yazma sessiz başarısız", MOD.saveWrite("/yok/dosya", "x") === false);
+
+section("Dosya izleyici");
+check("libc export yoksa zarifçe kapanır", MOD.startWatcher() === false);
+check("durdurma güvenli", (MOD.stopWatcher(), true));
+
+section("Sonuç");
+check("ajan hiç istisna fırlatmadı", !logs.some((l) => l.startsWith("ERR")));
+console.log(`\n${pass} geçti, ${fail} başarısız`);
+process.exit(fail === 0 ? 0 : 1);

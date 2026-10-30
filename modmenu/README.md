@@ -1,74 +1,56 @@
-# Sandbox Mod Menu (oyun içi overlay)
+# WSC Mod Menu — oyun içi (Frida)
 
-`modmenu/sandbox-menu.js` — World Soccer Champs'in **kendi penceresine** yüzen bir
-"SANDBOX" düğmesi ve düzenleme paneli ekleyen Frida ajanı.
+`modmenu/game-mod.js`, World Soccer Champs'in **kendi penceresine** yüzen bir `◢ MOD`
+düğmesi ve panel ekleyen Frida ajanıdır. Ayrı uygulama değildir: APK değişmez, koruma
+tetiklenmez, mod yalnızca oyun süreci çalışırken uygulanır.
 
 ```
-◢ SANDBOX  →  panel:
-   [değer] [int|float]
-   İlk Ara · Değişti · Aynı · Arttı · Azaldı
-   Sonuçlara Yaz · Dondur · Çöz
-   ── eşleşen adres listesi (adres = değer)
+◢ MOD  →  [ Tara ] [ Hazır ] [ Kayıt ]
+   Tara  : int32/int64/float/double değer taraması
+           İlk Ara · Değişti · Aynı · Arttı · Azaldı
+           Seçilene Yaz · Tümüne Yaz · Dondur/Çöz
+           + Dosya izleyici (oyunun açtığı kayıt dosyaları)
+   Hazır : transfer/maaş bütçesi, bakiye, CA, PA, nitelik, itibar şablonları
+   Kayıt : oyunun kendi files/ dizini — liste, oku, yedekle, JSON'u düzenleyip geri yaz
+```
+
+## Hızlı başlangıç
+
+```bash
+tools/game-mod.sh --check                          # cihaz + root + mimari raporu
+tools/game-mod.sh --server /yol/frida-server-arm   # sunucuyu at, oyunu mod menüsüyle aç
+tools/game-mod.sh --attach                         # oyun açıksa sürece enjekte et
+```
+
+Manuel:
+
+```bash
+adb push frida-server-arm /data/local/tmp/frida-server
+adb shell "su -c 'chmod 755 /data/local/tmp/frida-server'"
+adb shell "su -c '/data/local/tmp/frida-server &'"
+frida -U -f com.monkeyibrow.worldsoccerchamps -l modmenu/game-mod.js --no-pause
 ```
 
 ## Neden offset yok?
 
-REA analizi (`docs/REA-ANALYSIS.md`) gösterdi ki oyun Cocos2d-x, native kütüphane
-**stripped** ve PairIP ile korunuyor:
-
-- Sabit bellek adresi/alan offseti yok → menü **değer taraması** ile çalışır.
-- APK yeniden imzalanmıyor → `com.pairip.SignatureCheck` tetiklenmez.
-- Görünüm `activity.addContentView(...)` ile ekleniyor → `SYSTEM_ALERT_WINDOW` izni gerekmez.
+`libWorldSoccerChamps.so` 15,9 MB, C++ ve **stripped** (sembol yok, `Data/Classes/...`
+yolları yalnızca hata ayıklama dizesi olarak duruyor). Bu yüzden sabit offset yerine
+**değer taraması** kullanılır: oyun içi değer → tarama → oyunda değiştir → daralt → yaz.
 
 ## Gereksinimler
 
 | Gereksinim | Not |
 |---|---|
-| Root'lu cihaz **veya** root açık emülatör | `frida-server` çalıştırmak için |
+| Root'lu cihaz **veya** root açık emülatör | `frida-server` için |
 | `frida-tools` (PC) | `pip install frida-tools` |
-| `frida-server` (cihaz) | [sürümler](https://github.com/frida/frida/releases) — oyun **armeabi-v7a**, 64-bit cihazda `android-arm` build |
-| USB hata ayıklama | `adb devices` görüyor olmalı |
+| `frida-server` (cihaz) | oyun armeabi-v7a → 64-bit cihazda `android-arm` build |
+| USB hata ayıklama | `adb devices` görmeli |
 
-## Çalıştırma
+## Test
 
 ```bash
-# 1) frida-server'ı indir (PC tarafında frida sürümüyle aynı olmalı)
-frida --version
-
-# 2) tek komut: sunucuyu at, oyunu menüyle başlat
-tools/frida-run.sh /yol/frida-server-arm
-
-# veya elle:
-adb push frida-server-arm /data/local/tmp/frida-server
-adb shell "su -c 'chmod 755 /data/local/tmp/frida-server'"
-adb shell "su -c '/data/local/tmp/frida-server &'"
-frida -U -f com.monkeyibrow.worldsoccerchamps -l modmenu/sandbox-menu.js --no-pause
+node tests/game-mod-test.mjs    # sahte Frida ortamında 27 iddia
 ```
 
-Emülatörde (LDPlayer/MuMu/BlueStacks): emülatör ayarlarından **root** aç, `adb connect 127.0.0.1:5555`,
-sonra yukarıdaki komutlar. Emülatör x86 olduğu için `frida-server-android-x86` gerekir; oyunun
-yalnızca ARM kütüphanesi olduğundan ARM çeviri katmanı (LDPlayer'da varsayılan) açık olmalı.
-
-## Kullanım akışı (örnek: transfer bütçesi)
-
-1. Oyunda **Finans → Transfer Bütçesi** ekranına git, değeri not al (ör. `6.200.000`).
-2. Menüde `değer = 6200000`, tür `int` → **İlk Ara**.
-3. Oyunda bütçeyi değiştiren bir işlem yap (oyuncu sat, teklif ver) → **Değişti**.
-4. Sonuç 1–5 adrese düşene kadar 3. adımı yinele.
-5. Yeni değeri gir → **Sonuçlara Yaz** (kalıcı) veya **Dondur** (sürekli aynı değer).
-
-## Sınırlamalar (dürüst liste)
-
-- **Cihazda test edilmedi.** Bu ajan statik analize göre yazıldı; Frida API'leri doğru
-  kullanıldı ve söz dizimi doğrulandı, ancak gerçek cihazda uçtan uca denenmedi.
-- PairIP, root/Frida ortamlarını tespit edip oyunu kapatabilir. Tespit edilirse
-  Frida'yı yeniden adlandırılmış `frida-server` ile ve `--enable-jit` gibi seçeneklerle
-  denemek gerekir; bu proje **koruma atlatma** içermez.
-- Tarama, `rw-` bellek bölgelerini okur; 32-bit oyunda tipik olarak 300–600 MB.
-  Telefonda ilk tarama 20–60 saniye sürebilir (menüde ilerleme `console`'a yazılır).
-- Değerler her oturumda yeniden aranmalıdır (ASLR/pointer'lar değişir).
-
-## Root'suz ne yapabilirim?
-
-Bkz. [`../docs/ROOTSUZ-KURULUM.md`](../docs/ROOTSUZ-KURULUM.md): kayıt dosyası yolu,
-Android sürümüne göre erişim ve **Sandbox Editor** ile düzenleme.
+Ajanın tamamı (tarama, daraltma, yazma, dondurma, kayıt API'si, izleyici) gerçek cihaz
+olmadan sınanır. Ayrıntı ve dürüst sınırlar: [`../docs/GAME-MOD.md`](../docs/GAME-MOD.md).
