@@ -1635,6 +1635,8 @@
               ${moneyRow("Haftalık Ücret", p.contract, "wage")}
               ${moneyRow("İmza Bonusu", p.contract, "signingBonus")}
               ${moneyRow("Serbest Kalma Maddesi", p.contract, "releaseClause")}
+              <div class="row"><span class="label">Primler <i class="sw-hint">maaş oranından</i></span>
+                <span class="value mono muted">maç başı ${fmt.money(p.contract.appearanceBonus)} · gol ${fmt.money(p.contract.goalBonus)}</span></div>
             </div>
           </div>
           <div class="card">
@@ -1644,8 +1646,16 @@
               ${moneyRow("Piyasa Değeri", p, "value")}
               <div class="row"><span class="label">Kalan Süre</span>
                 <span class="value mono">${monthsLeft(p.contract.expiry)} ay</span></div>
+              <div class="row"><span class="label">Piyasa Ücreti</span>
+                <span class="value mono">${fmt.money(wageStatus(p, S.save).fair)}
+                  <span class="sal-badge ${wageStatus(p, S.save).key}">${esc(wageStatus(p, S.save).label)} · ${wageStatus(p, S.save).ratio >= 1 ? "+" : ""}${Math.round((wageStatus(p, S.save).ratio - 1) * 100)}%</span></span></div>
+              <div class="row"><span class="label">Yıllık Maliyet</span>
+                <span class="value mono">${fmt.money((Number(p.contract.wage) || 0) * 52 + bonusLoad(p))}</span></div>
               <div class="row"><span class="label">Hızlı İşlem</span>
-                <span class="value"><button class="btn" style="background:#241a3a;height:24px" data-quick="extend">+3 yıl uzat</button></span></div>
+                <span class="value" style="gap:6px">
+                  <button class="btn" style="background:#241a3a;height:24px" data-quick="extend">+3 yıl uzat</button>
+                  <button class="btn" style="background:#241a3a;height:24px" data-quick="fairwage">piyasa ücretine çek</button>
+                </span></div>
             </div>
           </div>
         </div>`,
@@ -1970,6 +1980,13 @@
         const t = save.players.find((x) => x.id === p.id);
         const y = Number(String(t.contract.expiry).slice(0, 4)) + 3;
         t.contract.expiry = `${y}${String(t.contract.expiry).slice(4)}`;
+      });
+    }
+    if (kind === "fairwage") {
+      bulk(`${p.name} · ücret → piyasa`, (save) => {
+        const t = save.players.find((x) => x.id === p.id);
+        t.contract.wage = fairWage(t, save);
+        applyBonusRates(t, save.salary);
       });
     }
     if (kind === "heal") {

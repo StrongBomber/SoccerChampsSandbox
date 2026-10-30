@@ -17,6 +17,8 @@ cd sandbox-editor && python3 -m http.server 8080     # → http://localhost:8080
 | Personel | Edit Staff | CA/PA, itibar, 7 nitelik, diziliş/tarz, sorumluluklar |
 | Finans | Edit Club Finances | bütçeler, maaş yükü, sezon projeksiyonu |
 | Müsabakalar | Edit Competition | seviye, itibar, takım sayısı, ödül havuzu, tur ödülü |
+| **Maç Kuralları** | Match Rules | **ofsayt, penaltı, taç, korner, faul** + 4 hazır kural profili + maç motoru tahmini |
+| **Maaşlar** | Contract / Finances | **adil ücret, primler, vergi, bütçe kullanımı**, 25 satırlık ücret tablosu |
 | Sandbox | — | 8 toplu işlem |
 | Tercihler | Preferences | renk, otomatik kayıt, içe/dışa aktarma, kısayollar |
 | **Serbest JSON** | — | **Gerçek kayıt dosyası için ağaç editörü**: her düğümü aç/kapat, değer düzenle, diziye öğe ekle/sil, alan/değer ara |
@@ -32,6 +34,49 @@ cd sandbox-editor && python3 -m http.server 8080     # → http://localhost:8080
 | **Özellikler** | 24 FM "Player Trait" (PPM) — çoklu seçim |
 | **Disiplin** | sarı/kırmızı kart, maç cezası, para cezası, sakatlık türü/süresi, **sakatlığı bitir** |
 | **İlişkiler** | sevdiği/sevmediği kulüpler, sevdiği kişiler (ekle/kaldır) |
+
+## Maç kuralları
+
+Beş kural ailesi, her biri açma/kapama anahtarıyla birlikte düzenlenebilir. Tüm alanlar
+`rules.*` altında saklanır ve oyun kaydına dışa aktarılır.
+
+| Kural | Alanlar |
+|---|---|
+| **Ofsayt** | tolerans (cm), geçerli bölge (tüm saha / hücum yarısı / ceza sahası), VAR incelemesi, yarı otomatik ofsayt, pasif ofsayt |
+| **Penaltı** | mesafe (9–13 m), VAR incelemesi, kalecinin erken çıkışına izin, ihlalde tekrar, uzatmada seri penaltı |
+| **Taç** | kullanma süresi (1–15 sn), taç noktası kaydırma, otomatik karar, uzun taç asisti |
+| **Korner** | yay mesafesi (25–200 cm), organizasyon (karışık/ön direk/arka direk/kısa/yay), kısa korner, kale çizgisi VAR |
+| **Faul** | temas sertliği (yumuşak/normal/sert), faul eşiği, sarı limiti, doğrudan kırmızı, avantaj, simülasyon cezası |
+
+### Maç motoru
+
+Kurallar **tahmini maç olaylarını** üretir (bizim takım, maç başına): gol, penaltıdan gol,
+penaltı kararı, ofsayt, korner, taç, faul, sarı ve kırmızı kart. Hesap kadronun ortalama
+niteliklerine dayanır — agresiflik ve temas sertliği faulü, karar verme sarı kartı, hız/pas
+ofsaytı, teknik korneri, bitiricilik ve CA gol beklentisini belirler. Penaltı mesafesi
+dönüşüm yüzdesini değiştirir (`%78 − (mesafe − 11) × 4.2`).
+
+### Hazır profiller
+
+`FIFA Standart` · `VAR Sıkı` · `Ofsaytsız (Sokak)` · `Sert Lig` — her biri tek bir toplu
+düzenleme olarak uygulanır, inceleme çekmecesinden tek tıkla geri alınır.
+
+## Maaş sistemi
+
+| Bölüm | İçerik |
+|---|---|
+| Üst kartlar | haftalık maaş (bütçe yüzdesi), yıllık maaş, prim yükü, vergi, ortalama ücret |
+| Maaş ayarları | gelir vergisi %0–60, maç başı / gol / gol yememe / sadakat prim oranları, asgari–azami ücret, yıllık zam, yenileme yılı |
+| Toplu işlemler | **piyasa ücretine çek**, **bütçeye sığdır**, primleri yeniden hesapla, ±%10, asgariye tamamla, sözleşme yenile |
+| Ücret tablosu | oyuncu, pozisyon, yaş, CA, haftalık ücret (stepper), **adil ücret**, fark %, durum rozeti, prim, yıllık maliyet, pay % |
+
+**Adil ücret** = piyasa değeri ÷ 474 × CA düzeltmesi (`0,82 + CA/200 × 0,36`) × yaş düzeltmesi
+(≤21 yaş +%5, 31–32 yaş −%7, 33+ −%12). Durum rozetleri: **Uygun** (±%15), **Yüksek** (>%15),
+**Çok yüksek** (>%100), **Düşük** (<−%15).
+
+Prim yükü beklentiden hesaplanır: 26 maç × maç başı prim + pozisyona göre gol beklentisi × gol
+primi + kaleci/stoperler için 10 maç gol yememe primi. Vergi, işveren maliyetine eklenir ve
+`vergi oranı` değiştiğinde yıllık maliyet anında güncellenir.
 
 ## Düzenleme modeli (FM davranışı)
 
@@ -50,13 +95,18 @@ Genel Bakış ve durum çubuğunda sürekli çalışır:
 - sözleşme bitişi oyun tarihinden önce → uyarı
 - maaş yükü > maaş bütçesi → uyarı
 - negatif bakiye, kalecisiz kadro, yinelenen forma numarası, düşük kondisyon → uyarı/bilgi
+- **kural tutarlılığı**: penaltı mesafesi 9–13 m dışında → hata; faul kapalıyken penaltı açık → uyarı;
+  ofsayt kapalı / geniş tolerans / düşük sarı limiti → bilgi
+- **maaş**: bütçe aşımı → hata, %85 üzeri → uyarı, asgari ücret altı oyuncular → uyarı,
+  adil ücretin 2 katından fazla kazanan → bilgi
 
 Her uyarının yanındaki **Git** düğmesi ilgili oyuncuya/ekrana atlar.
 
 ## Komut paleti
 
 Üstteki arama kutusuna yaz: oyuncu/personel/müsabaka adı veya bölüm adı. `↑/↓` ile gez, `Enter` ile git.
-Boşken hızlı komutlar (Kaydet, Bekleyen değişiklikler, bölümler) listelenir.
+Boşken hızlı komutlar (Kaydet, Bekleyen değişiklikler, **maaşları piyasa ücretine çek**,
+**bütçeye sığdır**, **kural profili: VAR Sıkı**, bölümler) listelenir.
 
 ## Serbest JSON (gerçek kayıtlar)
 

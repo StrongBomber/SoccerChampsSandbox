@@ -251,6 +251,17 @@ click("[data-sal-fair='0']");
 check("tek oyuncu eşitleme sahnelendi", d.querySelector("#reviewBtn").textContent.includes("1 bekleyen"));
 click("#undoBtn");
 
+section("Oyuncu sözleşmesinde maaş bloğu");
+click('[data-route="players"]');
+click('[data-ptab="contract"]');
+check("piyasa ücreti satırı", d.querySelector("#view").textContent.includes("Piyasa Ücreti"));
+check("yıllık maliyet satırı", d.querySelector("#view").textContent.includes("Yıllık Maliyet"));
+check("ücret durumu rozeti", !!d.querySelector("#view .sal-badge"));
+check("oyuncu primleri görünür", d.querySelector("#view").textContent.includes("maç başı"));
+click('[data-quick="fairwage"]');
+check("oyuncu bazlı piyasa ücreti sahnelendi", d.querySelector("#reviewBtn").textContent.includes("1 bekleyen"));
+click("#undoBtn");
+
 section("Doğrulama");
 click('[data-route="overview"]');
 check("doğrulama satırları", d.querySelectorAll(".issue").length > 0);

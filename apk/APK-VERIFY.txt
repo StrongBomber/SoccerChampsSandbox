@@ -1,9 +1,9 @@
 APK doğrulama: /home/runner/work/SoccerChampsSandbox/SoccerChampsSandbox/apk/out/wsc-editor.apk
-Boyut: 87446 bayt
-SHA-256: d5a55375356b5a172961e5259e3db9ac6fa81909bbd1d78dc76ffb32bf9c911b
+Boyut: 79254 bayt
+SHA-256: 390a548a828c0a32493cbc85b13f8d6bfe4a23338d9fb16d227587355f774081
 
 [1] Paket bilgisi (aapt2 dump badging)
-    package: name='com.wsc.editor' versionCode='4' versionName='1.3' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
+    package: name='com.wsc.editor' versionCode='3' versionName='1.2' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
     minSdkVersion:'24'
     targetSdkVersion:'34'
     application-label:'WSC In-Game Editor'
@@ -37,19 +37,19 @@ SHA-256: d5a55375356b5a172961e5259e3db9ac6fa81909bbd1d78dc76ffb32bf9c911b
 
 [3] Gömülü varlıklar
   ✓ assets/index.html (3163 bayt)
-  ✓ assets/app.js (124468 bayt)
+  ✓ assets/app.js (90513 bayt)
   ✓ assets/data.js (5470 bayt)
-  ✓ assets/styles.css (35150 bayt)
-  ✓ assets/demo-save.json (83251 bayt)
-  ✓ assets/demo-save.js (50743 bayt)
+  ✓ assets/styles.css (32908 bayt)
+  ✓ assets/demo-save.json (83242 bayt)
+  ✓ assets/demo-save.js (50735 bayt)
   ✓ assets/detect.js (6595 bayt)
   ✓ classes.dex (12868 bayt)
 
 [4] İmza (apksigner)
     V3.0 Signer: certificate DN: CN=WSC In-Game Editor, OU=Sandbox, O=WSC, L=Istanbul, C=TR
-    V3.0 Signer: certificate SHA-256 digest: a1b083457dd11f1fcd5b5d7b33cc9864c2683434fc75bcbc6e733cdb251e078d
-    V3.0 Signer: certificate SHA-1 digest: bd664f605fcd28aea2917252f6a5f52a16743ca4
-    V3.0 Signer: certificate MD5 digest: 20a510b42d2c3d562986f75c6fa92dcd
+    V3.0 Signer: certificate SHA-256 digest: dbd478f55389c487f3f5ea977a93d00fc4e8451790667f9518f588a213616f02
+    V3.0 Signer: certificate SHA-1 digest: 4bbb11f4110f63a3ae6a4212c3ce81f25b962a9b
+    V3.0 Signer: certificate MD5 digest: 1d9f259d6e30f30f65945edc72e9a1bc
   ✓ imza geçerli
 
 [5] Hizalama (zipalign)
