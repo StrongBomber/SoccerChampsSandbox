@@ -20,6 +20,7 @@ import path from "node:path";
 const args = process.argv.slice(2);
 if (!args.length || args[0] === "-h" || args[0] === "--help") {
   console.log("kullanım: node tools/save-scan.mjs <dosya> [--keys] [--patch k=v,...] [--out dosya] [--max 40]");
+  console.log("         binary dosyalar için: --strings [--grep budget]");
   process.exit(args.length ? 0 : 2);
 }
 
@@ -76,8 +77,16 @@ if (kind !== "json") {
   console.log("\nJSON değil → alan adlarıyla yama yapılamaz.");
   console.log("Bu durumda oyunu çalışırken modla:  tools/game-mod.sh");
   const strings = buf.toString("latin1").match(/[\x20-\x7e]{6,}/g) || [];
-  console.log(`\nyazdırılabilir metin parçası: ${strings.length} (ilk 10)`);
-  strings.slice(0, 10).forEach((s) => console.log("  " + s.slice(0, 72)));
+  if (has("--strings")) {
+    const filter = (flag("--grep") || "").toLowerCase();
+    const list = filter ? strings.filter((x) => x.toLowerCase().includes(filter)) : strings;
+    console.log(`\nmetin parçaları: ${list.length}${filter ? ` ("${filter}" filtresi)` : ""} (ilk ${Number(flag("--max") || 40)})`);
+    list.slice(0, Number(flag("--max") || 40)).forEach((x) => console.log("  " + x.slice(0, 78)));
+    if (!list.length) console.log("  (eşleşme yok)");
+  } else {
+    console.log(`\nyazdırılabilir metin parçası: ${strings.length} (ilk 10 · hepsi için --strings)`);
+    strings.slice(0, 10).forEach((x) => console.log("  " + x.slice(0, 72)));
+  }
   process.exit(0);
 }
 

@@ -5,6 +5,7 @@
 #   tools/game-mod.sh --server /yol/frida-server-arm    # sunucuyu at + başlat + oyunu aç
 #   tools/game-mod.sh --attach            # oyun zaten açıksa sürece enjekte et
 #   tools/game-mod.sh --check             # cihaz/kök/mimari raporu (hiçbir şey değiştirmez)
+#   tools/game-mod.sh --emulator          # LDPlayer/MuMu/BlueStacks: adb connect 127.0.0.1:5555
 #
 # Gereksinim: root'lu cihaz veya root açık emülatör + `adb` + `frida-tools`.
 # Karşı koruma yok: APK değişmez, yalnızca oyun süreci çalışırken modlanır.
@@ -18,12 +19,14 @@ PORT=27042
 
 MODE="spawn"
 SERVER=""
+EMU=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --server) SERVER="${2:-}"; shift 2 ;;
     --attach) MODE="attach"; shift ;;
     --check)  MODE="check"; shift ;;
+    --emulator) EMU="${2:-127.0.0.1:5555}"; shift; [ $# -gt 0 ] && [ "${1#-}" = "$1" ] && shift || true ;;
     -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
     *) echo "bilinmeyen argüman: $1" >&2; exit 2 ;;
   esac
@@ -31,6 +34,12 @@ done
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "eksik araç: $1" >&2; exit 1; }; }
 need adb
+
+if [ -n "$EMU" ]; then
+  echo "==> emülatöre bağlanılıyor: $EMU"
+  adb connect "$EMU" >/dev/null || true
+  sleep 1
+fi
 [ -f "$AGENT" ] || { echo "ajan bulunamadı: $AGENT" >&2; exit 1; }
 
 DEVICE="$(adb devices | awk 'NR>1 && $2=="device" {print $1; exit}')"

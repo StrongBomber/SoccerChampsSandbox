@@ -34,8 +34,10 @@ Bu yüzden mod, **APK'ya dokunmadan** uygulanır. İki yol var:
 ## 2. Yol A — oyun içi mod menüsü (tek komut)
 
 ```bash
-tools/game-mod.sh --check                 # cihaz / root / mimari raporu
+tools/game-mod.sh --check                          # cihaz / root / mimari raporu
+tools/game-mod.sh --emulator                       # LDPlayer/MuMu: adb connect 127.0.0.1:5555
 tools/game-mod.sh --server /yol/frida-server-arm   # sunucuyu at, başlat, oyunu aç
+tools/game-mod.sh --attach                         # oyun açıksa sürece enjekte et
 ```
 
 Root'lu cihaz veya root açık emülatör gerekir. Komut oyunu `frida -f` ile başlatır ve
@@ -80,6 +82,8 @@ node tools/save-scan.mjs saves/<dosya> --patch "transferBudget=200000000,ca=200"
 # 4) geri yaz (oyun tamamen kapalıyken)
 tools/wsc-save.sh push saves/
 ```
+
+Binary dosyalarda `--strings --grep budget` ile alan adı izleri aranabilir.
 
 `save-scan.mjs` dosya biçimini tespit eder (JSON / binary plist / XML plist / zip / sqlite /
 bilinmeyen) ve JSON'sa para-bütçe/kabiliyet/kural adaylarını **alan adına göre** listeler.

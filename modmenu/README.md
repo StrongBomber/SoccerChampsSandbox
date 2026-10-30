@@ -18,6 +18,7 @@ tetiklenmez, mod yalnızca oyun süreci çalışırken uygulanır.
 
 ```bash
 tools/game-mod.sh --check                          # cihaz + root + mimari raporu
+tools/game-mod.sh --emulator                       # LDPlayer/MuMu (adb connect 127.0.0.1:5555)
 tools/game-mod.sh --server /yol/frida-server-arm   # sunucuyu at, oyunu mod menüsüyle aç
 tools/game-mod.sh --attach                         # oyun açıksa sürece enjekte et
 ```
