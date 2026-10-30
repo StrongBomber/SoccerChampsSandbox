@@ -6,7 +6,7 @@ ve root'lu cihazlar için **Frida overlay mod menüsü**.
 ## Android APK
 
 **İndir:** https://github.com/StrongBomber/SoccerChampsSandbox/releases/download/editor-apk/wsc-editor.apk
-(77 KB · v1.2 · minSdk 24 · imzalı · çevrimdışı · kurulabilirlik doğrulandı)
+(85 KB · v1.3 · minSdk 24 · imzalı · çevrimdışı · kurulabilirlik doğrulandı)
 
 ```bash
 adb install wsc-editor.apk          # veya telefona kopyalayıp dokun
@@ -32,14 +32,17 @@ Ayrıntılı kullanım: [`docs/EDITOR.md`](docs/EDITOR.md)
 | **Personel** | CA/PA, itibar, 7 nitelik, tercih edilen diziliş/tarz, **sorumluluklar** |
 | **Finans** | Bütçeler, maaş yükü göstergesi, sezon projeksiyonu, hızlı işlemler |
 | **Müsabakalar** | Seviye, itibar, takım sayısı, ödül havuzu, tur ödülü + lig tablosu |
+| **Maç Kuralları** | **Ofsayt · Penaltı · Taç · Korner · Faul** kuralları (tolerans, mesafe, süre, yay, eşik, kart limiti, VAR) + 4 hazır profil + **maç motoru** tahmini (gol, penaltı, ofsayt, korner, taç, faul, kart) |
+| **Maaşlar** | **Adil ücret** hesabı, primler (maç başı/gol/gol yememe/sadakat), vergi, bütçe kullanımı, 25 satırlık ücret tablosu ve toplu işlemler (piyasa ücretine çek, bütçeye sığdır, ±%10, sözleşme yenile) |
 | **Serbest JSON** | Gerçek kayıt dosyaları için ağaç editörü (her alanı düzenle, dizi ekle/sil, ara) |
 | **Sandbox** | 8 toplu işlem (nitelik maks, PA=CA, sakatlık temizle, sözleşme +3 yıl, bütçe, moral, genç yetenek…) |
 | **Tercihler** | Renk/otomatik kayıt, JSON içe/dışa aktarma, kısayollar |
 
 **FM gibi düzenleme:** her alan değişikliği sahnelenir → **inceleme çekmecesi** (Ctrl+R) eski→yeni
 değerleri listeler, tek tek veya toplu geri alınır → **Değişiklikleri Kaydet** (Ctrl+S) kalıcılaştırır.
-Kaydedilmemişken sekmeyi kapatmak uyarı verir. `CA > PA`, geçmiş sözleşme, bütçe aşımı gibi durumlar
-**doğrulama** panelinde canlı gösterilir ve ilgili oyuncuya atlar.
+Kaydedilmemişken sekmeyi kapatmak uyarı verir. `CA > PA`, geçmiş sözleşme, bütçe aşımı, kural
+tutarsızlığı (ör. penaltı mesafesi 9–13 m dışı), asgari ücret altı oyuncu gibi durumlar
+**doğrulama** panelinde canlı gösterilir ve ilgili ekrana/oyuncuya atlar.
 
 ## Oyun içi mod menü (modmenu/)
 
@@ -56,7 +59,7 @@ Sağ üstte **◢ SANDBOX** düğmesi: değer tara → daralt → yaz / dondur. 
 | `tools/` | `wsc-save.sh` (kayıt çek/geri yaz), `frida-run.sh` |
 | `analysis/` | REA statik analiz çıktıları |
 | `apk/` | Android APK kaynakları (`build.sh`, `verify-apk.sh`, Java, manifest, ikon) |
-| `tests/` | `editor-smoke.mjs` — 52 iddialık jsdom duman testi · `detect-test.mjs` — 19 iddialık şema algılama testi |
+| `tests/` | `editor-smoke.mjs` — 89 iddialık jsdom duman testi · `detect-test.mjs` — 19 iddialık şema algılama testi |
 | `docs/` | `APK.md`, `EDITOR.md`, `REA-ANALYSIS.md`, `ROOTSUZ-KURULUM.md` |
 | `.github/workflows/` | XAPK indirme + REA analiz iş akışları |
 

@@ -8,9 +8,9 @@ Editörün telefonda kurulabilir sürümü. Tamamen çevrimdışı, oyun dosyala
 
 | | |
 |---|---|
-| Sürüm | 1.2 (versionCode 3) |
-| Boyut | 79.254 bayt (~77 KB) |
-| SHA-256 | `390a548a828c0a32493cbc85b13f8d6bfe4a23338d9fb16d227587355f774081` |
+| Sürüm | 1.3 (versionCode 4) |
+| Boyut | 87.446 bayt (~85 KB) |
+| SHA-256 | `e3f147c672d52e960be7fd540a0ebf3ce100604e9e250a9a73dd10b85201d33a` |
 | Paket | `com.wsc.editor` |
 | minSdk / targetSdk | 24 (Android 7+) / 34 |
 | İmza | APK Signature Scheme v3, `CN=WSC In-Game Editor` |
@@ -53,6 +53,15 @@ açılamazsa (çok nadir) `file://` moduna düşer ve editör yine açılır.
 - **İçe Al** → dosya seçici → JSON okunur, `WSC_IMPORT_JSON()` ile arayüze aktarılır.
 
 Bu JSON daha sonra `tools/wsc-save.sh push` ile (root/emülatör) cihazdaki oyuna geri yazılabilir.
+
+### Maç kuralları ve maaş sistemi (v1.3)
+
+| Sekme | Ne yapar |
+|---|---|
+| **Maç Kuralları** | ofsayt (tolerans, bölge, VAR, yarı otomatik, pasif), penaltı (9–13 m, VAR, kaleci erken çıkışı, tekrar), taç (süre, kaydırma, otomatik), korner (yay, organizasyon, kısa korner, kale çizgisi VAR), faul (temas sertliği, eşik, sarı limiti, doğrudan kırmızı, avantaj, simülasyon) + 4 hazır profil + **maç motoru** tahmini |
+| **Maaşlar** | haftalık/yıllık yük, prim yükü, vergi, bütçe kullanımı, **adil ücret** hesabı, 25 satırlık ücret tablosu, fark %, durum rozeti, toplu işlemler (piyasa ücretine çek / bütçeye sığdır / ±%10 / prim / yenile) |
+
+Oyunun kaydına `rules.*` ve `salary.*` blokları eklenir; eski kayıtlarda otomatik tamamlanır.
 
 ### Şema algılama (v1.2)
 
@@ -106,7 +115,7 @@ CI her derlemede önce iki test paketi çalıştırır; geçmeden APK yayınlanm
 | Paket | İddia | Kapsam |
 |---|---|---|
 | `tests/detect-test.mjs` | **19** | şema algılama: oyuncu/staff/finans/kulüp tanıma, güven yüzdeleri, yabancı şema, tanınmayan anahtarlar |
-| `tests/editor-smoke.mjs` | **52** (jsdom) | tüm sekmeler, 7 oyuncu alt sekmesi, kontrol yolu geçerliliği, sahneleme→inceleme→geri al→kaydet, toplu işlemler, serbest JSON ağacı, komut paleti, gelişmiş filtre, doğrulama, mobil çubuk, içe alma raporu |
+| `tests/editor-smoke.mjs` | **89** (jsdom) | tüm sekmeler, 7 oyuncu alt sekmesi, kontrol yolu geçerliliği, sahneleme→inceleme→geri al→kaydet, toplu işlemler, serbest JSON ağacı, komut paleti, gelişmiş filtre, doğrulama, mobil çubuk, içe alma raporu, **maç kuralları + maç motoru**, **maaş tablosu + toplu maaş işlemleri** |
 
 ## Bilinen sınırlar
 
