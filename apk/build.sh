@@ -20,7 +20,7 @@ if [ -z "$SDK" ] || [ ! -d "$SDK" ]; then
 fi
 
 BT="$(ls -d "$SDK"/build-tools/* 2>/dev/null | sort -V | tail -1)"
-PLATFORM="$(ls -d "$SDK"/platforms/android-* 2>/dev/null | sort -V | tail -1)"
+PLATFORM="$(ls -d "$SDK"/platforms/android-* 2>/dev/null | grep -Ev -- '-(beta|rc|preview)' | sort -V | tail -1)"
 [ -n "$BT" ] || { echo "HATA: build-tools yok." >&2; exit 1; }
 [ -n "$PLATFORM" ] || { echo "HATA: platforms/android-* yok." >&2; exit 1; }
 ANDROID_JAR="$PLATFORM/android.jar"
@@ -59,9 +59,17 @@ PY
 
 # ---------------------------------------------------------------- 2) java -> class
 echo "==> [2/6] Java derleniyor"
+set +e
 javac -nowarn -source 8 -target 8 -bootclasspath "$ANDROID_JAR" \
       -classpath "$ANDROID_JAR" -d "$BUILD/classes" \
-      $(find "$APK_DIR/java" -name '*.java') 2>&1 | grep -v "bootstrap class path" || true
+      $(find "$APK_DIR/java" -name '*.java') > "$BUILD/javac.log" 2>&1
+JAVAC_RC=$?
+set -e
+grep -v "bootstrap class path" "$BUILD/javac.log" | grep -v "^warning: \[options\]" || true
+if [ "$JAVAC_RC" -ne 0 ]; then
+  echo "HATA: javac başarısız (rc=$JAVAC_RC)" >&2
+  exit 1
+fi
 echo "    $(find "$BUILD/classes" -name '*.class' | wc -l) sınıf"
 
 # ---------------------------------------------------------------- 3) d8 -> dex

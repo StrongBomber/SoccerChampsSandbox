@@ -66,6 +66,11 @@ public class MainActivity extends Activity {
         web.loadUrl(base + "index.html");
     }
 
+    /** Kısa bildirim (UI iş parçacığından çağrılmalı). */
+    private void toast(String message) {
+        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show();
+    }
+
     /* ---------------- dosya köprüsü ---------------- */
 
     /** JS tarafından çağrılır: WSCAndroid.exportFile(name, text) */
