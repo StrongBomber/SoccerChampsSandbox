@@ -8,15 +8,15 @@ Editörün telefonda kurulabilir sürümü. Tamamen çevrimdışı, oyun dosyala
 
 | | |
 |---|---|
-| Sürüm | 1.1 (versionCode 2) |
-| Boyut | 75.072 bayt (~73 KB) |
-| SHA-256 | `b662222ba60a846f92475d14c58e893f4bca1466242964b3c927603066b91036` |
+| Sürüm | 1.2 (versionCode 3) |
+| Boyut | 79.254 bayt (~77 KB) |
+| SHA-256 | `390a548a828c0a32493cbc85b13f8d6bfe4a23338d9fb16d227587355f774081` |
 | Paket | `com.wsc.editor` |
 | minSdk / targetSdk | 24 (Android 7+) / 34 |
 | İmza | APK Signature Scheme v3, `CN=WSC In-Game Editor` |
 | İkon | 5 yoğunluk (mdpi→xxxhdpi) |
-| İçerik | `classes.dex`, `assets/{index.html,app.js,data.js,styles.css,demo-save.json,demo-save.js}` |
-| Doğrulama | `apk/APK-VERIFY.txt` — paket, launcher, SDK, dex, varlık, imza, hizalama: **hepsi ✓** |
+| İçerik | `classes.dex`, `assets/{index.html,app.js,detect.js,data.js,styles.css,demo-save.json,demo-save.js}` |
+| Doğrulama | `apk/APK-VERIFY.txt` — paket, launcher, SDK, dex, 7 varlık, imza, hizalama: **hepsi ✓** |
 
 ## Kurulum
 
@@ -54,6 +54,21 @@ açılamazsa (çok nadir) `file://` moduna düşer ve editör yine açılır.
 
 Bu JSON daha sonra `tools/wsc-save.sh push` ile (root/emülatör) cihazdaki oyuna geri yazılabilir.
 
+### Şema algılama (v1.2)
+
+İçe alınan **her** JSON önce `assets/detect.js` ile taranır: oyuncu/staff/finans/kulüp dizileri ve
+alan adları FM şemasına göre tahmin edilir, her bölüm için **güven yüzdesi** hesaplanır. Sonuç bir
+**İçe Alma Raporu** penceresinde gösterilir:
+
+| Durum | Davranış |
+|---|---|
+| FM şeması (`players[]` bulundu) | Tüm sekmeler açık; CA/PA, 47 nitelik, doğrulama ve sandbox çalışır |
+| Yabancı şema | Yalnızca **Serbest JSON** ağaç editörü; üst veri sekmeleri kilitli, doğrulama atlanır (yanlış alarm üretmez) |
+
+Rapor, tanınmayan üst düzey anahtarları da listeler; böylece kayıt dosyasının yapısı hakkında
+tahmin yürütmeden gerçek alan adlarıyla çalışılır. `Üst veri sekmeleri kapalı · Serbest JSON`
+satırındaki bağlantı ağacı arar ve ilgili diziye odaklanır.
+
 ## Derleme
 
 Yerelde:
@@ -77,7 +92,7 @@ imzalar, artifact + release asset olarak yayınlar ve `apk/APK-MANIFEST.txt` dos
 |---|---|
 | Paket kimliği, launcher activity, minSdk/targetSdk, etiket, ikon | `aapt2 dump badging` |
 | `MainActivity`, `MiniServer`, `MainActivity$Bridge` sınıfları | `dexdump` |
-| 6 gömülü varlık + `classes.dex` | `unzip -l` |
+| 7 gömülü varlık + `classes.dex` (detect.js dahil) | `unzip -l` |
 | Sertifika ve imza | `apksigner verify --print-certs` |
 | 4 bayt hizalama | `zipalign -c -p 4` |
 | Native kod yok (tüm ABİ'lerde çalışır) | badging `native-code` yok |
@@ -86,10 +101,12 @@ Son koşu: **"SONUÇ: APK kurulabilir görünüyor (tüm kontroller geçti)"**
 
 ## Kalite kapısı
 
-CI her derlemede önce `tests/editor-smoke.mjs` (jsdom, 46 iddia) çalıştırır; testler geçmeden
-APK yayınlanmaz. Testler: tüm sekmeler, 7 oyuncu alt sekmesi, kontrol yolu geçerliliği,
-sahneleme→inceleme→geri al→kaydet, toplu işlemler, serbest JSON ağacı, komut paleti,
-gelişmiş filtre, doğrulama, mobil çubuk.
+CI her derlemede önce iki test paketi çalıştırır; geçmeden APK yayınlanmaz:
+
+| Paket | İddia | Kapsam |
+|---|---|---|
+| `tests/detect-test.mjs` | **19** | şema algılama: oyuncu/staff/finans/kulüp tanıma, güven yüzdeleri, yabancı şema, tanınmayan anahtarlar |
+| `tests/editor-smoke.mjs` | **52** (jsdom) | tüm sekmeler, 7 oyuncu alt sekmesi, kontrol yolu geçerliliği, sahneleme→inceleme→geri al→kaydet, toplu işlemler, serbest JSON ağacı, komut paleti, gelişmiş filtre, doğrulama, mobil çubuk, içe alma raporu |
 
 ## Bilinen sınırlar
 

@@ -1,7 +1,7 @@
 # In-Game Editor — kullanım ve alan eşlemesi
 
 Football Manager'ın **In-Game Editor** ekranlarının World Soccer Champs verisiyle çalışan muadili.
-Bağımlılık yok: `index.html`, `data.js`, `app.js`, `styles.css`, `demo-save.json`.
+Bağımlılık yok: `index.html`, `data.js`, `app.js`, `detect.js`, `styles.css`, `demo-save.json`.
 
 ```bash
 cd sandbox-editor && python3 -m http.server 8080     # → http://localhost:8080
@@ -68,6 +68,26 @@ düzenlenebilir. Bu ağaç görünümü, REA analizinden çıkan alan adları do
 - sayı/metin/boolean düzenleme, **diziye öğe ekle**, **öğe sil**
 - tüm değişiklikler aynı inceleme çekmecesinde ve aynı geri al yığınında
 
+## Şema algılama + İçe Alma Raporu
+
+`detect.js` (`window.WSC_DETECT.detect(json)`) her içe alınan dosyayı FM şemasına göre tarar:
+
+1. **Aday toplama** — diziler ve nesneler 8 seviye derinliğe kadar gezilir.
+2. **Alan eşleme** — `ALIASES` tablosu (`name`/`age`/`position`/`ability`/`potential`/`value`/`wage`
+   ve `finance`/`clubMeta` varyantları) üzerinden her adayın kaç FM alanı tanıdığı sayılır.
+3. **Güven yüzdesi** — tanınan alan oranı + kayıt sayısı; `players`, `staff`, `finances`, `club`
+   bölümleri ayrı ayrı raporlanır (`yüksek ≥ %70`, `orta ≥ %40`, `düşük < %40`).
+4. **Rapor** — modal: bölüm kartları, alan çipleri, tanınmayan üst düzey anahtarlar, "Ham JSON'u Aç".
+
+Rapor kapandığında:
+
+| Durum | Sonuç |
+|---|---|
+| FM şeması (`players[]` var) | Tüm sekmeler normal çalışır |
+| **Yabancı şema** | `S.foreign = true` → yalnızca **Serbest JSON**; diğer sekmelerde bilgi kartı, doğrulama atlanır |
+
+`window.WSC_IMPORT_JSON(json)` APK'daki dosya seçicisinden gelen veriyi aynı yoldan geçirir.
+
 ## Gelişmiş arama
 
 Oyuncular listesinde ⚙ düğmesi: yaş, CA, PA aralıkları, ayak, yetişme durumu, sözleşme bitiş yılı.
@@ -81,8 +101,11 @@ görünür, stepper düğmeleri 30×30'a büyür. Uygulama olarak: [`APK.md`](AP
 ## Gerçek veriyle kullanım
 
 Editör demo kayıtla açılır. Gerçek kaydı yüklemek için:
-**Tercihler → JSON İçe Al** → kayıt dosyasını seç. Alan adları farklıysa **Ham** düzenleme yerine
-`data.js` içindeki eşlemeyi genişletmek gerekir (alan adları REA analizinden geliyor:
-`docs/REA-ANALYSIS.md` §4).
+**Tercihler → JSON İçe Al** → kayıt dosyasını seç.
+
+- **FM şeması tanınırsa** (rapor "Oyuncular · yüksek" derse) tüm sekmeler doğrudan çalışır.
+- **Şema farklıysa** rapor hangi dizide ne bulduğunu gösterir; editör yabancı moda geçip yalnızca
+  Serbest JSON'u açar. Alan adlarını kalıcı eşlemek için `detect.js` içindeki `ALIASES` tablosuna
+  ekleme yapılabilir (alan adları REA analizinden geliyor: `docs/REA-ANALYSIS.md` §4).
 
 Dışa aktarılan JSON `tools/wsc-save.sh push` ile cihaza geri yazılabilir (root/emülatör).

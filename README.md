@@ -6,7 +6,7 @@ ve root'lu cihazlar için **Frida overlay mod menüsü**.
 ## Android APK
 
 **İndir:** https://github.com/StrongBomber/SoccerChampsSandbox/releases/download/editor-apk/wsc-editor.apk
-(73 KB · v1.1 · minSdk 24 · imzalı · çevrimdışı · kurulabilirlik doğrulandı)
+(77 KB · v1.2 · minSdk 24 · imzalı · çevrimdışı · kurulabilirlik doğrulandı)
 
 ```bash
 adb install wsc-editor.apk          # veya telefona kopyalayıp dokun
@@ -56,7 +56,7 @@ Sağ üstte **◢ SANDBOX** düğmesi: değer tara → daralt → yaz / dondur. 
 | `tools/` | `wsc-save.sh` (kayıt çek/geri yaz), `frida-run.sh` |
 | `analysis/` | REA statik analiz çıktıları |
 | `apk/` | Android APK kaynakları (`build.sh`, `verify-apk.sh`, Java, manifest, ikon) |
-| `tests/` | `editor-smoke.mjs` — 46 iddialık jsdom duman testi |
+| `tests/` | `editor-smoke.mjs` — 52 iddialık jsdom duman testi · `detect-test.mjs` — 19 iddialık şema algılama testi |
 | `docs/` | `APK.md`, `EDITOR.md`, `REA-ANALYSIS.md`, `ROOTSUZ-KURULUM.md` |
 | `.github/workflows/` | XAPK indirme + REA analiz iş akışları |
 
