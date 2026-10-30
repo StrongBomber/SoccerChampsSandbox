@@ -1,0 +1,28 @@
+APK: apk/out/wsc-editor.apk
+Boyut: 66474 bayt
+SHA-256: ab374eff2990dca29e58f70f86b5a0cc9efe03fe4bde1e36a3c928f6acd45d3d
+
+=== içerik ===
+Archive:  apk/out/wsc-editor.apk
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+     2228  1980-01-01 00:00   AndroidManifest.xml
+       40  1980-01-01 00:00   resources.arsc
+    12868  2026-10-30 12:27   classes.dex
+    26006  2026-10-30 12:27   assets/styles.css
+    50735  2026-10-30 12:27   assets/demo-save.js
+    83242  2026-10-30 12:27   assets/demo-save.json
+     5470  2026-10-30 12:27   assets/data.js
+     2276  2026-10-30 12:27   assets/index.html
+    74358  2026-10-30 12:27   assets/app.js
+      945  2026-10-30 12:27   META-INF/WSC.SF
+     1337  2026-10-30 12:27   META-INF/WSC.RSA
+      818  2026-10-30 12:27   META-INF/MANIFEST.MF
+---------                     -------
+   260323                     12 files
+
+=== imza ===
+V3.0 Signer: certificate DN: CN=WSC In-Game Editor, OU=Sandbox, O=WSC, L=Istanbul, C=TR
+V3.0 Signer: certificate SHA-256 digest: f9aba2a949aa7b50f908a60bcee1c3890cafb47bca47399a79924a4194c53aa4
+V3.0 Signer: certificate SHA-1 digest: 006d43e25794817534ac38f3b5e290b175bcf367
+V3.0 Signer: certificate MD5 digest: 38bd09c99336a486ec4b6da3a61aff00
