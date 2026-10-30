@@ -29,8 +29,14 @@ jobs:
         with:
           node-version: "24.22.1"
 
-      - name: Download XAPK from Google Drive
-        run: bash scripts/download_drive.sh "$FILE_ID" "src.xapk"
+      - name: Download XAPK from the release asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release download wsc-2026.12 --pattern '*.xapk' --output src.xapk
+          ls -la src.xapk
+          echo "size=$(stat -c%s src.xapk) (beklenen 237511212)"
 
       - name: Unpack XAPK
         run: |
