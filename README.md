@@ -3,6 +3,18 @@
 World Soccer Champs (2026.12) için **Football Manager oyun içi editörünün (In-Game Editor) birebir muadili**
 ve root'lu cihazlar için **Frida overlay mod menüsü**.
 
+## Android APK
+
+**İndir:** https://github.com/StrongBomber/SoccerChampsSandbox/releases/download/editor-apk/wsc-editor.apk
+(65 KB · minSdk 24 · imzalı · çevrimdışı)
+
+```bash
+adb install wsc-editor.apk          # veya telefona kopyalayıp dokun
+```
+
+Uygulama, editörü WebView içinde gömer; kayıtlar sistem dosya seçicisiyle içe/dışa aktarılır.
+Ayrıntı: [`docs/APK.md`](docs/APK.md) · Derleme: `bash apk/build.sh`
+
 ## In-Game Editor (sandbox-editor/)
 
 ```bash
@@ -42,7 +54,8 @@ Sağ üstte **◢ SANDBOX** düğmesi: değer tara → daralt → yaz / dondur. 
 |---|---|
 | `tools/` | `wsc-save.sh` (kayıt çek/geri yaz), `frida-run.sh` |
 | `analysis/` | REA statik analiz çıktıları |
-| `docs/` | `EDITOR.md` (editör kullanımı), `REA-ANALYSIS.md` (teknik rapor), `ROOTSUZ-KURULUM.md` |
+| `apk/` | Android APK kaynakları (`build.sh`, Java, manifest) |
+| `docs/` | `APK.md`, `EDITOR.md`, `REA-ANALYSIS.md`, `ROOTSUZ-KURULUM.md` |
 | `.github/workflows/` | XAPK indirme + REA analiz iş akışları |
 
 ## Neden APK modlanmıyor?
