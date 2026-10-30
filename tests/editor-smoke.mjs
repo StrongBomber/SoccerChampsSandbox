@@ -26,7 +26,7 @@ const errors = [];
 window.addEventListener("error", (e) => errors.push(e.message || String(e.error)));
 window.addEventListener("unhandledrejection", (e) => errors.push(String(e.reason)));
 
-for (const f of ["data.js", "app.js"]) {
+for (const f of ["detect.js", "data.js", "app.js"]) {
   try { window.eval(fs.readFileSync(path.join(ROOT, f), "utf8")); }
   catch (e) { errors.push(`${f}: ${e.message}`); }
 }
@@ -169,6 +169,20 @@ check("durum çubuğu", d.querySelector("#statusIssues").textContent.length > 0)
 section("Mobil aksiyon çubuğu");
 check("mobil kaydet düğmesi", !!d.querySelector("#mSave"));
 check("mobil sayaç", !!d.querySelector("#mCount"));
+
+section("İçe alma raporu (yabancı şema)");
+const foreign = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "foreign-save.json"), "utf8");
+window.WSC_IMPORT_JSON(foreign);
+await new Promise((r) => setTimeout(r, 50));
+check("rapor açıldı", !d.querySelector("#report").hidden);
+check("özet metni", /oyuncu kaydı bulundu/.test(d.querySelector("#reportSummary").textContent));
+check("4 bölüm kartı", d.querySelectorAll(".detect-card").length >= 4);
+check("güven yüzdesi gösterildi", /%\d+ güven/.test(d.querySelector("#reportBody").textContent));
+click("#reportRaw");
+check("rapor kapandı + Serbest JSON", d.querySelector("#report").hidden && d.querySelector(".tab.active")?.textContent === "Serbest JSON");
+check("ağaç araması dolduruldu", d.querySelector("#treeQ")?.value.length > 0, d.querySelector("#treeQ")?.value);
+// demo kayda geri dön
+window.WSC_IMPORT_JSON(JSON.stringify(demo));
 
 section("Sonuç");
 check("JavaScript hatası yok", errors.length === 0, errors.join(" | "));

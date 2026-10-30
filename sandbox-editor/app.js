@@ -59,6 +59,7 @@
     history: [],
     prefs: { confirmLeave: true, attrColors: true, autoSave: false },
     scope: { path: "", name: "" },
+    foreign: false,
     focusPath: null,
   };
 
@@ -313,6 +314,7 @@
   function validate() {
     const s = S.save;
     const out = [];
+    if (!s || !Array.isArray(s.players) || !s.club || !s.club.finances) return out;
     const push = (level, text, go) => out.push({ level, text, go });
 
     if (s.club.finances.balance < 0) push("err", `Kulüp bakiyesi negatif (${fmt.money(s.club.finances.balance)}).`, { route: "finances" });
@@ -468,7 +470,7 @@
       const wages = s.players.reduce((a, p) => a + (p.contract?.wage || 0), 0);
       const avgCa = s.players.length ? Math.round(s.players.reduce((a, p) => a + p.ca, 0) / s.players.length) : 0;
       const expiring = s.players.filter((p) => String(p.contract?.expiry) < "2027-07-01").length;
-      const issues = validate();
+      const issues = S.foreign ? [] : validate();
       const wagePct = s.club.finances.wageBudget ? Math.round((wages / s.club.finances.wageBudget) * 100) : 0;
 
       return `
@@ -1262,7 +1264,7 @@
   function monthsLeft(expiry) {
     if (!expiry) return 0;
     const d = new Date(expiry);
-    const now = new Date(S.save.game.date);
+    const now = new Date(S.save?.game?.date || Date.now());
     const m = (d.getFullYear() - now.getFullYear()) * 12 + (d.getMonth() - now.getMonth());
     return Math.max(0, m);
   }
@@ -1445,8 +1447,29 @@
     CTLS = [];
     const scrollY = window.scrollY;
     $("#tabs").innerHTML = TABS.map((t) => `<button class="tab ${S.route === t.id ? "active" : ""}" data-route="${t.id}">${t.label}</button>`).join("");
+    if (S.foreign && S.route !== "free" && S.route !== "preferences") {
+      $("#view").innerHTML = `
+        <div class="hint-box warn">
+          <span>⚠</span>
+          <div>
+            <b>Bu kayıt editör modeline eşlenmedi.</b> İçe aldığın dosya FM alan adlarını
+            (<span class="mono">players</span>, <span class="mono">club.finances</span>…) kullanmıyor.
+            Tüm değerleri <b>Serbest JSON</b> ağacından düzenleyebilirsin; ya da demo kayda dönüp
+            biçimi inceleyebilirsin.
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn primary" data-route="free">Serbest JSON'u aç</button>
+          <button class="btn" style="background:#241a3a" id="reportReopen">Eşleme raporunu göster</button>
+          <button class="btn" style="background:#241a3a" id="resetBtn">Demo kayda dön</button>
+        </div>`;
+      paintStatus();
+      return;
+    }
     $("#view").innerHTML = views[S.route]();
-    $("#brandSub").textContent = `${S.save.meta.game} · ${S.save.game.season}`;
+    const brandGame = S.save?.meta?.game || S.save?.meta?.generatedBy || "İçe alınan kayıt";
+    const brandSeason = S.save?.game?.season || S.save?.career?.saveName || "";
+    $("#brandSub").textContent = S.foreign ? `${brandGame} · yabancı şema` : `${brandGame} · ${brandSeason}`;
     paintStatus();
     if (S.patches.length && !$("#review").hidden) renderReview();
     try { window.scrollTo(0, scrollY); } catch (_) { /* yok say */ }
@@ -1468,7 +1491,7 @@
     $("#saveBtn").disabled = n === 0;
 
     $("#statusLeft").textContent = n ? `${n} bekleyen düzenleme` : "Tüm değişiklikler kaydedildi";
-    const issues = validate();
+    const issues = S.foreign ? [] : validate();
     const errs = issues.filter((i) => i.level === "err").length;
     const warns = issues.filter((i) => i.level === "warn").length;
     $("#statusIssues").innerHTML = errs || warns
@@ -1481,8 +1504,12 @@
     const mUndo = $("#mUndo");
     if (mUndo) mUndo.disabled = n === 0;
 
-    $("#statusRight").textContent =
-      `${S.save.club.name} · ${S.save.game.season} · ${S.save.players.length} oyuncu · CA/PA 1–200 · nitelikler 1–20`;
+    const clubLabel = S.save?.club?.name || S.save?.meta?.game || "İçe alınan kayıt";
+    const season = S.save?.game?.season || "";
+    const nPlayers = Array.isArray(S.save?.players) ? S.save.players.length : 0;
+    $("#statusRight").textContent = S.foreign
+      ? `${clubLabel} · yabancı şema · ${Object.keys(S.save || {}).length} üst düzey alan`
+      : `${clubLabel} · ${season} · ${nPlayers} oyuncu · CA/PA 1–200 · nitelikler 1–20`;
   }
 
   /* ============================ olaylar ============================ */
@@ -1561,6 +1588,19 @@
           const parent = getPath(save, parts.join("."));
           if (Array.isArray(parent)) parent.splice(idx, 1);
         });
+        return;
+      }
+
+      if (t.closest("#reportClose") || t.closest("#reportOk") || t.closest("#reportScrim")) { closeReport(); return; }
+      if (t.closest("#reportReopen")) {
+        showImportReport(S.save, "içe alınan kayıt");
+        return;
+      }
+      if (t.closest("#reportRaw")) {
+        S.route = "free";
+        S.treeQ = S.report?.players?.path ? S.report.players.path.replace(/\[\d+\]/g, "").split(".").pop() : "";
+        closeReport();
+        paint();
         return;
       }
 
@@ -1647,6 +1687,7 @@
       if (t.closest("#resetBtn")) {
         if (!confirm("Demo kayda dönülsün mü? Düzenlemeler kaybolur.")) return;
         S.save = clone(S.demo); S.patches = []; S.history = [];
+        S.foreign = false;
         S.baseline = clone(S.save);
         localStorage.removeItem(LS_KEY);
         paint(); toast("Demo kayıt yüklendi");
@@ -1758,10 +1799,9 @@
       if (!file) return;
       try {
         const data = JSON.parse(await file.text());
-        S.save = data; S.patches = []; S.history = [];
-        S.baseline = clone(data);
-        localStorage.setItem(LS_KEY, JSON.stringify(data));
-        paint(); toast("Kayıt içe alındı");
+        applyImported(data);
+        showImportReport(data, file.name);
+        toast("Kayıt içe alındı — eşleme raporu açıldı");
       } catch (err) { toast("JSON okunamadı: " + err.message); }
       e.target.value = "";
     });
@@ -1849,15 +1889,80 @@
     toast("JSON dışa aktarıldı");
   }
 
+  /* ============================ şema tanıma raporu ============================ */
+
+  function showImportReport(json, fileName) {
+    const report = window.WSC_DETECT ? window.WSC_DETECT.detect(json) : null;
+    if (!report) return;
+
+    const row = (title, info, kind) => {
+      if (!info) {
+        return `<div class="detect-card miss">
+          <div class="dc-head"><span class="dc-title">${esc(title)}</span>
+            <span class="conf low">bulunamadı</span></div>
+          <div class="dc-meta">Bu bölüm tanınamadı. Serbest JSON sekmesinden elle düzenleyebilirsin.</div>
+        </div>`;
+      }
+      const conf = info.confidence === undefined ? null : info.confidence;
+      const cls = conf === null ? "mid" : conf >= 70 ? "high" : conf >= 40 ? "mid" : "low";
+      const fields = info.matchedFields
+        ? Object.values(info.matchedFields).flat().slice(0, 14)
+        : (info.fields || []).slice(0, 14);
+      return `<div class="detect-card">
+        <div class="dc-head">
+          <span class="dc-title">${esc(title)}${info.count !== undefined ? ` · ${info.count} kayıt` : ""}</span>
+          ${conf === null ? `<span class="conf ${cls}">eşleşti</span>` : `<span class="conf ${cls}">%${conf} güven</span>`}
+        </div>
+        <div class="dc-path">${esc(info.path || "(kök)")}</div>
+        <div class="dc-fields">${fields.map((f) => `<span>${esc(f)}</span>`).join("")}</div>
+      </div>`;
+    };
+
+    $("#reportSummary").textContent = `${fileName} · ${report.summary}`;
+    $("#reportBody").innerHTML = [
+      row("Oyuncular", report.players),
+      row("Personel", report.staff),
+      row("Finans", report.finances),
+      row("Kulüp", report.club),
+      report.unknownTopLevel.length
+        ? `<div class="detect-card">
+             <div class="dc-head"><span class="dc-title">Tanınmayan alanlar</span>
+               <span class="conf mid">${report.unknownTopLevel.length}</span></div>
+             <div class="dc-fields">${report.unknownTopLevel.slice(0, 24).map((k) => `<span>${esc(k)}</span>`).join("")}</div>
+           </div>`
+        : "",
+    ].join("");
+
+    S.report = report;
+    $("#report").hidden = false;
+    $("#reportScrim").hidden = false;
+  }
+
+  function closeReport() {
+    const r = $("#report");
+    const sc = $("#reportScrim");
+    if (r) r.hidden = true;
+    if (sc) sc.hidden = true;
+  }
+
   /* APK köprüsü: Android tarafı dosya seçtirip bu fonksiyonu çağırır. */
+  function applyImported(data) {
+    S.save = data;
+    S.patches = [];
+    S.history = [];
+    S.baseline = clone(data);
+    S.foreign = !Array.isArray(data?.players);
+    if (S.foreign) S.route = "free";
+    try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (_) { /* kota */ }
+    paint();
+  }
+
   window.WSC_IMPORT_JSON = function (text) {
     try {
       const data = JSON.parse(text);
-      S.save = data; S.patches = []; S.history = [];
-      S.baseline = clone(data);
-      try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (_) { /* kota */ }
-      paint();
-      toast("Kayıt içe alındı");
+      applyImported(data);
+      showImportReport(data, "android");
+      toast("Kayıt içe alındı — eşleme raporu açıldı");
     } catch (err) {
       toast("JSON okunamadı: " + err.message);
     }

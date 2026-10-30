@@ -37,6 +37,7 @@ echo "==> [1/6] Web uygulaması varlıkları kopyalanıyor"
 cp "$ROOT"/sandbox-editor/index.html \
    "$ROOT"/sandbox-editor/app.js \
    "$ROOT"/sandbox-editor/data.js \
+   "$ROOT"/sandbox-editor/detect.js \
    "$ROOT"/sandbox-editor/styles.css \
    "$ROOT"/sandbox-editor/demo-save.json \
    "$BUILD/assets/"
@@ -85,7 +86,7 @@ echo "==> [4/6] APK paketleniyor"
      -R "$BUILD/res.zip" \
      --manifest "$APK_DIR/AndroidManifest.xml" \
      --min-sdk-version 24 --target-sdk-version 34 \
-     --version-code 2 --version-name "1.1"
+     --version-code 3 --version-name "1.2"
 
 cp "$BUILD/dex/classes.dex" "$BUILD/classes.dex"
 ( cd "$BUILD" && zip -q base.apk classes.dex && zip -qr base.apk assets )

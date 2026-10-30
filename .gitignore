@@ -11,3 +11,6 @@ analysis/il2cpp-evidence.json
 # test bağımlılıkları (repoda tutulmaz)
 node_modules/
 package-lock.json
+
+# testte üretilen geçici dosyalar
+tests/.cache/

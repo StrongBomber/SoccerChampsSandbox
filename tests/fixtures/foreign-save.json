@@ -1,0 +1,414 @@
+{
+  "schemaVersion": 3,
+  "generatedBy": "World Soccer Champs",
+  "career": {
+    "saveName": "Kariyer 1",
+    "seasonYear": 2027
+  },
+  "squad": [
+    {
+      "uid": 9001,
+      "firstName": "Ali",
+      "lastName": "Yılmaz",
+      "ageYears": 26,
+      "posCode": "CB",
+      "quality": 69,
+      "ceiling": 68,
+      "marketValue": 1919583,
+      "weeklyWage": 48348,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 18,
+        "passing": 3
+      }
+    },
+    {
+      "uid": 9002,
+      "firstName": "Efe",
+      "lastName": "Yılmaz",
+      "ageYears": 18,
+      "posCode": "GK",
+      "quality": 68,
+      "ceiling": 74,
+      "marketValue": 8678454,
+      "weeklyWage": 43453,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 1,
+        "passing": 18
+      }
+    },
+    {
+      "uid": 9003,
+      "firstName": "Veli",
+      "lastName": "Demir",
+      "ageYears": 31,
+      "posCode": "CB",
+      "quality": 83,
+      "ceiling": 77,
+      "marketValue": 309031,
+      "weeklyWage": 53729,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 6,
+        "passing": 14
+      }
+    },
+    {
+      "uid": 9004,
+      "firstName": "Can",
+      "lastName": "Kaya",
+      "ageYears": 22,
+      "posCode": "CB",
+      "quality": 76,
+      "ceiling": 66,
+      "marketValue": 1756017,
+      "weeklyWage": 28898,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 4,
+        "passing": 12
+      }
+    },
+    {
+      "uid": 9005,
+      "firstName": "Can",
+      "lastName": "Demir",
+      "ageYears": 26,
+      "posCode": "GK",
+      "quality": 84,
+      "ceiling": 94,
+      "marketValue": 2294235,
+      "weeklyWage": 28807,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 3,
+        "passing": 18
+      }
+    },
+    {
+      "uid": 9006,
+      "firstName": "Can",
+      "lastName": "Demir",
+      "ageYears": 29,
+      "posCode": "LW",
+      "quality": 67,
+      "ceiling": 64,
+      "marketValue": 968805,
+      "weeklyWage": 47336,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 8,
+        "passing": 10
+      }
+    },
+    {
+      "uid": 9007,
+      "firstName": "Ali",
+      "lastName": "Yılmaz",
+      "ageYears": 21,
+      "posCode": "ST",
+      "quality": 72,
+      "ceiling": 89,
+      "marketValue": 10865015,
+      "weeklyWage": 58664,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 12,
+        "passing": 6
+      }
+    },
+    {
+      "uid": 9008,
+      "firstName": "Can",
+      "lastName": "Kaya",
+      "ageYears": 24,
+      "posCode": "CM",
+      "quality": 59,
+      "ceiling": 70,
+      "marketValue": 9161380,
+      "weeklyWage": 51784,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 8,
+        "passing": 6
+      }
+    },
+    {
+      "uid": 9009,
+      "firstName": "Efe",
+      "lastName": "Kaya",
+      "ageYears": 26,
+      "posCode": "LW",
+      "quality": 69,
+      "ceiling": 80,
+      "marketValue": 1138483,
+      "weeklyWage": 19010,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 2,
+        "passing": 11
+      }
+    },
+    {
+      "uid": 9010,
+      "firstName": "Efe",
+      "lastName": "Kaya",
+      "ageYears": 20,
+      "posCode": "CB",
+      "quality": 75,
+      "ceiling": 73,
+      "marketValue": 11196436,
+      "weeklyWage": 36717,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 13,
+        "passing": 15
+      }
+    },
+    {
+      "uid": 9011,
+      "firstName": "Veli",
+      "lastName": "Kaya",
+      "ageYears": 22,
+      "posCode": "CB",
+      "quality": 71,
+      "ceiling": 87,
+      "marketValue": 9990057,
+      "weeklyWage": 30175,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 12,
+        "passing": 8
+      }
+    },
+    {
+      "uid": 9012,
+      "firstName": "Veli",
+      "lastName": "Demir",
+      "ageYears": 33,
+      "posCode": "GK",
+      "quality": 58,
+      "ceiling": 67,
+      "marketValue": 2764251,
+      "weeklyWage": 45120,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 6,
+        "passing": 14
+      }
+    },
+    {
+      "uid": 9013,
+      "firstName": "Ali",
+      "lastName": "Kaya",
+      "ageYears": 30,
+      "posCode": "LW",
+      "quality": 84,
+      "ceiling": 93,
+      "marketValue": 4418028,
+      "weeklyWage": 40256,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 1,
+        "passing": 4
+      }
+    },
+    {
+      "uid": 9014,
+      "firstName": "Can",
+      "lastName": "Demir",
+      "ageYears": 28,
+      "posCode": "GK",
+      "quality": 73,
+      "ceiling": 87,
+      "marketValue": 2853446,
+      "weeklyWage": 33735,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 1,
+        "passing": 9
+      }
+    },
+    {
+      "uid": 9015,
+      "firstName": "Veli",
+      "lastName": "Demir",
+      "ageYears": 21,
+      "posCode": "CM",
+      "quality": 87,
+      "ceiling": 72,
+      "marketValue": 2764217,
+      "weeklyWage": 28504,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 6,
+        "passing": 18
+      }
+    },
+    {
+      "uid": 9016,
+      "firstName": "Ali",
+      "lastName": "Demir",
+      "ageYears": 28,
+      "posCode": "ST",
+      "quality": 56,
+      "ceiling": 67,
+      "marketValue": 6289806,
+      "weeklyWage": 58504,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 10,
+        "passing": 8
+      }
+    },
+    {
+      "uid": 9017,
+      "firstName": "Ali",
+      "lastName": "Yılmaz",
+      "ageYears": 20,
+      "posCode": "GK",
+      "quality": 86,
+      "ceiling": 64,
+      "marketValue": 9137326,
+      "weeklyWage": 54189,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 5,
+        "passing": 5
+      }
+    },
+    {
+      "uid": 9018,
+      "firstName": "Efe",
+      "lastName": "Demir",
+      "ageYears": 23,
+      "posCode": "CM",
+      "quality": 88,
+      "ceiling": 87,
+      "marketValue": 3753384,
+      "weeklyWage": 39343,
+      "clubName": "Kartal SK",
+      "nation": "TR",
+      "contract": {
+        "until": "2028-06-30"
+      },
+      "attrs": {
+        "shooting": 7,
+        "passing": 10
+      }
+    }
+  ],
+  "backroom": [
+    {
+      "uid": 1,
+      "displayName": "Selim Arıkan",
+      "jobTitle": "Manager",
+      "ageYears": 47,
+      "quality": 150
+    },
+    {
+      "uid": 2,
+      "displayName": "Marta Oliveira",
+      "jobTitle": "Coach",
+      "ageYears": 41,
+      "quality": 132
+    }
+  ],
+  "wallet": {
+    "cash": 18450000,
+    "transferBudget": 6200000,
+    "wageBudget": 1450000,
+    "debt": 0
+  },
+  "team": {
+    "name": "Kartal SK",
+    "shortName": "KRT",
+    "stadium": "Kartal Arena",
+    "capacity": 42500,
+    "reputation": 6250,
+    "league": "Süper Lig",
+    "colours": [
+      "#5b21b6"
+    ]
+  },
+  "leagueTable": [
+    {
+      "pos": 1,
+      "club": "Galatasaray",
+      "pts": 44
+    }
+  ],
+  "settings": {
+    "language": "tr",
+    "sound": true
+  }
+}

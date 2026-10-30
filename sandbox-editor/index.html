@@ -71,8 +71,25 @@
   </footer>
 </aside>
 
+<div class="scrim" id="reportScrim" hidden></div>
+<section class="report" id="report" hidden aria-label="İçe alma raporu">
+  <header class="report-head">
+    <div>
+      <h2>İçe Alma Raporu</h2>
+      <p id="reportSummary">—</p>
+    </div>
+    <button class="btn ghost" id="reportClose">✕</button>
+  </header>
+  <div class="report-body" id="reportBody"></div>
+  <footer class="report-foot">
+    <button class="btn" id="reportRaw">Serbest JSON'da aç</button>
+    <button class="btn primary" id="reportOk">Anladım</button>
+  </footer>
+</section>
+
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+<script src="./detect.js"></script>
 <script src="./data.js"></script>
 <script src="./app.js"></script>
 </body>

@@ -645,3 +645,40 @@ table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: 
   .subtabs { overflow-x: auto; flex-wrap: nowrap; }
   .subtab { white-space: nowrap; }
 }
+
+/* ==========================================================================
+   İçe alma raporu (şema tanıma)
+   ========================================================================== */
+.report {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(680px, 94vw); max-height: 84vh; z-index: 95;
+  background: #101016; border: 1px solid #3b2c60; border-radius: 6px;
+  display: flex; flex-direction: column; box-shadow: 0 30px 80px rgba(0,0,0,.7);
+}
+.report-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 14px 16px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(100deg, #2a0f52, #150c28);
+}
+.report-head h2 { margin: 0; font-size: 15px; }
+.report-head p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+.report-body { flex: 1; overflow: auto; padding: 12px 16px; display: grid; gap: 10px; }
+.report-foot {
+  display: flex; justify-content: flex-end; gap: 8px; padding: 12px 16px;
+  border-top: 1px solid var(--line); background: #0c0c11;
+}
+.detect-card { border: 1px solid var(--line); border-radius: 4px; background: var(--panel); padding: 10px 12px; }
+.detect-card.miss { border-color: #4a2a2a; background: rgba(217,83,79,.06); }
+.detect-card .dc-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.detect-card .dc-title { font-size: 12.5px; font-weight: 700; letter-spacing: .02em; }
+.detect-card .dc-path { font-family: var(--mono); font-size: 11px; color: var(--purple-3); margin-top: 3px; word-break: break-all; }
+.detect-card .dc-meta { font-size: 11px; color: var(--muted); margin-top: 5px; }
+.detect-card .dc-fields { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+.detect-card .dc-fields span {
+  font-family: var(--mono); font-size: 10px; padding: 2px 6px; border-radius: 3px;
+  background: #1a1a24; border: 1px solid var(--line); color: var(--text-dim);
+}
+.conf { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
+.conf.high { background: rgba(63,191,111,.16); color: #7ee0a6; border: 1px solid rgba(63,191,111,.4); }
+.conf.mid { background: rgba(232,179,57,.14); color: #f4d68a; border: 1px solid rgba(232,179,57,.4); }
+.conf.low { background: rgba(217,83,79,.14); color: #f3a6a6; border: 1px solid rgba(217,83,79,.4); }

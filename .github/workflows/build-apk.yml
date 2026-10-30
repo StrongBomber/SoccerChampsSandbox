@@ -46,6 +46,7 @@ jobs:
         run: |
           set -eu
           npm install --no-save --no-audit --no-fund jsdom
+          node tests/detect-test.mjs
           node tests/editor-smoke.mjs
 
       - name: APK derle
@@ -132,7 +133,7 @@ jobs:
             echo "Kurulum: APK'yi indir, telefonda 'bilinmeyen kaynaklara izin ver' secenegini ac, kur."
             echo "Uygulama tamamen cevrimdisidir; oyun dosyalarina dokunmaz."
             echo ""
-            echo "- Surum: 1.1 (versionCode 2)"
+            echo "- Surum: 1.2 (versionCode 3)"
             echo "- Paket: com.wsc.editor"
             echo "- minSdk 24 (Android 7+)"
             echo "- Icerik: 25 oyuncu demo kaydi, FM alanlariyla (CA/PA, 47 nitelik, tesisler, sozlesmeler)"
