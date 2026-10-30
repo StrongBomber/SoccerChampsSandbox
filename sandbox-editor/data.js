@@ -22,6 +22,29 @@
 
   const STAFF_ATTRS = ["Antrenörlük", "Taktik Bilgisi", "Kişi Yönetimi", "Zihinsel Antrenörlük", "Teknik Antrenörlük", "Fiziksel Antrenörlük", "Gençlerle Çalışma"];
 
+
+  /* FM "Player Traits" (PPM) listesi. */
+  const TRAITS = [
+    "Kanattan İçeri Kat Eder", "Kanatta Kalır", "Kanat Değiştirir", "Orta Sahaya Girer",
+    "Ceza Sahasına Girer", "Arkadan Bindirir", "Ofsayt Taktiği Uygular", "Markajdan Kaçar",
+    "Uzun Pas Dener", "Kısa Pas Dener", "Şut Çeker", "Uzaktan Şut Çeker",
+    "Topla Oynar", "Topu Hemen Bırakır", "Çalıma Girer", "Pas Yerine Şut Dener",
+    "Agresif Pres Yapar", "Sert Müdahale Eder", "Hava Toplarında Öne Çıkar",
+    "Penaltıları Kullanır", "Serbest Vuruşları Kullanır", "Kornerleri Kullanır",
+    "Kaleci: Topu Uzağa Fırlatır", "Kaleci: Riskli Pas Dener",
+  ];
+
+  const INJURIES = [
+    "Sakatlık Yok", "Kas Zorlanması", "Burkulma", "Kırık", "Kafa Sarsıntısı",
+    "Diz Bağı Zedelenmesi", "Ayak Bileği Burkulması", "Bel Ağrısı", "Grip",
+  ];
+
+  const FORMATIONS = ["4-4-2", "4-2-3-1", "4-3-3", "4-1-4-1", "3-5-2", "3-4-3", "5-3-2", "4-4-1-1"];
+  const COACHING_STYLES = ["Topa Sahip Olma", "Yüksek Pres", "Kontra Atak", "Dengeli", "Uzun Top", "Kanat Oyunu"];
+  const RESPONSIBILITIES = ["Antrenman", "Taktik", "Transfer", "Scout", "Genç Gelişim", "Fiziksel Hazırlık"];
+  const AFFILIATION_TYPES = ["Ana Kulüp", "Bağlı Kulüp", "İş Birliği"];
+  const SQUAD_TRAINED = ["Kulüpte Yetişti", "Ülkede Yetişti", "Yabancı"];
+
   const ENUMS = {
     foot: ["Sağ", "Sol", "Her ikisi"],
     morale: ["Çok İyi", "İyi", "Normal", "Düşük", "Çok Düşük"],
@@ -31,6 +54,7 @@
     media: ["Ölçülü", "Ateşli", "Sakin", "Çekingen", "Konuşkan", "Kavgacı"],
     clubStatus: ["Profesyonel", "Yarı Profesyonel", "Amatör"],
     staffRole: ["Menajer", "Yardımcı Antrenör", "Kaleci Antrenörü", "Baş Scout", "Scout", "Fizyoterapist", "Gençlik Sorumlusu", "Veri Analisti"],
+    squadStatus: ["Kadro Dışı", "Yedek", "Rotasyon", "İlk 11", "Kilit Oyuncu", "Yıldız Oyuncu"],
   };
 
   /** FM nitelik renk skalası (1-20). */
@@ -74,5 +98,9 @@
     },
   };
 
-  global.FM = { POSITIONS, POSITION_LABEL, GROUPS, STAFF_ATTRS, ENUMS, attrColor, abilityColor, fmt };
+  global.FM = {
+    POSITIONS, POSITION_LABEL, GROUPS, STAFF_ATTRS, ENUMS, TRAITS, INJURIES,
+    FORMATIONS, COACHING_STYLES, RESPONSIBILITIES, AFFILIATION_TYPES, SQUAD_TRAINED,
+    attrColor, abilityColor, fmt,
+  };
 })(window);

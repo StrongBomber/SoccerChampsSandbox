@@ -397,3 +397,161 @@ table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: 
   .row { grid-template-columns: 1fr; gap: 4px; }
   .row > .value { justify-content: flex-start; }
 }
+
+/* ==========================================================================
+   İnceleme çekmecesi, doğrulama, gelişmiş filtreler, özellik etiketleri
+   ========================================================================== */
+
+.status-chip {
+  border: 1px solid transparent; background: transparent; color: var(--muted);
+  font-size: 11px; letter-spacing: .04em; padding: 3px 8px; border-radius: 3px; cursor: pointer;
+}
+.status-chip:hover { border-color: var(--line); color: var(--text-dim); background: #15151c; }
+.status-mid { margin-left: 14px; margin-right: auto; font-size: 11px; }
+.status-mid .warn { color: var(--gold); }
+.status-mid .ok { color: var(--green); }
+
+.scrim { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 70; }
+
+.review-drawer {
+  position: fixed; top: 0; right: 0; height: 100vh; width: min(520px, 94vw);
+  background: #101016; border-left: 1px solid #342a52; z-index: 71;
+  display: flex; flex-direction: column; box-shadow: -30px 0 70px rgba(0,0,0,.65);
+}
+.review-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 16px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(100deg, #2a0f52, #1a1030);
+}
+.review-head h2 { margin: 0; font-size: 15px; letter-spacing: .02em; }
+.review-head p { margin: 4px 0 0; color: var(--muted); font-size: 11.5px; }
+.review-body { flex: 1; overflow: auto; padding: 10px 12px; display: grid; gap: 6px; }
+.review-foot {
+  display: flex; gap: 8px; justify-content: flex-end; padding: 12px 14px;
+  border-top: 1px solid var(--line); background: #0c0c11;
+}
+
+.patch {
+  display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+  border: 1px solid var(--line); border-radius: 4px; background: var(--panel);
+  padding: 8px 10px;
+}
+.patch .p-scope { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--purple-3); }
+.patch .p-field { font-size: 12px; margin-top: 2px; }
+.patch .p-vals { font-size: 11.5px; margin-top: 3px; font-family: var(--mono); }
+.patch .p-old { color: #f08a8a; text-decoration: line-through; opacity: .8; }
+.patch .p-new { color: #7ee0a6; }
+.patch .p-act button {
+  border: 1px solid var(--line); background: #1b1b24; color: var(--text-dim);
+  border-radius: 3px; height: 24px; padding: 0 8px; font-size: 10.5px; cursor: pointer;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.patch .p-act button:hover { border-color: #5b21b6; color: #fff; }
+.patch.structural { border-color: #4b3a1a; background: rgba(232,179,57,.06); }
+.patch.disabled { opacity: .55; }
+
+.empty-state { padding: 34px 16px; text-align: center; color: var(--muted); font-size: 12.5px; }
+.empty-state b { color: var(--text-dim); display: block; margin-bottom: 6px; font-size: 13px; }
+
+/* doğrulama listesi */
+.issue {
+  display: grid; grid-template-columns: 18px 1fr auto; gap: 9px; align-items: center;
+  padding: 7px 12px; border-bottom: 1px solid var(--line-soft); font-size: 12px;
+}
+.issue:last-child { border-bottom: none; }
+.issue .ico { font-size: 12px; }
+.issue.err .ico { color: var(--red); }
+.issue.warn .ico { color: var(--gold); }
+.issue.info .ico { color: #7cc4f2; }
+.issue button {
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  border-radius: 3px; height: 22px; padding: 0 8px; font-size: 10px; cursor: pointer;
+  letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+}
+.issue button:hover { color: #fff; border-color: var(--purple-2); }
+
+/* gelişmiş filtreler */
+.filters-panel {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+  padding: 10px; border-bottom: 1px solid var(--line); background: #12121a;
+}
+.filters-panel .f {
+  display: grid; gap: 3px;
+}
+.filters-panel .f span { font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.filters-panel .f input, .filters-panel .f select {
+  height: 24px; padding: 0 6px; background: #0c0c11; border: 1px solid var(--line);
+  border-radius: 3px; font-size: 11.5px; min-width: 0;
+}
+.filters-panel .f.full { grid-column: 1 / -1; }
+.filters-toggle {
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  height: 24px; border-radius: 3px; font-size: 10px; letter-spacing: .08em;
+  text-transform: uppercase; cursor: pointer;
+}
+.filters-toggle:hover { color: #fff; border-color: var(--purple-2); }
+.filters-toggle.on { background: rgba(91,33,182,.3); border-color: #5b21b6; color: #e9defd; }
+
+/* özellik (trait) etiketleri */
+.trait-grid { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px; }
+.trait-chip {
+  border: 1px solid var(--line); background: #12121a; color: var(--muted);
+  border-radius: 999px; padding: 5px 11px; font-size: 11.5px; cursor: pointer;
+  transition: .12s; user-select: none;
+}
+.trait-chip:hover { border-color: #5b21b6; color: var(--text-dim); }
+.trait-chip.on {
+  background: linear-gradient(180deg, rgba(124,58,237,.4), rgba(91,33,182,.28));
+  border-color: var(--purple-3); color: #ede9fe;
+}
+
+/* nitelik grubu başlığındaki toplu işlem düğmeleri */
+.card-head .head-actions { display: flex; gap: 4px; }
+.card-head .head-actions button {
+  border: 1px solid var(--line); background: #1a1a23; color: var(--muted);
+  border-radius: 2px; height: 20px; padding: 0 7px; font-size: 9.5px; cursor: pointer;
+  letter-spacing: .08em; text-transform: uppercase;
+}
+.card-head .head-actions button:hover { color: #fff; border-color: var(--purple-2); background: #241a3a; }
+
+/* ilişki / bağlantı satırları */
+.mini-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.mini-table td { padding: 5px 10px; border-bottom: 1px solid var(--line-soft); }
+.mini-table td.act { text-align: right; width: 1%; }
+.mini-table tr:last-child td { border-bottom: none; }
+.icon-btn {
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  height: 20px; width: 20px; border-radius: 3px; cursor: pointer; font-size: 11px; line-height: 1;
+}
+.icon-btn:hover { color: #fff; border-color: var(--red); }
+
+.add-row { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--line-soft); }
+.add-row input, .add-row select {
+  height: 24px; padding: 0 6px; background: #0c0c11; border: 1px solid var(--line);
+  border-radius: 3px; font-size: 11.5px; min-width: 0;
+}
+.add-row input { flex: 1; }
+
+.pill-soft {
+  display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: 10px;
+  letter-spacing: .06em; text-transform: uppercase; border: 1px solid var(--line);
+  background: #17171f; color: var(--muted);
+}
+.pill-soft.on { color: #c4b5fd; border-color: #4c2a86; background: rgba(91,33,182,.22); }
+.pill-soft.gold { color: #f4d68a; border-color: rgba(232,179,57,.4); background: rgba(232,179,57,.1); }
+.pill-soft.red { color: #f3a6a6; border-color: rgba(217,83,79,.45); background: rgba(217,83,79,.12); }
+
+.bulk-list { display: grid; gap: 8px; }
+.bulk-item {
+  display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: center;
+  border: 1px solid var(--line); border-radius: 4px; background: var(--panel); padding: 10px 12px;
+}
+.bulk-item .bi-icon { font-size: 14px; text-align: center; }
+.bulk-item .bi-title { font-size: 12.5px; font-weight: 600; }
+.bulk-item .bi-desc { font-size: 11.5px; color: var(--muted); margin-top: 2px; line-height: 1.45; }
+.bulk-item button {
+  border: 1px solid #5b21b6; background: rgba(91,33,182,.25); color: #e9defd;
+  border-radius: 3px; height: 26px; padding: 0 12px; font-size: 10.5px; cursor: pointer;
+  letter-spacing: .08em; text-transform: uppercase; font-weight: 600;
+}
+.bulk-item button:hover { background: rgba(124,58,237,.45); }

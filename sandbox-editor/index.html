@@ -25,7 +25,7 @@
       </div>
 
       <div class="title-actions">
-        <span class="dirty-pill" id="dirtyPill">Kaydedildi</span>
+        <button class="dirty-pill" id="reviewBtn" title="Bekleyen değişiklikleri incele (Ctrl+R)">Kaydedildi</button>
         <button class="btn ghost" id="undoBtn" title="Son düzenlemeyi geri al (Ctrl+Z)">↶ Geri Al</button>
         <button class="btn primary" id="saveBtn">Değişiklikleri Kaydet</button>
       </div>
@@ -38,12 +38,30 @@
     </main>
 
     <footer class="statusbar">
-      <span id="statusLeft">Hazır</span>
+      <button class="status-chip" id="statusLeft">Hazır</button>
+      <span class="status-mid" id="statusIssues"></span>
       <span id="statusRight"></span>
     </footer>
 
   </div>
 </div>
+
+<div class="scrim" id="scrim" hidden></div>
+
+<aside class="review-drawer" id="review" hidden aria-label="Bekleyen değişiklikler">
+  <header class="review-head">
+    <div>
+      <h2>Bekleyen Değişiklikler</h2>
+      <p id="reviewSub">0 düzenleme</p>
+    </div>
+    <button class="btn ghost" id="reviewClose">✕</button>
+  </header>
+  <div class="review-body" id="reviewBody"></div>
+  <footer class="review-foot">
+    <button class="btn" id="revertAllBtn">Tümünü Geri Al</button>
+    <button class="btn primary" id="saveFromReview">Kaydet ve Kapat</button>
+  </footer>
+</aside>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
