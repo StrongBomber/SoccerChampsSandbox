@@ -74,6 +74,30 @@ jobs:
           cat apk/out/wsc-editor.apk.sha256
           echo "size=$(stat -c%s apk/out/wsc-editor.apk)"
 
+      - name: APK manifestini yayınla
+        if: always()
+        run: |
+          set -eu
+          [ -f apk/out/wsc-editor.apk ] || exit 0
+          BT=$(ls -d "$ANDROID_SDK_ROOT/build-tools"/* | sort -V | tail -1)
+          {
+            echo "APK: apk/out/wsc-editor.apk"
+            echo "Boyut: $(stat -c%s apk/out/wsc-editor.apk) bayt"
+            echo "SHA-256: $(cut -d' ' -f1 apk/out/wsc-editor.apk.sha256)"
+            echo
+            echo "=== içerik ==="
+            unzip -l apk/out/wsc-editor.apk
+            echo
+            echo "=== imza ==="
+            "$BT/apksigner" verify --print-certs apk/out/wsc-editor.apk
+          } > apk/APK-MANIFEST.txt
+          cat apk/APK-MANIFEST.txt
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add apk/APK-MANIFEST.txt
+          git commit -m "ci: APK manifesti" || echo "değişiklik yok"
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push atlandı"
+
       - name: Artifact yükle
         uses: actions/upload-artifact@v4
         with:
