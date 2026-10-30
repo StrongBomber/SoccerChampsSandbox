@@ -1572,7 +1572,13 @@
 
   function exportJson() {
     const name = `wsc-editor-${(S.save.club.name || "kulup").toLowerCase().replace(/[^a-z0-9]+/gi, "-")}.json`;
-    const blob = new Blob([JSON.stringify(S.save, null, 2)], { type: "application/json" });
+    const text = JSON.stringify(S.save, null, 2);
+    if (window.WSCAndroid && window.WSCAndroid.exportFile) {
+      window.WSCAndroid.exportFile(name, text);
+      toast("Kayıt için konum seç…");
+      return;
+    }
+    const blob = new Blob([text], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = name;
@@ -1581,12 +1587,34 @@
     toast("JSON dışa aktarıldı");
   }
 
+  /* APK köprüsü: Android tarafı dosya seçtirip bu fonksiyonu çağırır. */
+  window.WSC_IMPORT_JSON = function (text) {
+    try {
+      const data = JSON.parse(text);
+      S.save = data; S.patches = []; S.history = [];
+      S.baseline = clone(data);
+      try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (_) { /* kota */ }
+      paint();
+      toast("Kayıt içe alındı");
+    } catch (err) {
+      toast("JSON okunamadı: " + err.message);
+    }
+  };
+
   /* ============================ başlangıç ============================ */
+
+  async function loadDemo() {
+    try {
+      const res = await fetch(DEMO_URL, { cache: "no-store" });
+      if (res.ok) return await res.json();
+    } catch (_) { /* file:// veya asset ortamı */ }
+    if (window.__DEMO_SAVE__) return window.__DEMO_SAVE__;
+    throw new Error("demo-save.json yüklenemedi");
+  }
 
   async function boot() {
     try {
-      const res = await fetch(DEMO_URL, { cache: "no-store" });
-      S.demo = await res.json();
+      S.demo = await loadDemo();
       let local = null;
       try { local = JSON.parse(localStorage.getItem(LS_KEY) || "null"); } catch (_) { local = null; }
       S.save = local || clone(S.demo);

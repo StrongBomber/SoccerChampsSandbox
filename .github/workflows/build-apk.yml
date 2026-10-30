@@ -1,0 +1,83 @@
+name: Build Editor APK
+
+# Sandbox In-Game Editor'ü Android APK olarak derler.
+# Çıktı: imzalı wsc-editor.apk (workflow artifact + `editor-apk` release asset).
+on:
+  push:
+    branches:
+      - arena/a59d6787-soccerchampssandbox
+    paths:
+      - apk/**
+      - sandbox-editor/**
+      - .github/workflows/build-apk.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Android SDK bilgisi
+        run: |
+          set -eu
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME}" >> "$GITHUB_ENV"
+          ls "${ANDROID_SDK_ROOT:-$ANDROID_HOME}/build-tools" || true
+          ls "${ANDROID_SDK_ROOT:-$ANDROID_HOME}/platforms" || true
+          java -version
+
+      - name: Java kaynak kontrolü (stub android.jar)
+        run: bash apk/check-java.sh
+
+      - name: APK derle
+        run: bash apk/build.sh
+
+      - name: İmza doğrula
+        run: |
+          set -eu
+          BT=$(ls -d "$ANDROID_SDK_ROOT/build-tools"/* | sort -V | tail -1)
+          "$BT/apksigner" verify --verbose apk/out/wsc-editor.apk | head -12
+          cat apk/out/wsc-editor.apk.sha256
+          echo "size=$(stat -c%s apk/out/wsc-editor.apk)"
+
+      - name: Artifact yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: wsc-editor-apk
+          path: |
+            apk/out/wsc-editor.apk
+            apk/out/wsc-editor.apk.sha256
+          retention-days: 30
+
+      - name: Release'e ekle
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          TAG="editor-apk"
+          {
+            echo "Football Manager tarzi In-Game Editor'un Android surumu."
+            echo ""
+            echo "Kurulum: APK'yi indir, telefonda 'bilinmeyen kaynaklara izin ver' secenegini ac, kur."
+            echo "Uygulama tamamen cevrimdisidir; oyun dosyalarina dokunmaz."
+            echo ""
+            echo "- Paket: com.wsc.editor"
+            echo "- minSdk 24 (Android 7+)"
+            echo "- Icerik: 25 oyuncu demo kaydi, FM alanlariyla (CA/PA, 47 nitelik, tesisler, sozlesmeler)"
+            echo "- JSON ice/disa aktarma: sistem dosya secici ile"
+          } > NOTES.md
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "WSC In-Game Editor - Android APK" --notes-file NOTES.md
+          fi
+          gh release upload "$TAG" apk/out/wsc-editor.apk apk/out/wsc-editor.apk.sha256 --clobber
+          gh release view "$TAG" --json assets --jq '.assets[] | "\(.name)  \(.size) bayt"'
