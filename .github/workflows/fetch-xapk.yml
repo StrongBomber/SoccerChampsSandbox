@@ -1,7 +1,7 @@
 name: Fetch XAPK from Google Drive
 
-# Runs on push (workflow_dispatch needs the file on the default branch, which this sandbox
-# branch is not allowed to write to).
+# Tetikleme: push. (workflow_dispatch, dosyanin varsayilan dalda olmasini gerektirir;
+# bu sandbox dali varsayilan dal degil.)
 on:
   push:
     branches:
@@ -40,11 +40,14 @@ jobs:
       - name: Publish as GitHub release asset
         run: |
           set -euo pipefail
+          {
+            echo "Kaynak: Google Drive (APKPure paketi)"
+            echo ""
+            echo "- Dosya: $FILE_NAME"
+            echo "- Boyut: 237.511.212 bayt (~226 MB)"
+            echo "- SHA-256: SHA256SUMS.txt dosyasinda"
+          } > notes.md
           gh release create "$RELEASE_TAG" \
             --title "World Soccer Champs 2026.12 (APKPure) - XAPK" \
-            --notes "World+Soccer+Champs_2026.12_APKPure-1.xapk
-
-- Kaynak: Google Drive (APKPure paketi)
-- Boyut: 237,511,212 bayt (~226 MB)
-- SHA-256: SHA256SUMS.txt dosyasinda" || true
+            --notes-file notes.md || true
           gh release upload "$RELEASE_TAG" "$FILE_NAME" SHA256SUMS.txt --clobber
