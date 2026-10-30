@@ -1,0 +1,50 @@
+name: Fetch XAPK from Google Drive
+
+# Runs on push (workflow_dispatch needs the file on the default branch, which this sandbox
+# branch is not allowed to write to).
+on:
+  push:
+    branches:
+      - arena/a59d6787-soccerchampssandbox
+    paths:
+      - .github/workflows/fetch-xapk.yml
+      - scripts/download_drive.sh
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    env:
+      FILE_ID: 1q83CaQEAi8ELOoG966wQr87VPqvCUFfv
+      FILE_NAME: World+Soccer+Champs_2026.12_APKPure-1.xapk
+      EXPECTED_SIZE: "237511212"
+      RELEASE_TAG: wsc-2026.12
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download from Google Drive
+        run: bash scripts/download_drive.sh "$FILE_ID" "$FILE_NAME"
+
+      - name: Verify integrity
+        run: |
+          set -euo pipefail
+          size=$(stat -c%s "$FILE_NAME")
+          echo "size=$size expected=$EXPECTED_SIZE"
+          [ "$size" = "$EXPECTED_SIZE" ] || { echo "::error::size mismatch"; exit 1; }
+          unzip -l "$FILE_NAME" | head -25
+          sha256sum "$FILE_NAME" | tee SHA256SUMS.txt
+
+      - name: Publish as GitHub release asset
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_TAG" \
+            --title "World Soccer Champs 2026.12 (APKPure) - XAPK" \
+            --notes "World+Soccer+Champs_2026.12_APKPure-1.xapk
+
+- Kaynak: Google Drive (APKPure paketi)
+- Boyut: 237,511,212 bayt (~226 MB)
+- SHA-256: SHA256SUMS.txt dosyasinda" || true
+          gh release upload "$RELEASE_TAG" "$FILE_NAME" SHA256SUMS.txt --clobber
