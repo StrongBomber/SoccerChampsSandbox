@@ -1,0 +1,59 @@
+=== check-java.log ===
+java/com/wsc/editor/MainActivity.java:134: error: cannot find symbol
+                toast("Kayıt dışa aktarıldı");
+                ^
+  symbol:   method toast(String)
+  location: class MainActivity
+java/com/wsc/editor/MainActivity.java:136: error: cannot find symbol
+                toast("Yazma hatası: " + e.getMessage());
+                ^
+  symbol:   method toast(String)
+  location: class MainActivity
+java/com/wsc/editor/MainActivity.java:143: error: cannot find symbol
+                if (in == null) { toast("Dosya açılamadı"); return; }
+                                  ^
+  symbol:   method toast(String)
+  location: class MainActivity
+java/com/wsc/editor/MainActivity.java:153: error: cannot find symbol
+                toast("Okuma hatası: " + e.getMessage());
+                ^
+  symbol:   method toast(String)
+  location: class MainActivity
+4 errors
+
+=== build.log ===
+==> SDK      : /usr/local/lib/android/sdk
+==> build-tools: 37.0.0
+==> platform : android-37.2-beta3
+==> [1/6] Web uygulaması varlıkları kopyalanıyor
+    demo-save.js gömüldü: 50735 bayt
+==> [2/6] Java derleniyor
+/home/runner/work/SoccerChampsSandbox/SoccerChampsSandbox/apk/java/com/wsc/editor/MainActivity.java:134: error: cannot find symbol
+                toast("Kayıt dışa aktarıldı");
+                ^
+  symbol:   method toast(String)
+  location: class MainActivity
+/home/runner/work/SoccerChampsSandbox/SoccerChampsSandbox/apk/java/com/wsc/editor/MainActivity.java:136: error: cannot find symbol
+                toast("Yazma hatası: " + e.getMessage());
+                ^
+  symbol:   method toast(String)
+  location: class MainActivity
+/home/runner/work/SoccerChampsSandbox/SoccerChampsSandbox/apk/java/com/wsc/editor/MainActivity.java:143: error: cannot find symbol
+                if (in == null) { toast("Dosya açılamadı"); return; }
+                                  ^
+  symbol:   method toast(String)
+  location: class MainActivity
+/home/runner/work/SoccerChampsSandbox/SoccerChampsSandbox/apk/java/com/wsc/editor/MainActivity.java:153: error: cannot find symbol
+                toast("Okuma hatası: " + e.getMessage());
+                ^
+  symbol:   method toast(String)
+  location: class MainActivity
+Note: /home/runner/work/SoccerChampsSandbox/SoccerChampsSandbox/apk/java/com/wsc/editor/MainActivity.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+4 errors
+    0 sınıf
+==> [3/6] DEX üretiliyor
+stat: cannot statx '/home/runner/work/SoccerChampsSandbox/SoccerChampsSandbox/apk/build/dex/classes.dex': No such file or directory
+    classes.dex:  bayt
+==> [4/6] APK paketleniyor
+cp: cannot stat '/home/runner/work/SoccerChampsSandbox/SoccerChampsSandbox/apk/build/dex/classes.dex': No such file or directory
