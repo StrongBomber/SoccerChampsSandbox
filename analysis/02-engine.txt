@@ -1,0 +1,47 @@
+=== base apk: xapk/config.my.apk ===
+=== native/asset izleri ===
+(iz yok)
+
+=== classes*.dex ===
+
+=== toplam giris sayisi ===
+6
+--- split: xapk/asset_pack.apk
+--- split: xapk/asset_pack.config.astc.apk
+--- split: xapk/com.monkeyibrow.worldsoccerchamps.apk
+--- split: xapk/config.ar.apk
+--- split: xapk/config.armeabi_v7a.apk
+lib/armeabi-v7a/libWorldSoccerChamps.so
+lib/armeabi-v7a/libapminsighta.so
+lib/armeabi-v7a/libapminsightb.so
+lib/armeabi-v7a/libapplovin-native-crash-reporter.so
+lib/armeabi-v7a/libbuffer_pgl.so
+lib/armeabi-v7a/libcrashlytics-common.so
+lib/armeabi-v7a/libcrashlytics-handler.so
+lib/armeabi-v7a/libcrashlytics-trampoline.so
+lib/armeabi-v7a/libcrashlytics.so
+lib/armeabi-v7a/libdatastore_shared_counter.so
+lib/armeabi-v7a/libfile_lock_pgl.so
+lib/armeabi-v7a/libnms.so
+lib/armeabi-v7a/libpairipcore.so
+lib/armeabi-v7a/libpglarmor.so
+lib/armeabi-v7a/libsentry-android.so
+lib/armeabi-v7a/libsentry.so
+lib/armeabi-v7a/libtt_ugen_layout.so
+--- split: xapk/config.de.apk
+--- split: xapk/config.en.apk
+--- split: xapk/config.es.apk
+--- split: xapk/config.fr.apk
+--- split: xapk/config.hdpi.apk
+--- split: xapk/config.hi.apk
+--- split: xapk/config.in.apk
+--- split: xapk/config.it.apk
+--- split: xapk/config.ja.apk
+--- split: xapk/config.ko.apk
+--- split: xapk/config.my.apk
+--- split: xapk/config.pt.apk
+--- split: xapk/config.ru.apk
+--- split: xapk/config.th.apk
+--- split: xapk/config.tr.apk
+--- split: xapk/config.vi.apk
+--- split: xapk/config.zh.apk
