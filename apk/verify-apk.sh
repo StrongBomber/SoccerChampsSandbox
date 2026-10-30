@@ -3,9 +3,14 @@
 # Kontroller: paket kimliği, launcher activity, minSdk/targetSdk, dex sınıfları,
 # gömülü varlıklar, imza, zipalign.
 set -euo pipefail
+# Argümanı çağrıldığı dizine göre mutlaklaştır, sonra apk/ içine geç.
+APK_ARG="${1:-out/wsc-editor.apk}"
+case "$APK_ARG" in
+  /*) APK="$APK_ARG" ;;
+  *)  APK="$(pwd)/$APK_ARG" ;;
+esac
 cd "$(dirname "$0")"
-
-APK="${1:-out/wsc-editor.apk}"
+[ -f "$APK" ] || { echo "APK bulunamadı: $APK" >&2; exit 1; }
 SDK="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
 BT="$(ls -d "$SDK"/build-tools/* 2>/dev/null | grep -Ev -- '-(beta|rc|preview)' | sort -V | tail -1)"
 
