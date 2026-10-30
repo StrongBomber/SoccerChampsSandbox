@@ -114,4 +114,5 @@ jobs:
             dist/theboys-mod-magisk.zip.sha256 \
             dist/MOD-CONTENTS.txt \
             dist/theboys-mod.js --clobber
+          gh release edit "$TAG" --notes-file NOTES.md
           gh release view "$TAG" --json assets --jq '.assets[] | "\(.name)  \(.size) bayt"'
