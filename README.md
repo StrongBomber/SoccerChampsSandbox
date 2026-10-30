@@ -1,117 +1,54 @@
-# SoccerChampsSandbox — World Soccer Champs modu
+# BitLife — The Boys Mod
 
-**Hedef: World Soccer Champs'in kendisini modlamak.** Ayrı bir uygulama değil — mod, oyunun
-kendi sürecinde çalışır: Frida ile canlı bellek modu veya oyunun kendi kayıt dosyası.
+BitLife (`com.candywriter.bitlife`) için **oyun içinde çalışan** mod. Ayrı uygulama yok:
+mod, oyunun kendi penceresine `◢ THE BOYS` düğmesi ekler.
 
-## Mod paketi (kurulabilir)
-
-**İndir:** https://github.com/StrongBomber/SoccerChampsSandbox/releases/download/wsc-mod/wsc-mod-magisk.zip
-(15,8 MB · frida-server + mod ajanı · Magisk/KernelSU)
-
-Magisk → Modules → Install → zip. Açılışta frida-server kendiliğinden başlar; oyunu açıp
-PC'den `tools/game-mod.sh --attach` çalıştırınca oyunun **kendi penceresinde** `◢ MOD` belirir.
-
-> **Neden APK değil?** Oyunun APK'sı yeniden imzalanamaz (`com.pairip.SignatureCheck` +
-> `libpairipcore.so` + Play Integrity) — yeniden imzalanan APK açılmaz. Bu yüzden mod
-> **çalışma anında** enjekte edilir; dağıtım biçimi flash'lanan pakettir.
-
-## Modu çalıştır (tek komut)
+**İndir:** https://github.com/StrongBomber/SoccerChampsSandbox/releases/download/theboys-mod/theboys-mod-magisk.zip
+(Magisk/KernelSU · frida-server + ajan · oyun kodunun tek baytı yok)
 
 ```bash
-tools/game-mod.sh --check                           # cihaz / root / mimari raporu
-tools/game-mod.sh --server /yol/frida-server-arm    # oyunu mod menüsüyle aç
+tools/theboys.sh --check           # cihaz / root / paket raporu
+tools/theboys.sh --attach          # oyun açıksa sürece enjekte et
+tools/theboys.sh --server /yol/frida-server-arm   # sunucuyu at + oyunu menüyle aç
 ```
 
-Oyunun kendi penceresine `◢ MOD` düğmesi eklenir:
+## Menü
 
 | Sekme | İçerik |
 |---|---|
-| **Tara** | int32/int64/float/double tarama · *İlk Ara → Değişti/Aynı/Arttı/Azaldı* · Seçilene Yaz · Tümüne Yaz · Dondur/Çöz · dosya izleyici |
-| **Hazır** | transfer/maaş bütçesi, bakiye, CA, PA, nitelik, piyasa değeri, itibar şablonları |
-| **Kayıt** | oyunun kendi `files/` dizini: listele, oku, yedekle, JSON'u düzenleyip geri yaz |
+| **Tara** | int32/int64/float/double tarama · *İlk Ara → Değişti/Aynı/Arttı/Azaldı* · Seçilene Yaz · Tümüne Yaz · Dondur |
+| **The Boys** | 10 karakter paketi (Homelander 100 · Black Noir 100 · Butcher 95 · Starlight 92 · A-Train 90 · Soldier Boy 88 · Kimiko 85 · Frenchie 78 · Hughie 70 · The Deep 60) + **Vought parası** + **Vought Modu** (kilitle) |
+| **İstatistik** | Para · Yaş · Görünüm · Zeka · Sağlık · Mutluluk · Şöhret · Karma şablonları |
+| **Kayıt** | Oyunun kendi `files/` dizini: listele, oku, **yedekle**, düzenle, geri yaz |
 
-Root yoksa (Android ≤10) kayıt dosyası yolu:
-
-```bash
-tools/wsc-save.sh pull saves/
-node tools/save-scan.mjs saves/<dosya> --patch "transferBudget=200000000" --out saves/yeni.json
-tools/wsc-save.sh push saves/
-```
-
-Ayrıntı: [`docs/GAME-MOD.md`](docs/GAME-MOD.md) · Ajan: [`modmenu/game-mod.js`](modmenu/game-mod.js)
-
-## Neden "modlanmış APK" dağıtılmıyor?
-
-`com.pairip.SignatureCheck`, `libpairipcore.so` ve Play Integrity: yeniden imzalanan APK açılmaz
-(kanıt: `analysis/05-probe.txt`). Bu yüzden mod **çalışma anında** uygulanır; oyunun orijinal
-kurulumu korunur. Ayrıntı: [`docs/GAME-MOD.md`](docs/GAME-MOD.md) §1.
-
-## İsteğe bağlı: kayıt dosyası yardımcısı (sandbox-editor/)
-
-> Hedef bu değil. Çekilen kayıt JSON'unu PC'de elle düzenlemek isteyenler için tarayıcı arayüzü;
-> mod menüsü ve `tools/save-scan.mjs` onsuz da çalışır.
+## Testler (cihaz gerekmez)
 
 ```bash
-cd sandbox-editor && python3 -m http.server 8080   # → http://localhost:8080
+node tests/theboys-test.mjs      # 33 iddia — ajan mantığı
+node tests/theboys-ui-test.mjs   # 36 iddia — arayüz (Android çerçeve taklidi)
 ```
 
-FM'nin oyun içi editörüyle aynı ekran akışı, terminoloji ve düzenleme modeli.
-Ayrıntılı kullanım: [`docs/EDITOR.md`](docs/EDITOR.md)
+## Neden modlanmış APK yok?
 
-| Sekme | İçerik |
+1. **Teknik:** Drive'daki `BitLife.apk` 141 MB — sandbox ağı Drive'a çıkmıyor, GitHub tek dosyada
+   100 MB kabul ediyor, Drive bağlayıcısı 100 MB üstünü satır içi vermiyor.
+2. **Hukuki:** BitLife ticari bir oyun; modlanmış APK yayınlamak oyunun kopyasını dağıtmak olur.
+
+Bu yüzden mod çalışma anında uygulanır ve paket oyun kodunu içermez.
+Ayrıntı ve dürüst sınırlar: [`docs/BITLIFE-MOD.md`](docs/BITLIFE-MOD.md)
+
+## Klasörler
+
+| Yol | Ne var |
 |---|---|
-| **Genel Bakış** | Kulüp başlığı, kadro değeri, ortalama CA, bakiye, maaş yükü, **doğrulama uyarıları**, son düzenlemeler |
-| **Kulüp** | Ad/statü, **İtibar 1–10.000**, stadyum/kapasite, **Antrenman/Altyapı Tesisi, Genç Keşif, Genç Antrenörlük (1–20)**, finans, **bağlantılı kulüpler / rakipler / efsaneler** |
-| **Oyuncular** | Aranabilir kadro + **7 alt sekme**: Profil · **Nitelikler (47 × 1–20)** · Sözleşme · Kişisel · **Özellikler (24 PPM)** · **Disiplin/Sakatlık** · **İlişkiler** |
-| **Personel** | CA/PA, itibar, 7 nitelik, tercih edilen diziliş/tarz, **sorumluluklar** |
-| **Finans** | Bütçeler, maaş yükü göstergesi, sezon projeksiyonu, hızlı işlemler |
-| **Müsabakalar** | Seviye, itibar, takım sayısı, ödül havuzu, tur ödülü + lig tablosu |
-| **Maç Kuralları** | **Ofsayt · Penaltı · Taç · Korner · Faul** kuralları (tolerans, mesafe, süre, yay, eşik, kart limiti, VAR) + 4 hazır profil + **maç motoru** tahmini (gol, penaltı, ofsayt, korner, taç, faul, kart) |
-| **Maaşlar** | **Adil ücret** hesabı, primler (maç başı/gol/gol yememe/sadakat), vergi, bütçe kullanımı, 25 satırlık ücret tablosu ve toplu işlemler (piyasa ücretine çek, bütçeye sığdır, ±%10, sözleşme yenile) |
-| **Serbest JSON** | Gerçek kayıt dosyaları için ağaç editörü (her alanı düzenle, dizi ekle/sil, ara) |
-| **Sandbox** | 8 toplu işlem (nitelik maks, PA=CA, sakatlık temizle, sözleşme +3 yıl, bütçe, moral, genç yetenek…) |
-| **Tercihler** | Renk/otomatik kayıt, JSON içe/dışa aktarma, kısayollar |
+| `bitlife/theboys-mod.js` | Frida ajanı — menü, tarayıcı, karakter paketleri, kayıt dosyaları |
+| `tools/theboys.sh` | Tek komut başlatıcı (`--check` · `--emulator` · `--server` · `--attach`) |
+| `tools/build-mod-zip.sh` | Magisk/KernelSU paketi üretir |
+| `tests/` | `theboys-test.mjs` (33) · `theboys-ui-test.mjs` (36) · `frida-mock.mjs` · `android-mock.mjs` |
+| `.github/workflows/build-mod.yml` | Testler → paket → release |
 
-**FM gibi düzenleme:** her alan değişikliği sahnelenir → **inceleme çekmecesi** (Ctrl+R) eski→yeni
-değerleri listeler, tek tek veya toplu geri alınır → **Değişiklikleri Kaydet** (Ctrl+S) kalıcılaştırır.
-Kaydedilmemişken sekmeyi kapatmak uyarı verir. `CA > PA`, geçmiş sözleşme, bütçe aşımı, kural
-tutarsızlığı (ör. penaltı mesafesi 9–13 m dışı), asgari ücret altı oyuncu gibi durumlar
-**doğrulama** panelinde canlı gösterilir ve ilgili ekrana/oyuncuya atlar.
+## Not
 
-## Mod ajanı testi
-
-```bash
-node tests/game-mod-test.mjs     # Frida çalışma zamanı taklidi: 27 iddia
-node tests/android-ui-test.mjs   # Android çerçeve taklidi: 46 iddia (menü, tarama, kayıt, kurallar)
-```
-
-Arayüz testi ajanın **gerçek kod yolunu** çalıştırır: Activity hook → `buildUi()` → sekmeler →
-tarama → yazma → dondurma → oyunun kayıt dosyası listesi/okuma/yedekleme → ofsayt/taç alanını
-1↔0 çevirip geri yazma. Gerçek emülatör bu ortamda yok; sınırlar: [`docs/GAME-MOD.md`](docs/GAME-MOD.md) §5–6.
-
-## Diğer klasörler
-
-| Klasör | Ne var |
-|---|---|
-| `tools/` | `game-mod.sh` (tek komut mod menüsü), `build-mod-zip.sh` (Magisk paketi), `wsc-save.sh`, `save-scan.mjs` |
-| `analysis/` | REA statik analiz çıktıları |
-| `apk/` | Android APK kaynakları (`build.sh`, `verify-apk.sh`, Java, manifest, ikon) |
-| `tests/` | `game-mod-test.mjs` (27) · `android-ui-test.mjs` (46) · `editor-smoke.mjs` (89) · `detect-test.mjs` (19) |
-| `docs/` | `APK.md`, `EDITOR.md`, `REA-ANALYSIS.md`, `ROOTSUZ-KURULUM.md` |
-| `.github/workflows/` | XAPK indirme + REA analiz iş akışları |
-
-## Teknik özet
-
-| Katman | Bulgu |
-|---|---|
-| Motor | **Cocos2d-x**, native C++ (`libWorldSoccerChamps.so`, 15,9 MB, **stripped**) |
-| Koruma | `com.pairip.SignatureCheck`, `VMRunner`, `libpairipcore.so`, `libpglarmor.so` + Play Integrity |
-| Sonuç | Sabit offset / sembol yok → **değer taraması**; yeniden imzalama yok → **runtime mod** |
-
-Ayrıntılı analiz: [`docs/REA-ANALYSIS.md`](docs/REA-ANALYSIS.md) · Root'suz seçenekler:
-[`docs/ROOTSUZ-KURULUM.md`](docs/ROOTSUZ-KURULUM.md)
-
-## Yasal not
-
-Yalnızca kendi cihazında, tek oyunculu kariyerinde kullanım için. Çok oyunculu/online modda veya
-satılan hesaplarda kullanmak oyunun kullanım koşullarını ihlal eder.
+- Karakter adları yalnızca kişisel kullanım için şablon etiketidir; hiçbir görsel/ses/oyun
+  varlığı kopyalanmadı. Bu mod **yeni oyun içeriği eklemez**, değerleri değiştirir.
+- Yalnızca kendi cihazın ve kendi kopyan için.

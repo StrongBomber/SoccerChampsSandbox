@@ -1,5 +1,5 @@
 /**
- * modmenu/game-mod.js — Frida ajanı mantık testi (gerçek cihaz gerekmez).
+ * bitlife/theboys-mod.js — The Boys modu mantık testi (gerçek cihaz gerekmez).
  *
  * Ajan Node içinde sahte Frida çalışma zamanıyla yüklenir; tarama, daraltma,
  * yazma, dondurma ve kayıt dosyası API'leri sınanır. Amaç: cihaza gitmeden
@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import { createRuntime } from "./frida-mock.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const src = fs.readFileSync(path.join(ROOT, "modmenu", "game-mod.js"), "utf8");
+const src = fs.readFileSync(path.join(ROOT, "bitlife", "theboys-mod.js"), "utf8");
 
 const rt = createRuntime();
 const logs = [];
@@ -21,7 +21,7 @@ const fakeConsole = { log: (m) => logs.push(String(m)), warn: () => {}, error: (
 
 const factory = new Function(
   "Process", "Module", "Interceptor", "Int64", "setInterval", "clearInterval", "console",
-  src + "\nreturn globalThis.MOD;",
+  src + "\nreturn globalThis.BOYS;",
 );
 const MOD = factory(
   rt.Process, rt.Module, rt.Interceptor, rt.Int64,
@@ -40,13 +40,19 @@ const section = (t) => console.log(`\n${t}`);
 section("Ajan yükleme");
 check("MOD API yüklendi", !!MOD && typeof MOD.firstScan === "function");
 check("ajan çökmeden sonlandı", logs.some((l) => l.includes("test modu")), logs.slice(-1)[0]);
+check("Frida yokken Java'ya dokunmuyor", !logs.some((l) => l.startsWith("ERR")));
 check("4 tarama tipi", Object.keys(MOD.TYPES).length === 4, Object.keys(MOD.TYPES).join(","));
 check("varsayılan tip int32", MOD.S.type === "int32");
 
 section("Hazır modlar");
-check("8 hazır mod", MOD.PRESETS.length === 8, MOD.PRESETS.map((p) => p.id).join(","));
-check("her hazır mod geçerli tipte", MOD.PRESETS.every((p) => !!MOD.TYPES[p.type]));
-check("CA/PA 1–200 notu var", MOD.PRESETS.filter((p) => p.id === "ca" || p.id === "pa").every((p) => /1–200/.test(p.note)));
+check("8 istatistik şablonu", MOD.PRESETS.length === 8, MOD.PRESETS.map((p) => p.id).join(","));
+check("her şablon geçerli tipte", MOD.PRESETS.every((p) => !!MOD.TYPES[p.type]));
+check("BitLife istatistikleri", ["money", "age", "looks", "smarts", "health", "happy", "fame", "karma"].every((id) => MOD.PRESETS.some((p) => p.id === id)));
+check("10 The Boys karakteri", MOD.CHARACTERS.length === 10, MOD.CHARACTERS.map((c) => c.name).join(", "));
+check("Homelander 100", MOD.CHARACTERS.find((c) => c.id === "homelander").quick === 100);
+check("karakter değerleri 1–100", MOD.CHARACTERS.every((c) => c.quick > 0 && c.quick <= 100));
+check("Vought para sabiti", MOD.VOUGHT_MONEY === 999999999);
+check("hedef paket BitLife", /com\.candywriter\.bitlife/.test(src));
 
 section("Değer tarama (int32)");
 rt.plant.int32(0x100, 4200000);
@@ -92,7 +98,7 @@ check("interval kuruldu", rt.calls.intervals >= 1);
 const cleared = MOD.freezeAll(0, false, "int32");
 check("çözme temizledi", cleared === 1 && MOD.S.frozen.size === 0 && rt.calls.cleared >= 1);
 
-section("Oyunun kendi kayıt dosyaları");
+section("Oyunun kendi kayıt dosyaları (BitLife)");
 check("Java yokken liste boş (çökmez)", Array.isArray(MOD.saveList()) && MOD.saveList().length === 0);
 check("okuma hatayı yutar", String(MOD.saveRead("/yok/dosya", 100)).startsWith("HATA"));
 check("yazma sessiz başarısız", MOD.saveWrite("/yok/dosya", "x") === false);

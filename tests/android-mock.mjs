@@ -195,11 +195,13 @@ export function createAndroidMock({ files = new Map(), density = 2.75 } = {}) {
   };
 
   const ActivityShim = class {
-    constructor(filesDir, externalDir) {
+    constructor(filesDir, externalDir, pkg = "com.example.app") {
       this._files = filesDir;
       this._external = externalDir;
+      this._pkg = pkg;
       this.views = [];
     }
+    getPackageName() { return this._pkg; }
     getApplicationContext() { return this; }
     getResources() { return { getDisplayMetrics: () => ({ density }) }; }
     getFilesDir() { return new FileShim(this._files); }

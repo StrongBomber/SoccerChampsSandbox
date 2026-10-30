@@ -1,18 +1,18 @@
-name: Mod paketi (Magisk)
+name: The Boys mod paketi
 
-# Oyunu calisma aninda modlayan paketi uretir: frida-server + ajan.
-# Oyunun APK'si DEGISMEZ (PairIP imza kontrolu). Cikti: wsc-mod-magisk.zip
+# BitLife icin The Boys modunu paketler: frida-server + ajan.
+# Oyunun APK'si DEGISMEZ ve dagitilmaz. Cikti: theboys-mod-magisk.zip
 
 on:
   push:
     branches:
       - arena/a59d6787-soccerchampssandbox
     paths:
-      - "modmenu/**"
+      - "bitlife/**"
       - "tools/build-mod-zip.sh"
-      - "tools/game-mod.sh"
-      - "tests/game-mod-test.mjs"
-      - "tests/android-ui-test.mjs"
+      - "tools/theboys.sh"
+      - "tests/theboys-test.mjs"
+      - "tests/theboys-ui-test.mjs"
       - "tests/android-mock.mjs"
       - "tests/frida-mock.mjs"
       - ".github/workflows/build-mod.yml"
@@ -32,10 +32,10 @@ jobs:
           node-version: "20"
 
       - name: Ajan mantık testi
-        run: node tests/game-mod-test.mjs
+        run: node tests/theboys-test.mjs
 
       - name: Arayüz testi (Android çerçeve taklidi)
-        run: node tests/android-ui-test.mjs
+        run: node tests/theboys-ui-test.mjs
 
       - name: frida-server indir (android-arm)
         id: fdi
@@ -58,59 +58,59 @@ jobs:
       - name: Paketi doğrula
         run: |
           set -eu
-          Z=dist/wsc-mod-magisk.zip
+          Z=dist/theboys-mod-magisk.zip
           test -s "$Z"
           unzip -l "$Z" | tee /tmp/list.txt
-          for f in module.prop customize.sh post-fs-data.sh service.sh agent/game-mod.js system/bin/frida-server; do
+          for f in module.prop customize.sh post-fs-data.sh service.sh agent/theboys-mod.js system/bin/frida-server; do
             unzip -l "$Z" "$f" | grep -q "$f" || { echo "eksik: $f" >&2; exit 1; }
           done
-          unzip -p "$Z" module.prop | grep -q "id=wscmod"
-          unzip -p "$Z" agent/game-mod.js | grep -q "WSC MOD MENU"
+          unzip -p "$Z" module.prop | grep -q "id=boysmod"
+          unzip -p "$Z" agent/theboys-mod.js | grep -q "THE BOYS MOD"
           # ajan dosyası repodakiyle birebir aynı olmalı
-          unzip -p "$Z" agent/game-mod.js > /tmp/agent.js
-          cmp /tmp/agent.js modmenu/game-mod.js
+          unzip -p "$Z" agent/theboys-mod.js > /tmp/agent.js
+          cmp /tmp/agent.js bitlife/theboys-mod.js
           file_size=$(unzip -p "$Z" system/bin/frida-server | wc -c)
           echo "frida-server: $file_size bayt"
           test "$file_size" -gt 1000000 || { echo "frida-server çok küçük" >&2; exit 1; }
           sha256sum "$Z" | tee dist/sha.txt
           unzip -l "$Z" > dist/MOD-CONTENTS.txt
-          cp modmenu/game-mod.js dist/game-mod.js
+          cp bitlife/theboys-mod.js dist/theboys-mod.js
 
       - name: Artifact yükle
         uses: actions/upload-artifact@v4
         with:
-          name: wsc-mod-magisk
+          name: theboys-mod-magisk
           path: |
-            dist/wsc-mod-magisk.zip
-            dist/wsc-mod-magisk.zip.sha256
+            dist/theboys-mod-magisk.zip
+            dist/theboys-mod-magisk.zip.sha256
             dist/MOD-CONTENTS.txt
-            dist/game-mod.js
+            dist/theboys-mod.js
 
       - name: Release'e ekle
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -eu
-          TAG="wsc-mod"
+          TAG="theboys-mod"
           {
-            echo "World Soccer Champs icin calisma aninda mod paketi (Magisk / KernelSU)."
+            echo "BitLife icin The Boys modu — calisma aninda mod paketi (Magisk / KernelSU)."
             echo ""
-            echo "Oyunun APK'si DEGISMEZ: PairIP imza kontrolu nedeniyle yeniden imzalama calismaz,"
-            echo "bu yuzden mod oyun surecine runtime'da enjekte edilir."
+            echo "Oyunun APK'si DEGISMEZ ve bu pakette YOKTUR: mod, kendi cihazindaki kurulu"
+            echo "kopyaya runtime'da enjekte edilir. Ticari oyunun kopyasi dagitilmaz."
             echo ""
-            echo "- Icerik: frida-server (android-arm) + mod ajani + acilista otomatik baslatma"
-            echo "- Kurulum: Magisk uzerinden zip'i flash et, oyunu ac, PC'den tools/game-mod.sh --attach"
-            echo "- Menu: Tara (bellek taramasi) / Hazir (butce, CA, PA...) / Kayit (oyunun kendi dosyalari + kurallar)"
+            echo "- Icerik: frida-server (android-arm) + The Boys ajani + acilista otomatik baslatma"
+            echo "- Kurulum: Magisk uzerinden zip'i flash et, oyunu ac, PC'den tools/theboys.sh --attach"
+            echo "- Menu: Tara (para/yas/gorunum/zeka/saglik...) / The Boys (10 karakter + Vought) / Istatistik / Kayit"
             echo "- Oyun APK'si, paket adi ve imzasi korunur"
             echo ""
-            echo "Ayrica: game-mod.js tek basina (frida -U -f <pkg> -l game-mod.js)"
+            echo "Ayrica: theboys-mod.js tek basina (frida -U -f com.candywriter.bitlife -l theboys-mod.js)"
           } > NOTES.md
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --title "WSC Mod - runtime mod paketi" --notes-file NOTES.md
+            gh release create "$TAG" --title "The Boys Mod (BitLife) - runtime paket" --notes-file NOTES.md
           fi
           gh release upload "$TAG" \
-            dist/wsc-mod-magisk.zip \
-            dist/wsc-mod-magisk.zip.sha256 \
+            dist/theboys-mod-magisk.zip \
+            dist/theboys-mod-magisk.zip.sha256 \
             dist/MOD-CONTENTS.txt \
-            dist/game-mod.js --clobber
+            dist/theboys-mod.js --clobber
           gh release view "$TAG" --json assets --jq '.assets[] | "\(.name)  \(.size) bayt"'

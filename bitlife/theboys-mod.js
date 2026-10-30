@@ -1,31 +1,33 @@
 /*
- * WSC MOD MENU — World Soccer Champs'i çalışırken modlayan Frida ajanı.
+ * THE BOYS MOD — BitLife (com.candywriter.bitlife) icin calisma aninda mod.
  *
- * Oyunun APK'sı DEĞİŞMEZ. Ajan oyunun kendi sürecine enjekte edilir ve
- * oyunun kendi penceresine yüzen bir "MOD" düğmesi + panel ekler
- * (SYSTEM_ALERT_WINDOW izni gerekmez, activity.addContentView kullanılır).
- *
- * Neden bellek taraması: libWorldSoccerChamps.so 15,9 MB, C++ ve STRIPPED →
- * sembol/offset yok. Değerler (para, bütçe, CA/PA, yaş, sözleşme) çalışma
- * anında taranır:  ilk ara → oyunda değiştir → "Değişti/Aynı/Arttı/Azaldı" ile daralt
- *                  → "Yaz" (kalıcı) veya "Dondur" (sürekli sabit tut).
+ * Oyunun APK'si DEGISMEZ, kopyasi dagitilmaz. Ajan yalnizca kullanicinin
+ * KENDI cihazindaki kurulu oyuna enjekte edilir ve oyunun kendi penceresine
+ * yüzen bir "◢ THE BOYS" dugmesi + panel ekler (ayri uygulama degil).
  *
  * Sekmeler
- *   Tara  : değer tarayıcı (int32/int64/float/double), tek adres yazma, dondurma
- *   Hazır : yaygın modlar için hazır değer/tip şablonları
- *   Kayıt : oyunun KENDİ kayıt dizinini (app files) listeler, yedekler, JSON içeriğini değiştirir
+ *   TARA     : deger tarayici (int32/int64/float/double) — para, yas, gorunum,
+ *              zeka, saglik, mutluluk, sohret... ilk ara → oyunda degistir →
+ *              "Degisti/Ayni/Artti/Azaldi" ile daralt → yaz veya dondur.
+ *   THE BOYS : karakter paketleri (Homelander, Billy Butcher, Starlight,
+ *              A-Train, The Deep, Black Noir, Soldier Boy, Kimiko, Frenchie,
+ *              Hughie) — secili adreslere o karakterin imza degerini yazar.
+ *              Ayrica "Vought Modu": degeri mevcut halinde dondurur.
+ *   KAYIT    : oyunun kendi dosya dizinini listeler, yedekler, metin ise duzenler.
  *
- * Kullanım:
- *   frida -U -f com.monkeyibrow.worldsoccerchamps -l modmenu/game-mod.js --no-pause
- *   (kolay yol: tools/game-mod.sh)
+ * Kullanim:
+ *   frida -U -f com.candywriter.bitlife -l bitlife/theboys-mod.js --no-pause
+ *   ya da: tools/theboys.sh
  *
- * Ayrıntı ve dürüst sınırlar: docs/GAME-MOD.md
+ * Testler (cihaz gerekmez):
+ *   node tests/theboys-test.mjs      # mantik
+ *   node tests/theboys-ui-test.mjs   # arayuz (Android cerceve taklidi)
  */
 
 "use strict";
 
-const PKG = "com.monkeyibrow.worldsoccerchamps";
-const LIB = "libWorldSoccerChamps.so";
+const PKG = "com.candywriter.bitlife";
+const LIB = "";   // BitLife: tek bir native kutuphane varsayilmiyor, tarama tum rw- bolgelerini gezer
 const MAX_RESULTS = 3000;
 const CHUNK = 1 << 20; // 1 MiB
 
@@ -63,15 +65,32 @@ const TYPES = {
 const TYPE_ORDER = ["int32", "int64", "float", "double"];
 
 const PRESETS = [
-  { id: "budget",  label: "Transfer bütçesi", type: "int32",  note: "Finans ekranındaki değeri gir (virgülsüz)" },
-  { id: "wage",    label: "Maaş bütçesi",     type: "int32",  note: "Haftalık maaş bütçesi" },
-  { id: "money",   label: "Kulüp bakiyesi",   type: "int32",  note: "Bakiye / kasa" },
-  { id: "ca",      label: "CA (oyuncu)",      type: "int32",  note: "1–200 arası; oyuncu profilinde görünür" },
-  { id: "pa",      label: "PA (oyuncu)",      type: "int32",  note: "1–200 arası potansiyel" },
-  { id: "attr",    label: "Nitelik (1–20)",   type: "int32",  note: "Tek bir nitelik değeri, ör. Bitiricilik = 14" },
-  { id: "value",   label: "Piyasa değeri",    type: "int32",  note: "Çok büyük sayı → int64 dene" },
-  { id: "rep",     label: "İtibar (1–10000)", type: "int32",  note: "Kulüp itibarı" },
+  { id: "money",  label: "Para",      type: "int32", note: "Cüzdandaki nakit. Büyük sayıda int64 dene." },
+  { id: "age",    label: "Yaş",       type: "int32", note: "Kaç yaşındasın (oyun içi yıl)" },
+  { id: "looks",  label: "Görünüm",   type: "int32", note: "0–100 arası" },
+  { id: "smarts", label: "Zeka",      type: "int32", note: "0–100 arası" },
+  { id: "health", label: "Sağlık",    type: "int32", note: "0–100 arası (ölüm riski)" },
+  { id: "happy",  label: "Mutluluk",  type: "int32", note: "0–100 arası" },
+  { id: "fame",   label: "Şöhret",    type: "int32", note: "0–100 arası (ünlü olmadan 0)" },
+  { id: "karma",  label: "Karma",     type: "int32", note: "0–100 arası" },
 ];
+
+/* The Boys karakter paketleri — seçili adreslere yazılacak imza değerleri.
+ * Dizi/film görselleri KULLANILMAZ; yalnızca istatistik şablonları. */
+const CHARACTERS = [
+  { id: "homelander", name: "Homelander",     tag: "Vought'un yüzü",     quick: 100, note: "Görünüm + Sağlık + Şöhret 100 · dokunulmaz" },
+  { id: "butcher",    name: "Billy Butcher",  tag: "The Boys",           quick: 95,  note: "Sağlık + dayanıklılık 95 · kararlı" },
+  { id: "starlight",  name: "Starlight",      tag: "Yedi",               quick: 92,  note: "Şöhret + görünüm 92" },
+  { id: "atrain",     name: "A-Train",        tag: "Yedi",               quick: 90,  note: "Hız odaklı 90" },
+  { id: "blacknoir",  name: "Black Noir",     tag: "Yedi",               quick: 100, note: "Gizem + dayanıklılık 100" },
+  { id: "soldierboy", name: "Soldier Boy",    tag: "Vought efsanesi",    quick: 88,  note: "Savaşçı 88" },
+  { id: "kimiko",     name: "Kimiko",         tag: "The Boys",           quick: 85,  note: "Dayanıklılık 85" },
+  { id: "frenchie",   name: "Frenchie",       tag: "The Boys",           quick: 78,  note: "Zeka 78" },
+  { id: "hughie",     name: "Hughie",         tag: "The Boys",           quick: 70,  note: "Sıradan insan 70" },
+  { id: "thedeep",    name: "The Deep",       tag: "Yedi",               quick: 60,  note: "Deniz adamı 60" },
+];
+
+const VOUGHT_MONEY = 999999999;
 
 /* ------------------------------------------------------------------ */
 /* yardımcılar                                                         */
@@ -89,10 +108,10 @@ function setStatus(msg) {
 function candidateRanges() {
   const out = [];
   try {
-    const mod = Process.findModuleByName(LIB);
+    const mod = LIB ? Process.findModuleByName(LIB) : null;
     if (mod) Process.enumerateRanges(mod.name, "rw-").forEach((r) => out.push(r));
     Process.enumerateRanges("rw-").forEach((r) => {
-      if (r.file && r.file.path && r.file.path.indexOf(LIB) >= 0) return;
+      if (LIB && r.file && r.file.path && r.file.path.indexOf(LIB) >= 0) return;
       if (r.size > 96 * 1024 * 1024) return;
       out.push(r);
     });
@@ -404,9 +423,9 @@ function buildUi() {
   };
 
   // ---- yüzen düğme ----
-  const fab = text("◢ MOD", 12, "#0a0612");
+  const fab = text("◢ THE BOYS", 11, "#1a0d02");
   fab.setGravity(Gravity.CENTER.getValue());
-  fab.setBackgroundColor(color("#a78bfa"));
+  fab.setBackgroundColor(color("#f0a94c"));
   fab.setPadding(dp(10), dp(7), dp(10), dp(7));
 
   // ---- panel ----
@@ -414,7 +433,7 @@ function buildUi() {
   panel.setBackgroundColor(color("#f00b0912"));
   panel.setPadding(dp(10), dp(8), dp(10), dp(10));
 
-  panel.addView(text("WSC MOD MENU · World Soccer Champs", 12, "#e9e4fb"));
+  panel.addView(text("THE BOYS MOD · BitLife", 12, "#ffd9a0"));
   const status = text("hazır", 9, "#9a9ab0");
   panel.addView(status);
   S.status = status;
@@ -428,8 +447,8 @@ function buildUi() {
     Object.keys(pages).forEach((k) => pages[k].setVisibility(k === id ? 0 : 8));
     Object.keys(tabBtns).forEach((k) => tabBtns[k].setTextColor(color(k === id ? "#c4b5fd" : "#7c7c92")));
   };
-  ["scan", "presets", "save"].forEach((id) => {
-    const label = id === "scan" ? "Tara" : id === "presets" ? "Hazır" : "Kayıt";
+  ["scan", "boys", "presets", "save"].forEach((id) => {
+    const label = id === "scan" ? "Tara" : id === "boys" ? "The Boys" : id === "presets" ? "İstatistik" : "Kayıt";
     tabBtns[id] = button(tabsRow, label, () => showTab(id));
     tabBtns[id].setTextSize(10);
   });
@@ -568,7 +587,49 @@ function buildUi() {
     if (!S.hits.length) list.addView(text("sonuç yok — oyunda değeri değiştirip tekrar daralt", 9, "#8fa2b1"));
   });
 
-  /* ---------------- HAZIR ---------------- */
+  /* ---------------- THE BOYS ---------------- */
+  const boysPage = makePage("boys");
+
+  const readInputNormalized = () => {
+    try { return readInput(); } catch (_) { return null; }
+  };
+
+  const applyQuick = (value, label) => {
+    if (!S.hits.length) { setStatus("önce Tara'da değer ara"); return; }
+    const targets = S.selected ? [S.selected] : S.hits;
+    let n = 0;
+    targets.forEach((h) => { if (writeOne(h, value, S.type)) n++; });
+    renderResults();
+    setStatus(`${label}: ${n} adrese ${value} yazıldı`);
+  };
+
+  boysPage.addView(text("Karakter paketi — önce Tara'da değeri bul, sonra karaktere dokun.", 9, "#b8a8d8"));
+
+  CHARACTERS.forEach((c) => {
+    const row = box(LinearLayout.HORIZONTAL.getValue());
+    const b = button(row, `${c.name} · ${c.quick}`, () => applyQuick(c.quick, c.name));
+    b.setTextSize(10);
+    const info = text(c.tag, 8, "#7c7c92");
+    row.addView(info, LP.$new(dp(74), -2, 0));
+    boysPage.addView(row);
+    boysPage.addView(text(c.note, 8, "#6f6f85"));
+  });
+
+  const voughtRow = box(LinearLayout.HORIZONTAL.getValue());
+  button(voughtRow, `Vought parası (${VOUGHT_MONEY})`, () => applyQuick(VOUGHT_MONEY, "Vought"));
+  button(voughtRow, "Vought Modu (dondur)", () => {
+    if (!S.hits.length) { setStatus("önce Tara'da değer ara"); return; }
+    if (S.frozen.size) { freezeAll(0, false, S.type); setStatus("Vought Modu kapandı"); return; }
+    const v = readInputNormalized();
+    if (v === null) { setStatus("dondurulacak değer gir (Tara)"); return; }
+    const n = freezeAll(v, true, S.type);
+    setStatus(`Vought Modu: ${n} adres ${v} değerinde kilitlendi`);
+  });
+  boysPage.addView(voughtRow);
+
+  boysPage.addView(text("Not: bu bir istatistik şablonudur. Oyuna yeni bölüm/karakter verisi eklemez.", 8, "#6f6f85"));
+
+  /* ---------------- İSTATİSTİK ---------------- */
   const presetPage = makePage("presets");
   presetPage.addView(text("Değeri oyundan oku, tipe göre tara, oyunda değiştir, daralt.", 9, "#9a9ab0"));
   PRESETS.forEach((p) => {
@@ -754,41 +815,41 @@ function attach() {
   }
 }
 
-function hookActivity() {
-  let hooked = false;
+function isTargetActivity(activity) {
   try {
-    const AppActivity = Java.use("org.cocos2dx.cpp.AppActivity");
-    AppActivity.onCreate.overload("android.os.Bundle").implementation = function (b) {
-      this.onCreate(b);
-      S.activity = this;
-      setTimeout(attach, 1800);
-    };
-    hooked = true;
-    log("AppActivity.onCreate hook'landı");
-  } catch (e) {
-    log("AppActivity yok: " + e);
+    const pkg = String(activity.getPackageName());
+    return pkg === PKG || pkg.indexOf("candywriter") >= 0 || pkg.indexOf("bitlife") >= 0;
+  } catch (_) {
+    try { return String(activity.getClass().getName()).toLowerCase().indexOf("bitlife") >= 0; }
+    catch (__) { return false; }
   }
-  if (!hooked) {
-    try {
-      const Activity = Java.use("android.app.Activity");
-      Activity.onCreate.overload("android.os.Bundle").implementation = function (b) {
-        this.onCreate(b);
-        const name = this.getClass().getName();
-        if (name.indexOf("monkeyibrow") >= 0 || name.indexOf("cocos2dx") >= 0) {
+}
+
+function hookActivity() {
+  try {
+    const Activity = Java.use("android.app.Activity");
+    Activity.onCreate.overload("android.os.Bundle").implementation = function (b) {
+      this.onCreate(b);
+      try {
+        if (isTargetActivity(this)) {
           S.activity = this;
           setTimeout(attach, 1800);
         }
-      };
-      log("android.app.Activity.onCreate hook'landı");
-    } catch (e) {
-      log("Activity hook hatası: " + e);
-    }
+      } catch (e) { log("activity kontrolü: " + e); }
+    };
+    log("android.app.Activity.onCreate hook'landı (paket: " + PKG + ")");
+  } catch (e) {
+    log("Activity hook hatası: " + e);
   }
+
+  // Ajan oyun zaten açıkken yüklenirse: mevcut Activity'yi bul
   setTimeout(() => {
     if (S.activity) return;
     try {
-      Java.choose("org.cocos2dx.cpp.AppActivity", {
-        onMatch(instance) { S.activity = instance; },
+      Java.choose("android.app.Activity", {
+        onMatch(instance) {
+          try { if (!S.activity && isTargetActivity(instance)) S.activity = instance; } catch (_) { /* yok say */ }
+        },
         onComplete() { if (S.activity) attach(); },
       });
     } catch (_) { /* yok say */ }
@@ -800,21 +861,18 @@ function hookActivity() {
 /* ------------------------------------------------------------------ */
 
 // Node testleri ajanın saf mantığını bu nesne üzerinden sınar.
-globalThis.MOD = {
-  S, TYPES, TYPE_ORDER, PRESETS,
+globalThis.BOYS = {
+  S, TYPES, TYPE_ORDER, PRESETS, CHARACTERS, VOUGHT_MONEY,
   firstScan, nextScan, writeOne, writeAll, freezeAll,
   saveList, saveRead, saveWrite, saveBackup,
-  findRuleFields, setByPath,
+  findRuleFields, setByPath, isTargetActivity,
   candidateRanges, startWatcher, stopWatcher,
 };
 
 if (typeof Java !== "undefined") {
   Java.perform(() => {
-    log("WSC mod menüsü yükleniyor…");
-    try {
-      const m = Process.findModuleByName(LIB);
-      log(m ? `${LIB} @ ${m.base}` : `${LIB} henüz yüklenmedi`);
-    } catch (_) { /* yok say */ }
+    log("The Boys modu yükleniyor…");
+    log("hedef paket: " + PKG);
     hookActivity();
   });
 } else {

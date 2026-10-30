@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# World Soccer Champs'i MOD MENÜSÜYLE başlat (tek komut).
+# BitLife'i THE BOYS moduyla başlat (tek komut).
 #
-#   tools/game-mod.sh                    # frida-server zaten çalışıyorsa doğrudan bağlan
-#   tools/game-mod.sh --server /yol/frida-server-arm    # sunucuyu at + başlat + oyunu aç
-#   tools/game-mod.sh --attach            # oyun zaten açıksa sürece enjekte et
-#   tools/game-mod.sh --check             # cihaz/kök/mimari raporu (hiçbir şey değiştirmez)
-#   tools/game-mod.sh --emulator          # LDPlayer/MuMu/BlueStacks: adb connect 127.0.0.1:5555
+#   tools/theboys.sh                    # frida-server zaten çalışıyorsa doğrudan bağlan
+#   tools/theboys.sh --server /yol/frida-server-arm    # sunucuyu at + başlat + oyunu aç
+#   tools/theboys.sh --attach            # oyun zaten açıksa sürece enjekte et
+#   tools/theboys.sh --check             # cihaz/kök/mimari raporu (hiçbir şey değiştirmez)
+#   tools/theboys.sh --emulator          # LDPlayer/MuMu/BlueStacks: adb connect 127.0.0.1:5555
 #
 # Gereksinim: root'lu cihaz veya root açık emülatör + `adb` + `frida-tools`.
 # Karşı koruma yok: APK değişmez, yalnızca oyun süreci çalışırken modlanır.
 set -euo pipefail
 
-PKG="com.monkeyibrow.worldsoccerchamps"
+PKG="com.candywriter.bitlife"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-AGENT="$ROOT/modmenu/game-mod.js"
+AGENT="$ROOT/bitlife/theboys-mod.js"
 REMOTE="/data/local/tmp/frida-server"
 PORT=27042
 
@@ -54,7 +54,7 @@ adb shell "pm list packages $PKG" 2>/dev/null | grep -q "$PKG" && GAME_INSTALLED
 
 echo "cihaz      : $DEVICE"
 echo "android sdk: ${SDK:-?}"
-echo "abilist    : ${ABI:-?}   (oyun yalnızca armeabi-v7a kütüphanesi içeriyor)"
+echo "abilist    : ${ABI:-?}"
 echo "root       : $HAS_ROOT"
 echo "oyun       : $GAME_INSTALLED ($PKG)"
 echo "ajan       : $AGENT"
@@ -85,5 +85,5 @@ if [ "$MODE" = "attach" ]; then
   exec frida -U -n "$PKG" -l "$AGENT"
 fi
 
-echo "==> oyun mod menüsüyle başlatılıyor"
+echo "==> BitLife THE BOYS moduyla başlatılıyor"
 exec frida -U -f "$PKG" -l "$AGENT" --no-pause
