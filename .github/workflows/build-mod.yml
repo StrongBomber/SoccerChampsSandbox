@@ -1,0 +1,116 @@
+name: Mod paketi (Magisk)
+
+# Oyunu calisma aninda modlayan paketi uretir: frida-server + ajan.
+# Oyunun APK'si DEGISMEZ (PairIP imza kontrolu). Cikti: wsc-mod-magisk.zip
+
+on:
+  push:
+    branches:
+      - arena/a59d6787-soccerchampssandbox
+    paths:
+      - "modmenu/**"
+      - "tools/build-mod-zip.sh"
+      - "tools/game-mod.sh"
+      - "tests/game-mod-test.mjs"
+      - "tests/android-ui-test.mjs"
+      - "tests/android-mock.mjs"
+      - "tests/frida-mock.mjs"
+      - ".github/workflows/build-mod.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Ajan mantık testi
+        run: node tests/game-mod-test.mjs
+
+      - name: Arayüz testi (Android çerçeve taklidi)
+        run: node tests/android-ui-test.mjs
+
+      - name: frida-server indir (android-arm)
+        id: fdi
+        run: |
+          set -eu
+          URL=$(curl -fsSL https://api.github.com/repos/frida/frida/releases/latest \
+            | grep -o '"browser_download_url": *"[^"]*android-arm\.xz"' \
+            | head -1 | sed 's/.*"\(https[^"]*\)"/\1/')
+          [ -n "$URL" ] || { echo "frida-server asset bulunamadı" >&2; exit 1; }
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "indiriliyor: $URL"
+
+      - name: Mod paketini üret
+        env:
+          FDI_SERVER_URL: ${{ steps.fdi.outputs.url }}
+          MOD_VERSION: "1.0"
+          MOD_VERSION_CODE: "1"
+        run: bash tools/build-mod-zip.sh
+
+      - name: Paketi doğrula
+        run: |
+          set -eu
+          Z=dist/wsc-mod-magisk.zip
+          test -s "$Z"
+          unzip -l "$Z" | tee /tmp/list.txt
+          for f in module.prop customize.sh post-fs-data.sh service.sh agent/game-mod.js system/bin/frida-server; do
+            grep -q " $f$" /tmp/list.txt || { echo "eksik: $f" >&2; exit 1; }
+          done
+          unzip -p "$Z" module.prop | grep -q "id=wscmod"
+          unzip -p "$Z" agent/game-mod.js | head -1 | grep -q "WSC MOD MENU"
+          # ajan dosyası repodakiyle birebir aynı olmalı
+          unzip -p "$Z" agent/game-mod.js > /tmp/agent.js
+          cmp /tmp/agent.js modmenu/game-mod.js
+          file_size=$(unzip -p "$Z" system/bin/frida-server | wc -c)
+          echo "frida-server: $file_size bayt"
+          test "$file_size" -gt 1000000 || { echo "frida-server çok küçük" >&2; exit 1; }
+          sha256sum "$Z" | tee dist/sha.txt
+          unzip -l "$Z" > dist/MOD-CONTENTS.txt
+          cp modmenu/game-mod.js dist/game-mod.js
+
+      - name: Artifact yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: wsc-mod-magisk
+          path: |
+            dist/wsc-mod-magisk.zip
+            dist/wsc-mod-magisk.zip.sha256
+            dist/MOD-CONTENTS.txt
+            dist/game-mod.js
+
+      - name: Release'e ekle
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          TAG="wsc-mod"
+          {
+            echo "World Soccer Champs icin calisma aninda mod paketi (Magisk / KernelSU)."
+            echo ""
+            echo "Oyunun APK'si DEGISMEZ: PairIP imza kontrolu nedeniyle yeniden imzalama calismaz,"
+            echo "bu yuzden mod oyun surecine runtime'da enjekte edilir."
+            echo ""
+            echo "- Icerik: frida-server (android-arm) + mod ajani + acilista otomatik baslatma"
+            echo "- Kurulum: Magisk uzerinden zip'i flash et, oyunu ac, PC'den tools/game-mod.sh --attach"
+            echo "- Menu: Tara (bellek taramasi) / Hazir (butce, CA, PA...) / Kayit (oyunun kendi dosyalari + kurallar)"
+            echo "- Oyun APK'si, paket adi ve imzasi korunur"
+            echo ""
+            echo "Ayrica: game-mod.js tek basina (frida -U -f <pkg> -l game-mod.js)"
+          } > NOTES.md
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "WSC Mod - runtime mod paketi" --notes-file NOTES.md
+          fi
+          gh release upload "$TAG" \
+            dist/wsc-mod-magisk.zip \
+            dist/wsc-mod-magisk.zip.sha256 \
+            dist/MOD-CONTENTS.txt \
+            dist/game-mod.js --clobber
+          gh release view "$TAG" --json assets --jq '.assets[] | "\(.name)  \(.size) bayt"'

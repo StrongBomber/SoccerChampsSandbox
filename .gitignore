@@ -14,3 +14,7 @@ package-lock.json
 
 # testte üretilen geçici dosyalar
 tests/.cache/
+
+# mod paketi çıktıları (CI üretir)
+dist/
+vendor/

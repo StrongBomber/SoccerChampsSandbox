@@ -196,6 +196,39 @@ function freezeAll(value, on, type) {
   return S.frozen.size;
 }
 
+const RULE_RE = /(offside|penalt|throw.?in|corner|foul|yellow|red.?card|var|referee|kural|ofsayt|tac|tas|faul|korner)/i;
+
+/** JSON içinde kural benzeri alanları bulur: [{path, key, value, kind}] */
+function findRuleFields(json) {
+  const out = [];
+  if (json === null || typeof json !== "object") return out;
+  (function walk(node, prefix) {
+    if (node === null || typeof node !== "object") return;
+    if (Array.isArray(node)) {
+      node.forEach((v, i) => walk(v, `${prefix}[${i}]`));
+      return;
+    }
+    Object.keys(node).forEach((k) => {
+      const path = prefix ? `${prefix}.${k}` : k;
+      const v = node[k];
+      if (RULE_RE.test(k) && (typeof v === "number" || typeof v === "boolean")) {
+        out.push({ path, key: k, value: v, kind: typeof v });
+      } else if (v && typeof v === "object") {
+        walk(v, path);
+      }
+    });
+  })(json, "");
+  return out;
+}
+
+function setByPath(obj, path, value) {
+  const parts = path.replace(/\[(\d+)\]/g, ".$1").split(".").filter(Boolean);
+  let cur = obj;
+  for (let i = 0; i < parts.length - 1; i++) cur = cur[parts[i]];
+  cur[parts[parts.length - 1]] = value;
+  return obj;
+}
+
 /* ------------------------------------------------------------------ */
 /* oyunun KENDİ dosyaları (kayıt dizini)                               */
 /* ------------------------------------------------------------------ */
@@ -592,6 +625,67 @@ function buildUi() {
     });
   });
 
+  // ---- kurallar (ofsayt / penaltı / taç / korner / faul) ----
+  const ruleBox = box(LinearLayout.VERTICAL.getValue());
+  const ruleTitle = text("Kurallar: dosya seçip 'Kuralları bul'", 9, "#9a9ab0");
+  ruleBox.addView(ruleTitle);
+  const ruleList = box(LinearLayout.VERTICAL.getValue());
+  ruleBox.addView(ruleList);
+
+  let ruleJson = null;
+
+  const renderRules = (UI.renderRules = function () {
+    ruleList.removeAllViews();
+    if (!ruleJson) return;
+    const fields = findRuleFields(ruleJson);
+    if (!fields.length) {
+      ruleList.addView(text("Bu kayıtta kural alanı yok. Ofsayt/taç gibi kurallar oyunun native maç motorunda tutuluyor olabilir; o durumda Tara sekmesiyle maç sırasında değer arayabilirsin.", 8, "#e0a13f"));
+      return;
+    }
+    fields.slice(0, 24).forEach((f) => {
+      const row = text(`${f.path} = ${f.value}`, 9, "#a9c2d3");
+      row.setOnClickListener(Click.$new({
+        onClick() {
+          if (f.kind !== "boolean" && f.value !== 0 && f.value !== 1) {
+            setStatus(`${f.path}: yalnızca 0/1 veya boolean çevrilebilir (şu an ${f.value})`);
+            return;
+          }
+          const next = f.kind === "boolean" ? !f.value : f.value === 0 ? 1 : 0;
+          setByPath(ruleJson, f.path, next);
+          f.value = next;
+          previewInput.setText(JSON.stringify(ruleJson));
+          renderRules();
+          setStatus(`${f.path} → ${next} (kaydetmek için 'Geri Yaz')`);
+        },
+      }));
+      ruleList.addView(row);
+    });
+    if (fields.length > 24) ruleList.addView(text(`… +${fields.length - 24} alan`, 8, "#8fa2b1"));
+  });
+
+  ruleBox.addView((() => {
+    const r = box(LinearLayout.HORIZONTAL.getValue());
+    button(r, "Kuralları bul", () => {
+      if (!selectedPath) { setStatus("önce bir dosya seç (yukarıdaki listeden)"); return; }
+      const raw = saveRead(selectedPath, 262144);
+      try {
+        ruleJson = JSON.parse(raw);
+      } catch (_) {
+        ruleJson = null;
+        setStatus("dosya JSON değil — kural alanları okunamadı");
+        renderRules();
+        return;
+      }
+      const n = findRuleFields(ruleJson).length;
+      ruleTitle.setText(`Kurallar: ${n} alan bulundu (dokun → 0/1 çevir)`);
+      renderRules();
+      setStatus(`${n} kural alanı`);
+    });
+    return r;
+  })());
+
+  savePage.addView(ruleBox);
+
   const saveRow = box(LinearLayout.HORIZONTAL.getValue());
   button(saveRow, "Yenile", () => { renderSaves(); setStatus("liste yenilendi"); });
   button(saveRow, "Yedekle", () => {
@@ -710,6 +804,7 @@ globalThis.MOD = {
   S, TYPES, TYPE_ORDER, PRESETS,
   firstScan, nextScan, writeOne, writeAll, freezeAll,
   saveList, saveRead, saveWrite, saveBackup,
+  findRuleFields, setByPath,
   candidateRanges, startWatcher, stopWatcher,
 };
 
