@@ -1,9 +1,9 @@
 APK doğrulama: /home/runner/work/SoccerChampsSandbox/SoccerChampsSandbox/apk/out/wsc-editor.apk
-Boyut: 75072 bayt
-SHA-256: b662222ba60a846f92475d14c58e893f4bca1466242964b3c927603066b91036
+Boyut: 79254 bayt
+SHA-256: d5f6314859ece365bd039ef9d03edde23b84a5a9aeb909db6aee3cdf6cd6c4f2
 
 [1] Paket bilgisi (aapt2 dump badging)
-    package: name='com.wsc.editor' versionCode='2' versionName='1.1' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
+    package: name='com.wsc.editor' versionCode='3' versionName='1.2' platformBuildVersionName='17' platformBuildVersionCode='37' compileSdkVersion='37' compileSdkVersionCodename='17'
     minSdkVersion:'24'
     targetSdkVersion:'34'
     application-label:'WSC In-Game Editor'
@@ -36,19 +36,19 @@ SHA-256: b662222ba60a846f92475d14c58e893f4bca1466242964b3c927603066b91036
   ✓ sınıf: Lcom/wsc/editor/MainActivity$Bridge;
 
 [3] Gömülü varlıklar
-  ✓ assets/index.html (2572 bayt)
-  ✓ assets/app.js (85833 bayt)
+  ✓ assets/index.html (3163 bayt)
+  ✓ assets/app.js (90513 bayt)
   ✓ assets/data.js (5470 bayt)
-  ✓ assets/styles.css (30515 bayt)
+  ✓ assets/styles.css (32908 bayt)
   ✓ assets/demo-save.json (83242 bayt)
   ✓ assets/demo-save.js (50735 bayt)
   ✓ classes.dex (12868 bayt)
 
 [4] İmza (apksigner)
     V3.0 Signer: certificate DN: CN=WSC In-Game Editor, OU=Sandbox, O=WSC, L=Istanbul, C=TR
-    V3.0 Signer: certificate SHA-256 digest: 9134b09a020027e24bcecda032b8d1d198de9b8168d16fa682a2ecb85144a1cb
-    V3.0 Signer: certificate SHA-1 digest: 5992203e5595149fab70bd8fe2ae9517dbfc8b1a
-    V3.0 Signer: certificate MD5 digest: 742c0908851e99d4de85e65c883216a8
+    V3.0 Signer: certificate SHA-256 digest: d553f5ac693e8586de6796cf8ee7b159331a9b927b51cd27c65dfe17f3f99568
+    V3.0 Signer: certificate SHA-1 digest: 205b822ad7e9eca580bb37e09e88bf2575c12dd3
+    V3.0 Signer: certificate MD5 digest: 7bca261053750a1751dcc84ff351fdb2
   ✓ imza geçerli
 
 [5] Hizalama (zipalign)
