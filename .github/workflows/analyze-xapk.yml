@@ -105,47 +105,61 @@ jobs:
           } > out/02-engine.txt 2>&1 || true
           cat out/02-engine.txt
 
-      - name: "Deep probe - native markers, dex packages, save-format hints"
+      - name: "Deep probe - native markers, save paths, asset data"
         continue-on-error: true
-        timeout-minutes: 20
+        timeout-minutes: 25
         run: |
           set -eu
           mkdir -p out/probe
-          unzip -o -j -q "$PKG_APK" 'lib/*/libWorldSoccerChamps.so' -d out/probe 2>/dev/null || true
-          unzip -o -q "$PKG_APK" 'classes*.dex' -d out/probe 2>/dev/null || true
+          : > out/05-probe.txt
+          # native lib bir split apk icinde olabilir
+          for apk in xapk/*.apk; do
+            if unzip -Z1 "$apk" | grep -q 'lib/'; then
+              unzip -o -j -q "$apk" 'lib/*/*.so' -d out/probe 2>/dev/null || true
+            fi
+          done
           {
-            echo "=== native kutuphane ==="
-            ls -la out/probe/*.so 2>/dev/null || echo "(libWorldSoccerChamps.so yok)"
-            for so in out/probe/*.so; do
+            echo "=== native kutuphaneler ==="
+            ls -la out/probe/*.so 2>/dev/null || echo "(so yok)"
+            echo
+            for so in out/probe/libWorldSoccerChamps.so out/probe/*WorldSoccerChamps*.so; do
               [ -f "$so" ] || continue
               echo "--- $so"
               echo "  ELF: $(file -b "$so")"
-              echo "  il2cpp/mono/unity sembolleri:"
-              strings -n 6 "$so" | grep -Ei 'il2cpp_init|il2cpp_domain_get|il2cpp_class_from_name|mono_image_open|UnityPlayer' | sort -u | head -20 || true
-              echo "  IL2CPP metadata imzasi (0xFAB11BAF):"
-              strings -n 6 "$so" | grep -c 'global-metadata' || true
-              echo "  oyun veri anahtarlari (ilk 40):"
-              strings -n 5 "$so" | grep -Ei '^(money|budget|transfer|wage|contract|player|club|finances?)' | sort -u | head -40 || true
-              echo "  sqlite/json/save izleri:"
-              strings -n 6 "$so" | grep -Ei 'sqlite|\.sav\b|playerprefs|savegame|persistentDataPath' | sort -u | head -20 || true
+              echo "  cocos/box2d/tolua izleri:"
+              strings -n 6 "$so" | grep -Ei 'cocos2d|CCDirector|cocos2dx|cocostudio|luaL_|tolua|box2d' | sort -u | head -25 || true
+              echo "  kayit/yol izleri:"
+              strings -n 8 "$so" | grep -Ei 'writablePath|/data/|/sdcard|getFilesDir|Documents|Application Support|UserDefault|SharedPreferences|sqlite3_open|\.db$|\.sqlite|\.json$|\.plist|\.sav' | sort -u | head -60 || true
+              echo "  oyun ekonomi anahtarlari:"
+              strings -n 4 "$so" | grep -E '^(money|Money|budget|Budget|transfer|Transfer|wage|Wage|salary|Salary|contract|Contract|player|Player|club|Club|finance|Finance|coins|Coins|gems|Gems)[A-Za-z_]*$' | sort -u | head -60 || true
+              echo "  toplam string: $(strings -n 4 "$so" | wc -l)"
             done
             echo
-            echo "=== dex: paket/uygulama siniflari ==="
+            echo "=== assets veri dosyalari (boyutlu, ilk 200) ==="
+            unzip -l "$PKG_APK" | awk '$4 ~ /^assets\// && $1 > 0 {print $1, $4}' | head -200 || true
+            echo
+            echo "=== kucuk asset icerikleri ==="
+            for f in a.json components.json; do
+              unzip -p "$PKG_APK" "assets/$f" 2>/dev/null | head -c 600 | sed "s/^/[$f] /" || true
+            done
+            echo
+            echo "=== assets/dic (ilk 400 bayt) ==="
+            unzip -p "$PKG_APK" 'assets/dic' 2>/dev/null | head -c 400 | xxd | head -20 || true
+            echo
+            echo "=== XAPK manifest.json ==="
+            cat xapk/manifest.json 2>/dev/null | head -c 2500 || true
+            echo
+            echo "=== dex: uygulama siniflari (monkeyibrow / oyun) ==="
+            unzip -o -q "$PKG_APK" 'classes*.dex' -d out/probe 2>/dev/null || true
             for dex in out/probe/classes*.dex; do
-              [ -f "$dex" ] || continue
-              echo "--- $dex"
-              strings -n 8 "$dex" | grep -E '^L(com|io|net|org)/[a-zA-Z0-9_/]+;' | sed 's/^L//; s/;$//' | cut -d/ -f1-3 | sort -u | head -40 || true
+              strings -n 8 "$dex" | grep -Ei '^L(com/monkeyibrow|com/zmaticoo|org/cocos2dx)' | head -30 || true
             done
             echo
-            echo "=== dex: koruma/guc izleri ==="
-            for dex in out/probe/classes*.dex; do
-              strings -n 6 "$dex" | grep -Ei 'pairip|playcore|integrity|rootbeer|frida|signature.*check|licensing' | sort -u | head -20 || true
-            done
-            echo
-            echo "=== asset veri dosyalari (db/json/csv/sav) ==="
-            unzip -Z1 "$PKG_APK" | grep -Ei '\.(db|sqlite|json|csv|sav|dat|bin|asset)$' | head -60 || true
+            echo "=== dex: PairIP / koruma ==="
+            strings -n 6 out/probe/classes*.dex 2>/dev/null | grep -Ei 'pairip|SignatureCheck|VMRunner|vmDecrypt|integrity|tamper' | sort -u | head -30 || true
           } > out/05-probe.txt 2>&1 || true
-          cat out/05-probe.txt
+          wc -l out/05-probe.txt
+          head -120 out/05-probe.txt
 
       - name: IL2CPP metadata inventory (REA)
         id: il2cpp
