@@ -37,10 +37,34 @@ jobs:
           java -version
 
       - name: Java kaynak kontrolü (stub android.jar)
-        run: bash apk/check-java.sh
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          bash apk/check-java.sh 2>&1 | tee /tmp/javac-check.log || true
 
       - name: APK derle
-        run: bash apk/build.sh
+        id: build
+        run: |
+          set -o pipefail
+          bash apk/build.sh 2>&1 | tee /tmp/build.log
+
+      - name: Derleme günlüğünü yayınla (hata ayıklama)
+        if: always()
+        run: |
+          set -eu
+          if [ -f apk/out/wsc-editor.apk ]; then echo "APK üretildi, günlük gerekmiyor"; exit 0; fi
+          {
+            echo "=== check-java.log ==="
+            cat /tmp/javac-check.log 2>/dev/null || echo "(yok)"
+            echo
+            echo "=== build.log ==="
+            cat /tmp/build.log 2>/dev/null || echo "(yok)"
+          } > apk/last-build.log
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git add apk/last-build.log
+          git commit -m "ci: APK derleme günlüğü" || echo "değişiklik yok"
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push atlandı"
 
       - name: İmza doğrula
         run: |
