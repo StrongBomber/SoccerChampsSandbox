@@ -80,7 +80,9 @@ echo "    classes.dex: $(stat -c%s "$BUILD/dex/classes.dex") bayt"
 
 # ---------------------------------------------------------------- 4) manifest/zip
 echo "==> [4/6] APK paketleniyor"
+"$BT/aapt2" compile --dir "$APK_DIR/res" -o "$BUILD/res.zip"
 "$BT/aapt2" link -o "$BUILD/base.apk" -I "$ANDROID_JAR" \
+     -R "$BUILD/res.zip" \
      --manifest "$APK_DIR/AndroidManifest.xml" \
      --min-sdk-version 24 --target-sdk-version 34 \
      --version-code 2 --version-name "1.1"

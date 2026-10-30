@@ -9,7 +9,7 @@
     <!-- Editör yalnızca gömülü varlıkları 127.0.0.1 üzerinden sunar; ağ izni gerekmez. -->
     <application
         android:label="WSC In-Game Editor"
-        android:icon="@android:drawable/ic_menu_edit"
+        android:icon="@mipmap/ic_launcher"
         android:allowBackup="true"
         android:usesCleartextTraffic="true"
         android:hardwareAccelerated="true"
