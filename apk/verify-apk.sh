@@ -47,7 +47,7 @@ done
 say ""
 
 say "[3] Gömülü varlıklar"
-for asset in assets/index.html assets/app.js assets/data.js assets/styles.css assets/demo-save.json assets/demo-save.js classes.dex; do
+for asset in assets/index.html assets/app.js assets/data.js assets/styles.css assets/demo-save.json assets/demo-save.js assets/detect.js classes.dex; do
   unzip -l "$APK" | grep -q " $asset\$" && ok "$asset ($(unzip -l "$APK" | awk -v a="$asset" '$4==a {print $1}') bayt)" || bad "eksik: $asset"
 done
 say ""
