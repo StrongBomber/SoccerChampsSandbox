@@ -1,0 +1,9 @@
+# APK derleme çıktıları (CI üretir; repoda tutulmaz)
+apk/out/
+apk/build/
+apk/keystore.jks
+apk/last-build.log
+
+# Geçici analiz çıktıları
+analysis/il2cpp-evidence.json
+*.tmp

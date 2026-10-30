@@ -93,6 +93,7 @@ echo "==> [5/6] Hizalanıyor (zipalign)"
 "$BT/zipalign" -f -p 4 "$BUILD/base.apk" "$OUT/wsc-editor-unaligned.apk"
 
 echo "==> [6/6] İmzalanıyor (apksigner)"
+# Not: keystore repoya girmez (.gitignore); CI her derlemede üretir.
 KS="$APK_DIR/keystore.jks"
 if [ ! -f "$KS" ]; then
   echo "    keystore üretiliyor (wsc-editor.jks)"
