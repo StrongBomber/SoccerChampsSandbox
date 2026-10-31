@@ -48,8 +48,8 @@
     },
     {
       "name": "resources.arsc 4 bayt hizalı",
-      "ok": false,
-      "detail": "veri ofseti 137460499 (mod 4 = 3)",
+      "ok": true,
+      "detail": "veri ofseti 137460508 (mod 4 = 0)",
       "fatal": true
     },
     {
@@ -122,6 +122,12 @@
       "name": "beklenen dışında değişen girdi yok",
       "ok": false,
       "detail": "değişen: 1 (assets/bin/Data/Managed/Metadata/global-metadata.dat) · eklenen: 0 · silinen: 1 · BEKLENMEYEN: stamp-cert-sha256",
+      "fatal": true
+    },
+    {
+      "name": "yerel kütüphane (lib/) var",
+      "ok": false,
+      "detail": "lib/ girdisi: 0 · .so: 0 · YOK: bu APK tek başına çalışamaz (yerel kod ayrı split'te olabilir)",
       "fatal": true
     }
   ],
