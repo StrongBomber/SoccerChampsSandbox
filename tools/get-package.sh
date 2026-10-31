@@ -74,15 +74,14 @@ try_url() {
 VQ=""
 [ -n "$VC" ] && VQ="&versionCode=$VC"
 
-# 1) APKPure doğrudan indirme uçları (XAPK = split seti)
-try_url "APKPure XAPK (sürüm $VC)" "https://d.apkpure.com/b/XAPK/$PKG?versionCode=${VC:-latest}" ||
-try_url "APKPure XAPK (latest)" "https://d.apkpure.com/b/XAPK/$PKG?version=latest" ||
-# 2) APKPure APK (bazı sürümler tek parça/universal olabilir)
-try_url "APKPure APK (latest)" "https://d.apkpure.com/b/APK/$PKG?version=latest" ||
-# 3) pureapk API — XAPK bağlantısı
-try_url "pureapk API v3" "https://api.pureapk.com/m/v3/cms/app_version?hl=en-US&package_name=$PKG" ||
-# 4) APKCombo (build numarası ile)
-try_url "APKCombo" "https://apkcombo.app/bitlife/com.candywriter.bitlife/download/xapk" ||
+# 1) d.apkpure.net — Cloudflare yok, tam XAPK veriyor (2026-10 itibarıyla çalışıyor)
+try_url "apkpure.net XAPK (latest)" "https://d.apkpure.net/b/XAPK/$PKG?version=latest" ||
+try_url "apkpure.net XAPK (sürüm $VC)" "https://d.apkpure.net/b/XAPK/$PKG?versionCode=${VC:-latest}" ||
+# 2) d.apkpure.net APK (bazı sürümler tek parça/universal)
+try_url "apkpure.net APK (latest)" "https://d.apkpure.net/b/APK/$PKG?version=latest" ||
+# 3) Cloudflare'lı uçlar (genelde 403 ama yedek)
+try_url "d.apkpure.com XAPK" "https://d.apkpure.com/b/XAPK/$PKG?version=latest" ||
+try_url "download.apkpure.com XAPK" "https://download.apkpure.com/b/XAPK/$PKG?version=latest" ||
 {
   echo "none" > "$OUT/KIND"
 }

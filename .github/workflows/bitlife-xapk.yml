@@ -92,21 +92,37 @@ jobs:
         run: |
           set -eu
           KIND="${{ steps.acquire.outputs.kind }}"
-          rm -rf parts && mkdir parts
+          rm -rf parts x && mkdir parts
           if [ "$KIND" = "universal" ]; then
             cp pkg/file parts/base.apk
           else
-            rm -rf x && mkdir x && unzip -q -o pkg/file -d x
-            find x -name '*.apk' -maxdepth 3 -exec cp {} parts/ \;
+            mkdir x && unzip -q -o pkg/file -d x
+            find x -maxdepth 5 -name '*.apk' -exec cp {} parts/ \;
+            find x -maxdepth 6 -name '*.obb' -exec cp {} parts/ \;
+            [ -f x/manifest.json ] && cp x/manifest.json parts/ || true
             if [ ! -f parts/base.apk ]; then
               B=$(python3 -c "import json;m=json.load(open('x/manifest.json'));b=[a for a in m.get('split_apks',[]) if a.get('id')=='base'];print(b[0]['file'] if b else '')" 2>/dev/null || echo "")
               if [ -n "$B" ] && [ -f "parts/$B" ]; then mv "parts/$B" parts/base.apk; fi
             fi
-            [ -f parts/base.apk ] || { B=$(ls parts | grep -vi 'config\|split' | head -1); [ -n "$B" ] && mv "parts/$B" parts/base.apk; }
+            if [ ! -f parts/base.apk ]; then
+              B=$(ls parts | grep '\.apk$' | grep -vi 'config\|split' | head -1)
+              [ -n "$B" ] && mv "parts/$B" parts/base.apk
+            fi
           fi
+          [ -f parts/base.apk ] || { echo "base bulunamadı"; exit 1; }
           cp parts/base.apk base-original.apk
-          ls -l parts
-          echo "parça: $(ls parts | wc -l)"
+          LIB=$(python3 -c "import zipfile;n=zipfile.ZipFile('parts/base.apk').namelist();print(len([x for x in n if x.startswith('lib/') and x.endswith('.so')]))")
+          echo "base içindeki .so: $LIB"
+          if [ "$LIB" -gt 0 ]; then
+            echo "→ base kendi kendine yeterli: tek APK yolu"
+            find parts -name '*.apk' ! -name 'base.apk' -delete
+            echo "kind2=universal" >> "$GITHUB_OUTPUT"
+          else
+            echo "→ base eksik (lib/ yok): split seti gerekiyor"
+            echo "kind2=xapk" >> "$GITHUB_OUTPUT"
+          fi
+          echo "--- parçalar ---"; ls -l parts
+          echo "kind=$KIND kind2=$(grep -o 'kind2=.*' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)"
 
       - name: base'i yamala (The Boys metin havuzu)
         id: patch
@@ -154,7 +170,7 @@ jobs:
         if: ${{ steps.patch.outputs.applied != '' && steps.patch.outputs.applied != '0' }}
         run: |
           set +e
-          KIND="${{ steps.acquire.outputs.kind }}"
+          KIND="${{ steps.parts.outputs.kind2 }}"
           RC=0
           if [ "$KIND" = "universal" ]; then
             python3 tools/apk-doctor.py signed/base.apk --reference base-original.apk --out apk-analiz
