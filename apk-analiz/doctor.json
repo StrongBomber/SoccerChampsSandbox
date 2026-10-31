@@ -1,0 +1,130 @@
+{
+  "apk": "/home/runner/work/_temp/theboys-signed.apk",
+  "bytes": 141450854,
+  "entries": 3103,
+  "dex": [
+    "classes.dex",
+    "classes10.dex",
+    "classes11.dex",
+    "classes2.dex",
+    "classes3.dex",
+    "classes4.dex",
+    "classes5.dex",
+    "classes6.dex",
+    "classes7.dex",
+    "classes8.dex",
+    "classes9.dex"
+  ],
+  "abis": [],
+  "schemes": [
+    {
+      "id": "0x7109871a",
+      "name": "APK Signature Scheme v2",
+      "bytes": 1461
+    },
+    {
+      "id": "0xf05368c0",
+      "name": "APK Signature Scheme v3",
+      "bytes": 1461
+    },
+    {
+      "id": "0x42726577",
+      "name": "bilinmeyen",
+      "bytes": 1106
+    }
+  ],
+  "checks": [
+    {
+      "name": "zip bütünlüğü (CRC)",
+      "ok": true,
+      "detail": "tüm girdiler sağlam",
+      "fatal": true
+    },
+    {
+      "name": "resources.arsc sıkıştırılmamış",
+      "ok": true,
+      "detail": "compress_type=0 (STORED)",
+      "fatal": true
+    },
+    {
+      "name": "resources.arsc 4 bayt hizalı",
+      "ok": false,
+      "detail": "veri ofseti 137460499 (mod 4 = 3)",
+      "fatal": true
+    },
+    {
+      "name": ".so sıkıştırılmamış",
+      "ok": true,
+      "detail": "0/0 .so STORED",
+      "fatal": true
+    },
+    {
+      "name": ".so 4 KB hizalı",
+      "ok": true,
+      "detail": "0/0 .so 4096 hizalı",
+      "fatal": true
+    },
+    {
+      "name": ".so 16 KB hizalı (Android 15+ 16 KB sayfa cihazları)",
+      "ok": true,
+      "detail": "0/0 .so 16384 hizalı",
+      "fatal": false
+    },
+    {
+      "name": "zip merkezi dizin (EOCD)",
+      "ok": true,
+      "detail": "CD 286288 bayt, ofset 141164544",
+      "fatal": true
+    },
+    {
+      "name": "APK imza bloğu",
+      "ok": true,
+      "detail": "[\"APK Signature Scheme v2\", \"APK Signature Scheme v3\", \"bilinmeyen\"]",
+      "fatal": true
+    },
+    {
+      "name": "v2 imzası",
+      "ok": true,
+      "detail": "APK Signature Scheme v2 var",
+      "fatal": true
+    },
+    {
+      "name": "v3 imzası",
+      "ok": true,
+      "detail": "APK Signature Scheme v3 var",
+      "fatal": false
+    },
+    {
+      "name": "v1 imzası tutarlı",
+      "ok": true,
+      "detail": "v1 yok (v2/v3 yeterli)",
+      "fatal": true
+    },
+    {
+      "name": "AndroidManifest.xml var",
+      "ok": true,
+      "detail": "79236 bayt",
+      "fatal": true
+    },
+    {
+      "name": "en az bir dex var",
+      "ok": true,
+      "detail": "11 dex: classes.dex, classes10.dex, classes11.dex, classes2.dex, classes3.dex, classes4.dex, classes5.dex, classes6.dex, classes7.dex, classes8.dex, classes9.dex",
+      "fatal": true
+    },
+    {
+      "name": "en az bir ABI var",
+      "ok": false,
+      "detail": "ABI: yok",
+      "fatal": true
+    },
+    {
+      "name": "beklenen dışında değişen girdi yok",
+      "ok": false,
+      "detail": "değişen: 1 (assets/bin/Data/Managed/Metadata/global-metadata.dat) · eklenen: 0 · silinen: 1 · BEKLENMEYEN: stamp-cert-sha256",
+      "fatal": true
+    }
+  ],
+  "fails": 3,
+  "warnings": 0
+}

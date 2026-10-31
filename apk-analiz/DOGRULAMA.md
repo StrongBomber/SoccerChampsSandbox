@@ -1,7 +1,7 @@
 # Yayın öncesi doğrulama
 
-- APK: `theboys-signed.apk` (141709099 bayt)
-- Girdi sayısı: 3106 · dex: 11 (classes.dex, classes10.dex, classes11.dex, classes2.dex, classes3.dex, classes4.dex, classes5.dex, classes6.dex, classes7.dex, classes8.dex, classes9.dex)
+- APK: `theboys-signed.apk` (141450854 bayt)
+- Girdi sayısı: 3103 · dex: 11 (classes.dex, classes10.dex, classes11.dex, classes2.dex, classes3.dex, classes4.dex, classes5.dex, classes6.dex, classes7.dex, classes8.dex, classes9.dex)
 - Metadata: 19293888 bayt
 - Yama: 23 çift · **doğrulanan: 23** · hatalı: 0
 
