@@ -1,0 +1,629 @@
+{
+  "root": "/home/runner/work/_temp/decoded",
+  "package": "com.candywriter.bitlife",
+  "versionName": null,
+  "minSdk": 25,
+  "applicationClass": "unity.auto-set-game-state",
+  "activities": [
+    "com.unity3d.player.UnityPlayerActivity",
+    "io.didomi.sdk.preferences.ctv.TVPreferencesDialogActivity",
+    "io.didomi.sdk.notice.ctv.TVNoticeDialogActivity",
+    "com.android.billingclient.api.ProxyBillingActivity",
+    "com.android.billingclient.api.ProxyBillingActivityV2",
+    "com.hyprmx.android.sdk.activity.HyprMXOfferViewerActivity",
+    "com.hyprmx.android.sdk.activity.HyprMXRequiredInformationActivity",
+    "com.hyprmx.android.sdk.activity.HyprMXNoOffersActivity",
+    "com.hyprmx.android.sdk.overlay.HyprMXBrowserActivity",
+    "com.chartboost.sdk.view.CBImpressionActivity",
+    "com.chartboost.sdk.internal.clickthrough.EmbeddedBrowserActivity",
+    "com.chartboost.sdk.view.FullscreenAdActivity",
+    "com.moloco.sdk.xenoss.sdkdevkit.android.adrenderer.internal.templates.renderer.fullscreen.FullscreenWebviewActivity",
+    "com.moloco.sdk.xenoss.sdkdevkit.android.adrenderer.internal.vast.VastActivity",
+    "com.moloco.sdk.xenoss.sdkdevkit.android.adrenderer.internal.staticrenderer.StaticAdActivity",
+    "com.moloco.sdk.xenoss.sdkdevkit.android.adrenderer.internal.mraid.MraidActivity",
+    "com.applovin.adview.AppLovinFullscreenActivity",
+    "com.applovin.adview.AppLovinFullscreenImmersiveActivity",
+    "com.applovin.sdk.AppLovinWebViewActivity",
+    "com.applovin.mediation.MaxDebuggerActivity",
+    "com.applovin.mediation.MaxDebuggerDetailActivity",
+    "com.applovin.mediation.MaxDebuggerMultiAdActivity",
+    "com.applovin.mediation.MaxDebuggerAdUnitsListActivity",
+    "com.applovin.mediation.MaxDebuggerAdUnitWaterfallsListActivity",
+    "com.applovin.mediation.MaxDebuggerAdUnitDetailActivity",
+    "com.applovin.mediation.MaxDebuggerCmpNetworksListActivity",
+    "com.applovin.mediation.MaxDebuggerTcfConsentStatusesListActivity",
+    "com.applovin.mediation.MaxDebuggerTcfInfoListActivity",
+    "com.applovin.mediation.MaxDebuggerTcfStringActivity",
+    "com.applovin.mediation.MaxDebuggerTestLiveNetworkActivity",
+    "com.applovin.mediation.MaxDebuggerTestModeNetworkActivity",
+    "com.applovin.mediation.MaxDebuggerUnifiedFlowActivity",
+    "com.applovin.mediation.MaxDebuggerWaterfallSegmentsActivity",
+    "com.applovin.creative.MaxCreativeDebuggerActivity",
+    "com.applovin.creative.MaxCreativeDebuggerDisplayedAdActivity",
+    "com.inmobi.ads.rendering.InMobiAdActivity",
+    "com.inmobi.ads.rendering.InMobiInAppBrowserActivity",
+    "com.google.android.gms.auth.api.signin.internal.SignInHubActivity",
+    "com.unity3d.ads.adplayer.FullScreenWebViewDisplay",
+    "com.google.android.gms.common.api.GoogleApiActivity"
+  ],
+  "counts": {
+    "files": 89031,
+    "assets": 151,
+    "smali": 85591,
+    "dex": 2
+  },
+  "databases": [],
+  "json": [
+    {
+      "path": "assets/bin/Data/RuntimeInitializeOnLoads.json",
+      "size": 18893,
+      "arrays": [
+        {
+          "key": "root",
+          "count": 108,
+          "sampleKeys": [
+            "assemblyName",
+            "nameSpace",
+            "className",
+            "methodName",
+            "loadTypes",
+            "isUnityClass"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "assets/didomi_master_config.json",
+      "size": 10383,
+      "arrays": [
+        {
+          "key": "purposes",
+          "count": 11,
+          "sampleKeys": [
+            "id",
+            "iabId"
+          ]
+        },
+        {
+          "key": "specialFeatures",
+          "count": 2,
+          "sampleKeys": [
+            "id",
+            "iabId"
+          ]
+        },
+        {
+          "key": "vendors",
+          "count": 11,
+          "sampleKeys": [
+            "id",
+            "didomiId",
+            "name",
+            "purposeIds",
+            "legIntPurposeIds",
+            "policyUrl",
+            "namespace"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "original/META-INF/native-image/io.opentelemetry/opentelemetry-sdk-trace/reflect-config.json",
+      "size": 924,
+      "arrays": [
+        {
+          "key": "",
+          "count": 3,
+          "sampleKeys": [
+            "condition",
+            "name",
+            "fields"
+          ]
+        }
+      ]
+    },
+    {
+      "path": "res/raw/applovin_consent_flow_unified_cmp.json",
+      "size": 2201,
+      "arrays": [
+        {
+          "key": "states",
+          "count": 11,
+          "sampleKeys": [
+            "id",
+            "type",
+            "decision_type",
+            "destination_state_id_true",
+            "destination_state_id_false"
+          ]
+        }
+      ]
+    }
+  ],
+  "keywordFiles": [
+    {
+      "path": "assets/didomi_iab_config_v3.json",
+      "size": 820661,
+      "keywords": [
+        "occupation",
+        "profession",
+        "job",
+        "event",
+        "choice",
+        "character",
+        "supe",
+        "power",
+        "trait",
+        "life",
+        "age",
+        "school"
+      ]
+    },
+    {
+      "path": "res/values/public.xml",
+      "size": 795440,
+      "keywords": [
+        "job",
+        "event",
+        "story",
+        "choice",
+        "character",
+        "trait",
+        "life",
+        "age",
+        "prison"
+      ]
+    },
+    {
+      "path": "assets/didomi_iab_purposes_v3_en-CA.json",
+      "size": 21101,
+      "keywords": [
+        "occupation",
+        "profession",
+        "event",
+        "choice",
+        "character",
+        "supe",
+        "age",
+        "school"
+      ]
+    },
+    {
+      "path": "assets/didomi_iab_purposes_v3_en-GB.json",
+      "size": 21089,
+      "keywords": [
+        "occupation",
+        "profession",
+        "event",
+        "choice",
+        "character",
+        "supe",
+        "age",
+        "school"
+      ]
+    },
+    {
+      "path": "assets/didomi_iab_purposes_v3_en-NZ.json",
+      "size": 21089,
+      "keywords": [
+        "occupation",
+        "profession",
+        "event",
+        "choice",
+        "character",
+        "supe",
+        "age",
+        "school"
+      ]
+    },
+    {
+      "path": "smali_classes4/androidx/core/util/PatternsCompat.smali",
+      "size": 83543,
+      "keywords": [
+        "career",
+        "job",
+        "wage",
+        "event",
+        "supe",
+        "life",
+        "age",
+        "school"
+      ]
+    },
+    {
+      "path": "AndroidManifest.xml",
+      "size": 57689,
+      "keywords": [
+        "job",
+        "event",
+        "story",
+        "power",
+        "trait",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "res/values/strings.xml",
+      "size": 74760,
+      "keywords": [
+        "event",
+        "story",
+        "choice",
+        "character",
+        "trait",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes11/io/didomi/sdk/em.smali",
+      "size": 154527,
+      "keywords": [
+        "job",
+        "event",
+        "choice",
+        "character",
+        "supe",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "res/values-es/strings.xml",
+      "size": 49990,
+      "keywords": [
+        "event",
+        "story",
+        "choice",
+        "character",
+        "supe",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes10/com/unity3d/services/core/di/ServiceProvider.smali",
+      "size": 949550,
+      "keywords": [
+        "job",
+        "event",
+        "supe",
+        "trait",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes10/com/vungle/ads/internal/ui/AdActivity.smali",
+      "size": 63116,
+      "keywords": [
+        "job",
+        "event",
+        "supe",
+        "trait",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes11/io/didomi/sdk/Didomi.smali",
+      "size": 171869,
+      "keywords": [
+        "job",
+        "event",
+        "choice",
+        "supe",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes5/com/applovin/impl/sdk/l.smali",
+      "size": 230153,
+      "keywords": [
+        "event",
+        "story",
+        "supe",
+        "power",
+        "trait",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes5/com/inmobi/media/pi.smali",
+      "size": 530604,
+      "keywords": [
+        "job",
+        "event",
+        "supe",
+        "trait",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes8/com/hyprmx/android/sdk/activity/HyprMXBaseViewController.smali",
+      "size": 45390,
+      "keywords": [
+        "job",
+        "event",
+        "supe",
+        "power",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes8/com/hyprmx/android/sdk/activity/HyprMXOfferViewerActivity.smali",
+      "size": 29413,
+      "keywords": [
+        "job",
+        "event",
+        "supe",
+        "power",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes8/com/hyprmx/android/sdk/activity/HyprMXWebTrafficViewController.smali",
+      "size": 50285,
+      "keywords": [
+        "job",
+        "event",
+        "supe",
+        "power",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes8/com/hyprmx/android/sdk/core/HyprMXController.smali",
+      "size": 80062,
+      "keywords": [
+        "job",
+        "event",
+        "supe",
+        "power",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes8/com/hyprmx/android/sdk/powersavemode/DefaultPowerSaveModeListener.smali",
+      "size": 9152,
+      "keywords": [
+        "job",
+        "event",
+        "supe",
+        "power",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes8/com/hyprmx/android/sdk/webview/t.smali",
+      "size": 47279,
+      "keywords": [
+        "job",
+        "event",
+        "story",
+        "supe",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes9/com/ironsource/adqualitysdk/sdk/i/by.smali",
+      "size": 237535,
+      "keywords": [
+        "event",
+        "scenario",
+        "character",
+        "supe",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes9/com/mbridge/msdk/advanced/view/MBNativeAdvancedView.smali",
+      "size": 25329,
+      "keywords": [
+        "event",
+        "story",
+        "choice",
+        "supe",
+        "trait",
+        "age"
+      ]
+    },
+    {
+      "path": "assets/didomi_iab_purposes_v3_nl-BE.json",
+      "size": 24418,
+      "keywords": [
+        "profession",
+        "event",
+        "supe",
+        "perk",
+        "age"
+      ]
+    },
+    {
+      "path": "assets/didomi_iab_purposes_v3_nl.json",
+      "size": 24519,
+      "keywords": [
+        "profession",
+        "event",
+        "supe",
+        "perk",
+        "age"
+      ]
+    },
+    {
+      "path": "original/META-INF/androidx/constraintlayout/constraintlayout-core/LICENSE.txt",
+      "size": 10175,
+      "keywords": [
+        "event",
+        "character",
+        "supe",
+        "power",
+        "age"
+      ]
+    },
+    {
+      "path": "res/values-fr/strings.xml",
+      "size": 51289,
+      "keywords": [
+        "story",
+        "choice",
+        "character",
+        "trait",
+        "age"
+      ]
+    },
+    {
+      "path": "res/values-gl/strings.xml",
+      "size": 41432,
+      "keywords": [
+        "event",
+        "choice",
+        "character",
+        "supe",
+        "age"
+      ]
+    },
+    {
+      "path": "res/values-it/strings.xml",
+      "size": 47208,
+      "keywords": [
+        "event",
+        "story",
+        "choice",
+        "character",
+        "age"
+      ]
+    },
+    {
+      "path": "res/values-ms/strings.xml",
+      "size": 45973,
+      "keywords": [
+        "story",
+        "choice",
+        "character",
+        "perk",
+        "age"
+      ]
+    },
+    {
+      "path": "smali/androidx/appcompat/app/AppCompatDelegateImpl.smali",
+      "size": 230234,
+      "keywords": [
+        "event",
+        "character",
+        "supe",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali/androidx/compose/ui/platform/AndroidComposeView.smali",
+      "size": 265057,
+      "keywords": [
+        "event",
+        "story",
+        "supe",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali/androidx/compose/ui/platform/AndroidComposeViewAccessibilityDelegateCompat.smali",
+      "size": 550393,
+      "keywords": [
+        "event",
+        "character",
+        "supe",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali/androidx/compose/ui/platform/WindowRecomposer_androidKt$createLifecycleAwareWindowRecomposer$2.smali",
+      "size": 7963,
+      "keywords": [
+        "job",
+        "event",
+        "supe",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali/androidx/compose/ui/viewinterop/AndroidViewHolder.smali",
+      "size": 66884,
+      "keywords": [
+        "job",
+        "event",
+        "supe",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_assets/audience_network/classes2/com/facebook/ads/redexgen/X/Ji.smali",
+      "size": 167590,
+      "keywords": [
+        "event",
+        "outcome",
+        "supe",
+        "trait",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_assets/audience_network/classes2/com/facebook/ads/redexgen/X/YM.smali",
+      "size": 599677,
+      "keywords": [
+        "job",
+        "choice",
+        "supe",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes10/com/moloco/sdk/internal/ilrd/b.smali",
+      "size": 72292,
+      "keywords": [
+        "job",
+        "event",
+        "supe",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes10/com/moloco/sdk/internal/publisher/F.smali",
+      "size": 7883,
+      "keywords": [
+        "job",
+        "event",
+        "supe",
+        "life",
+        "age"
+      ]
+    },
+    {
+      "path": "smali_classes10/com/moloco/sdk/internal/publisher/H.smali",
+      "size": 8077,
+      "keywords": [
+        "job",
+        "event",
+        "supe",
+        "life",
+        "age"
+      ]
+    }
+  ],
+  "generated_at": "2026-10-31T09:26:23.893Z"
+}
