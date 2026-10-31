@@ -1,0 +1,160 @@
+{
+  "apk": "signed/base.apk",
+  "bytes": 141450854,
+  "entries": 3103,
+  "dex": [
+    "classes.dex",
+    "classes10.dex",
+    "classes11.dex",
+    "classes2.dex",
+    "classes3.dex",
+    "classes4.dex",
+    "classes5.dex",
+    "classes6.dex",
+    "classes7.dex",
+    "classes8.dex",
+    "classes9.dex"
+  ],
+  "checked": 23,
+  "fails": 0,
+  "rows": [
+    {
+      "find": "I accepted the job offer.",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "I was unable to negotiate a higher salary.",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "You were sent to the principal's office!",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "Your teacher sent you to the principal's office!",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "The contractors botched the job and made out with all of my ",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "The contractors botched the job and refunded me ",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "My contractors came in over-budget by ",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "My contractors gave up on the project! ",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "I began training to be an astronaut at the ",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "A coworker told everyone you slept with the boss.",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "I was rejected on account of not having a job.",
+      "new_present": 3,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "No one else responded to your job listing.",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "I have been promoted to {0} with a salary of {1}.",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "I negotiated for a higher starting salary of <amount>.",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "I began working harder in my job as {0}.",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "I began working harder in my job as {0} for {1}.",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "I was hired for the position of <position> at <record-label>",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "I tried to negotiate for a higher salary, but they refused.",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "I attempted to seduce my {0}, {1}, in order to keep my job b",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "I chose to buy a Golden Diploma to increase my chances of ca",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "I felt motivated enough about my job as {0} that I put in so",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "In this challenge, redemption is just a job change away.",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    },
+    {
+      "find": "I enlightened my communard, I enlisted in the {0} with a sal",
+      "new_present": 1,
+      "old_present": 0,
+      "ok": true
+    }
+  ]
+}
