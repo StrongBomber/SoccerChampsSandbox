@@ -79,6 +79,13 @@ jobs:
           echo "--- sonda ---"; cat pkg/SONDA.md 2>/dev/null || true
           cp pkg/SONDA.md apk-analiz/PAKET-KAYNAK.md 2>/dev/null || true
 
+      - name: Ayna sondası (paket bulunamadıysa)
+        if: ${{ steps.acquire.outputs.kind == 'none' || steps.acquire.outputs.kind == '' }}
+        run: |
+          set +e
+          bash tools/mirror-probe.sh apk-analiz
+          cat apk-analiz/AYNA-SONDA.md | head -40
+
       - name: Parçaları hazırla
         id: parts
         if: ${{ steps.acquire.outputs.kind != 'none' && steps.acquire.outputs.kind != '' }}
