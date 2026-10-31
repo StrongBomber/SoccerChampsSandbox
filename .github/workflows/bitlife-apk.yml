@@ -1,0 +1,211 @@
+name: BitLife APK — indir, analiz et, modla
+
+# Drive'daki BitLife APK'sını GitHub runner'ında indirir (runner'ın ağı açık),
+# apktool ile açar, içerik modelini çıkarır, The Boys içeriğini oyunun kendi
+# veri dosyalarına yazar ve modlanmış APK'yı imzalayıp Release'e koyar.
+#
+# Tetikleme:
+#   - trigger/bitlife/ altındaki bir dosyayı değiştirip push et  (dal çalışır)
+#   - ya da elle: gh workflow run bitlife-apk.yml --ref <dal>
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "trigger/bitlife/**"
+
+concurrency:
+  group: bitlife-apk
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Araçlar (apktool, build-tools)
+        run: |
+          set -eu
+          mkdir -p "$HOME/tools"
+          APKTOOL_URL=$(gh api repos/iBotPeaches/Apktool/releases/latest --jq '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -1)
+          echo "apktool: $APKTOOL_URL"
+          curl -fsSL "$APKTOOL_URL" -o "$HOME/tools/apktool.jar"
+          java -jar "$HOME/tools/apktool.jar" --version
+          echo "APKTOOL=java -jar $HOME/tools/apktool.jar" >> "$GITHUB_ENV"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* 2>/dev/null | sort -V | tail -1)
+          echo "build-tools: $BT"
+          echo "$BT" >> "$GITHUB_PATH"
+
+      - name: APK'yı Drive'dan indir
+        run: |
+          set -eu
+          bash tools/drive-fetch.sh "${DRIVE_ID:-19nxS1vrw5oP56ymsumXNRUMXmgA90-ef}" "$RUNNER_TEMP/bitlife.apk"
+          cp "$RUNNER_TEMP/bitlife.apk" "$RUNNER_TEMP/original.apk"
+          ls -l "$RUNNER_TEMP/bitlife.apk"
+          unzip -l "$RUNNER_TEMP/bitlife.apk" | head -30
+          echo "--- en büyük 20 girdi ---"
+          unzip -l "$RUNNER_TEMP/bitlife.apk" | sort -k1 -n -r | head -22
+
+      - name: XAPK/APKS ise base APK'yı çıkar
+        id: unpack
+        run: |
+          set -eu
+          cd "$RUNNER_TEMP"
+          if unzip -l bitlife.apk | grep -qE '\.apk$'; then
+            echo "paket içinde APK var → XAPK/APKS olarak açılıyor"
+            mkdir -p xapk && unzip -q -o bitlife.apk -d xapk
+            if [ -f xapk/manifest.json ]; then
+              BASE=$(node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync("xapk/manifest.json","utf8"));(m.split_apks||[]).forEach(a=>console.log(a.id+" "+a.file));')
+              echo "$BASE"
+              F=$(echo "$BASE" | awk '$1=="base"{print $2}')
+              [ -n "$F" ] || F=$(echo "$BASE" | head -1 | awk '{print $2}')
+              cp "xapk/$F" base.apk
+              echo "base: $F"
+            else
+              F=$(find xapk -maxdepth 1 -name '*.apk' | head -1)
+              cp "$F" base.apk
+              echo "base: $F"
+            fi
+          else
+            cp bitlife.apk base.apk
+          fi
+          ls -l base.apk
+          echo "apk=$RUNNER_TEMP/base.apk" >> "$GITHUB_OUTPUT"
+
+      - name: APK'yı aç (apktool)
+        run: |
+          set -eu
+          cd "$RUNNER_TEMP"
+          rm -rf decoded
+          $APKTOOL d -f -o decoded base.apk > apktool.log 2>&1 || { tail -40 apktool.log; exit 1; }
+          tail -5 apktool.log
+          du -sh decoded
+
+      - name: İçerik modelini çıkar
+        run: |
+          set -eu
+          node tools/apk-analyze.mjs "$RUNNER_TEMP/decoded" apk-analiz | tee apk-analiz-stdout.txt
+          cp "$RUNNER_TEMP/apktool.log" apk-analiz/apktool.log || true
+
+      - name: Analizi repoya işle
+        run: |
+          set -eu
+          git config user.name "bitlife-bot"
+          git config user.email "bitlife-bot@users.noreply.github.com"
+          git add -A apk-analiz
+          git commit -m "analiz(bitlife): APK içerik modeli [skip ci]" || echo "değişiklik yok"
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push atlandı"
+
+      - name: The Boys içeriğini oyunun verisine yaz
+        id: inject
+        run: |
+          set -eu
+          set +e
+          node tools/apk-inject.mjs "$RUNNER_TEMP/decoded" apk-analiz/model.json apk-analiz
+          RC=$?
+          set -e
+          echo "exit=$RC"
+          echo "rows=$(node -e 'console.log(require("./apk-analiz/injection.json").total_rows)' 2>/dev/null || echo 0)" >> "$GITHUB_OUTPUT"
+          git add -A apk-analiz || true
+          git commit -m "enjeksiyon(bitlife): The Boys içeriği [skip ci]" || echo "değişiklik yok"
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push atlandı"
+          if [ "$RC" = "3" ]; then
+            echo "::warning::Oyunun veri dosyalarında enjekte edilebilir içerik tablosu bulunamadı"
+          fi
+
+      - name: Yeniden paketle (apktool b)
+        if: ${{ steps.inject.outputs.rows != '' && steps.inject.outputs.rows != '0' }}
+        run: |
+          set -eu
+          cd "$RUNNER_TEMP"
+          $APKTOOL b decoded -o unsigned.apk > build.log 2>&1 || { tail -60 build.log; exit 1; }
+          tail -5 build.log
+          ls -l unsigned.apk
+
+      - name: İmzalama anahtarı (sabit)
+        if: ${{ steps.inject.outputs.rows != '' && steps.inject.outputs.rows != '0' }}
+        run: |
+          set -eu
+          if gh release download bitlife-theboys -p mod-signing.jks -O "$RUNNER_TEMP/mod-signing.jks" 2>/dev/null; then
+            echo "mevcut anahtar indirildi"
+          else
+            keytool -genkeypair -v -keystore "$RUNNER_TEMP/mod-signing.jks" -storepass theboysmod -keypass theboysmod \
+              -alias theboys -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=The Boys Mod, O=BitLifeSandbox, C=TR"
+            echo "yeni anahtar üretildi"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Hizala + imzala
+        if: ${{ steps.inject.outputs.rows != '' && steps.inject.outputs.rows != '0' }}
+        run: |
+          set -eu
+          cd "$RUNNER_TEMP"
+          zipalign -f -p 4 unsigned.apk aligned.apk
+          apksigner sign --ks mod-signing.jks --ks-pass pass:theboysmod --key-pass pass:theboysmod \
+            --ks-key-alias theboys --out theboys-signed.apk aligned.apk
+          apksigner verify --print-certs theboys-signed.apk | tee certs.txt
+          ls -l theboys-signed.apk
+          unzip -l theboys-signed.apk | head -20
+          sha256sum theboys-signed.apk | tee theboys-signed.apk.sha256
+
+      - name: Release'e yükle
+        if: ${{ steps.inject.outputs.rows != '' && steps.inject.outputs.rows != '0' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          TAG="bitlife-theboys"
+          cat > NOTES.md <<'EOF'
+          BitLife APK — The Boys modu.
+          Oyunun kendi veri dosyalari degistirildi: apktool ile acildi, icerik
+          tablolarina The Boys satirlari yazildi, yeniden paketlendi ve imzalandi.
+
+          - Eklenen icerik: 12 meslek, 30 bolum, 10 karakter (tablo bulunduysa)
+          - Ayrintili rapor: depodaki apk-analiz/ANALIZ.md ve apk-analiz/INJEKSIYON.md
+          - Imza farkli oldugu icin kurmadan once orijinal BitLife'i kaldir.
+          - Yalnizca kendi cihazin icin.
+          EOF
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "BitLife — The Boys modu (APK)" --notes-file NOTES.md
+          fi
+          gh release upload "$TAG" \
+            "$RUNNER_TEMP/theboys-signed.apk#bitlife-theboys.apk" \
+            "$RUNNER_TEMP/theboys-signed.apk.sha256#bitlife-theboys.apk.sha256" \
+            "$RUNNER_TEMP/mod-signing.jks#mod-signing.jks" \
+            --clobber
+          gh release edit "$TAG" --notes-file NOTES.md
+
+      - name: Özet
+        if: always()
+        run: |
+          {
+            echo "## BitLife APK hattı"
+            echo ""
+            echo "- APK: $(wc -c < "$RUNNER_TEMP/base.apk" 2>/dev/null || echo '?') bayt"
+            echo "- Enjekte edilen satır: ${{ steps.inject.outputs.rows }}"
+            echo ""
+            cat apk-analiz/ANALIZ.md 2>/dev/null | head -60 || echo "analiz yok"
+            echo ""
+            cat apk-analiz/INJEKSIYON.md 2>/dev/null | head -60 || echo "enjeksiyon raporu yok"
+          } >> "$GITHUB_STEP_SUMMARY"
