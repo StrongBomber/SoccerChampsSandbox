@@ -124,16 +124,31 @@ jobs:
           echo "--- parçalar ---"; ls -l parts
           echo "kind=$KIND kind2=$(grep -o 'kind2=.*' "$GITHUB_OUTPUT" | tail -1 | cut -d= -f2)"
 
-      - name: base'i yamala (The Boys metin havuzu)
+      - name: Metin yaması (içerik hangi parçada ise)
         id: patch
         if: ${{ steps.acquire.outputs.kind != 'none' && steps.acquire.outputs.kind != '' }}
         run: |
           set -eu
-          python3 tools/apk-text-patch.py parts/base.apk tools/theboys-text-patch.json parts/base-patched.apk apk-analiz
-          mv parts/base-patched.apk parts/base.apk
-          N=$(python3 -c 'import json;print(json.load(open("apk-analiz/text-patch.json"))["applied"])')
-          echo "applied=$N" >> "$GITHUB_OUTPUT"
-          echo "yamalanan çift: $N"
+          META="assets/bin/Data/Managed/Metadata/global-metadata.dat"
+          : > patch-sayilari.txt
+          TOTAL=0
+          echo "--- parça parça içerik denetimi ---"
+          for f in parts/*.apk; do
+            n=$(basename "$f")
+            HAS=$(python3 -c "import zipfile,sys;print('1' if '$META' in zipfile.ZipFile('$f').namelist() else '0')")
+            FIRST=$(python3 -c "import zipfile;print(', '.join(zipfile.ZipFile('$f').namelist()[:4]))")
+            echo "$n · metadata=$HAS · ilk: $FIRST"
+            if [ "$HAS" = "1" ]; then
+              python3 tools/apk-text-patch.py "$f" tools/theboys-text-patch.json "$f.patched" "apk-analiz/yama-$n"
+              CNT=$(python3 -c "import json;print(json.load(open('apk-analiz/yama-$n/text-patch.json'))['applied'])")
+              echo "$n: $CNT çift" | tee -a patch-sayilari.txt
+              mv "$f.patched" "$f"
+              TOTAL=$((TOTAL + CNT))
+            fi
+          done
+          echo "toplam yamalanan çift: $TOTAL"
+          echo "applied=$TOTAL" >> "$GITHUB_OUTPUT"
+          [ "$TOTAL" -gt 0 ] || { echo "hiçbir parçada içerik bulunamadı"; exit 1; }
 
       - name: İmzala (tüm parçalar aynı anahtarla)
         id: sign
@@ -185,8 +200,10 @@ jobs:
             sha256sum theboys-final.xapk > theboys-final.xapk.sha256
             echo "artifact=theboys-final.xapk" >> "$GITHUB_OUTPUT"
           fi
-          python3 tools/apk-verify-patch.py signed/base.apk tools/theboys-text-patch.json apk-analiz
-          echo "rc_verify=$?"
+          for f in signed/*.apk; do
+            python3 -c "import zipfile,sys;sys.exit(0 if 'assets/bin/Data/Managed/Metadata/global-metadata.dat' in zipfile.ZipFile('$f').namelist() else 1)" && \
+              { python3 tools/apk-verify-patch.py "$f" tools/theboys-text-patch.json "apk-analiz/dogrulama-$(basename "$f")"; echo "rc_verify($(basename "$f"))=$?"; }
+          done
           echo "rc=$RC" >> "$GITHUB_OUTPUT"
           echo "doctor rc=$RC"
           cat apk-analiz/TANI-APK.md apk-analiz/TANI-XAPK.md 2>/dev/null | head -40
@@ -230,6 +247,7 @@ jobs:
           EOF
           gh release view "$TAG" >/dev/null 2>&1 || \
             gh release create "$TAG" --title "BitLife — The Boys (kurulabilir)" --notes-file NOTES.md
-          gh release upload "$TAG" "$ART#bitlife-theboys-${ART##*.}" "$ART.sha256" --clobber
+          EXT="${ART##*.}"
+          gh release upload "$TAG" "$ART#bitlife-theboys.$EXT" "$ART.sha256#bitlife-theboys.$EXT.sha256" --clobber
           gh release edit "$TAG" --notes-file NOTES.md
           du -h "$ART"
