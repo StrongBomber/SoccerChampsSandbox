@@ -5,3 +5,9 @@ vendor/
 # frida-server ikilileri
 *.so
 frida-server*
+
+# APK hattı: ham ara dosyalar (yeniden üretilebilir)
+apk-analiz/unity-raw/
+apk-analiz/*.bin
+apk-analiz/*.bin.gz
+apk-analiz/literals.json

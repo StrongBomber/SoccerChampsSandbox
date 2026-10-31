@@ -46,13 +46,20 @@ node tests/rea-scan-test.mjs     # 15 iddia — REA içerik tarayıcısı
 (`ICERIK-HARITASI.md`). Bu hattı BitLife üzerinde çalıştıramadım — dosya 141 MB, bu
 ortama aktarılabilen sınır 100 MiB. Ayrıntı: [`docs/REA-ANALIZ.md`](docs/REA-ANALIZ.md)
 
-## Neden modlanmış APK yok?
+## İki kurulum yolu
 
-1. **Teknik:** `BitLife.apk` 141 MB — bu çalışma alanına aktarılamıyor (100 MiB sınırı).
-2. **Hukuki:** BitLife ticari bir oyun; modlanmış APK yayınlamak oyunun kopyasını dağıtmak olur.
+| Yol | Ne yapar | Nerede |
+|---|---|---|
+| **APK (metin yaması)** | Gerçek BitLife APK'sı Drive'dan GitHub runner'ına indirilir, metin havuzu The Boys evrenine çevrilir, imzalanır | Release `bitlife-theboys` → `theboys-signed.apk` |
+| **Magisk/Frida modu** | Çalışma anında SQLite/JSON içerik tablolarına The Boys içeriği yazar (12 meslek, 30 bölüm, 10 karakter) | Release `theboys-mod` → `theboys-mod-magisk.zip` |
 
-Bu yüzden mod çalışma anında uygulanır ve paket oyun kodunu içermez.
-Dürüst sınırlar: [`docs/BITLIFE-MOD.md`](docs/BITLIFE-MOD.md)
+APK'nın ne yaptığı ve neyi **yapmadığı** (meslek/bölüm sınıfları derlenmiş IL2CPP
+kodudur, veri tablosu yoktur): [`docs/APK-HATTI.md`](docs/APK-HATTI.md)
+
+141 MB'lık `BitLife.apk` bu çalışma alanına aktarılamıyor (100 MiB sınırı) ama
+GitHub runner'ı Drive'dan doğrudan indirebiliyor — hat bu yüzden GitHub Actions'ta
+çalışır. Modlanmış APK yalnızca kendi cihazın için üretilir; oyunun kopyası depoda
+tutulmaz.
 
 ## Klasörler
 
@@ -67,6 +74,7 @@ Dürüst sınırlar: [`docs/BITLIFE-MOD.md`](docs/BITLIFE-MOD.md)
 | `docs/` | `BITLIFE-MOD.md` · `ENJEKSIYON.md` · `REA-ANALIZ.md` |
 | `.github/workflows/build-mod.yml` | Testler → paket → doğrulama → release |
 
+| `tools/apk-text-patch.py` | Gerçek APK'nın metin havuzunu birebir uzunlukta The Boys metnine çevirir |
 ## Not
 
 - Karakter adları yalnızca kişisel kullanım için şablon etiketidir; hiçbir görsel/ses/oyun

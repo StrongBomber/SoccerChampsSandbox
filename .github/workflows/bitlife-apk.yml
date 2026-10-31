@@ -142,20 +142,7 @@ jobs:
           echo "== metadata tablo çözümü =="
           python3 tools/meta-map.py "$RUNNER_TEMP/base.apk" apk-analiz
           echo "rc(map)=$?"
-          echo "== metadata metin havuzu dilimi =="
-          python3 - "$RUNNER_TEMP/base.apk" <<'PYH'
-          import sys, zipfile
-          apk = sys.argv[1]
-          with zipfile.ZipFile(apk) as z:
-              raw = z.read("assets/bin/Data/Managed/Metadata/global-metadata.dat")
-          import gzip
-          lo, hi = 680000, 1920000
-          body = raw[lo:hi]
-          open("apk-analiz/meta-pool2.bin.gz", "wb").write(gzip.compress(body, 9))
-          print("havuz 2:", lo, "-", hi, "=", len(body), "bayt (gz)", len(gzip.compress(body, 9)))
-          print("havuz dilimi:", lo, "-", hi, "=", hi - lo, "bayt")
-          PYH
-          echo "rc(slice)=$?"
+          echo "== (ham havuz dökümü artık alınmıyor) =="
           ls -la apk-analiz/literals.json 2>/dev/null || echo "literals.json YOK"
           # 40 MB üstü artefakt kırp
           find apk-analiz -type f -size +20M -delete || true
