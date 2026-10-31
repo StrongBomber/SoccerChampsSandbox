@@ -1,6 +1,6 @@
 # Tanılama
 
-sürüm: 2026-10-31T10:03:30Z
+sürüm: 2026-10-31T10:12:04Z
 
 ```
 21:build-tools: /usr/local/lib/android/sdk/build-tools/37.0.0
@@ -10,17 +10,20 @@ sürüm: 2026-10-31T10:03:30Z
 111:rc(probe2)=0
 112:== metadata literal dökümü ==
 114:çözüm: len_first taban: data · okunabilir literal: 1206 · ortalama: 0.101
-115:literal: 5514 · okunabilir: 1206
-116:→ apk-analiz/literals.json 1530328351 bayt
+115:literal: 1 · okunabilir: 1
+116:→ apk-analiz/literals.json 240 bayt
 117:rc(literals)=0
-118:-rw-r--r-- 1 runner runner 1530328351 Oct 31 10:02 apk-analiz/literals.json
-157:| `.kotlin_builtins` | 8 |
-216:değişiklik yok — yine de imzalama zinciri sınanacak
-217:değişen girdi: 0
-223:V3.0 Signer: certificate DN: CN=The Boys Mod, O=BitLifeSandbox, C=TR
-224:V3.0 Signer: certificate SHA-256 digest: 4c23343b95eb2e1e79e0b5ad938f0fd1ea94b6480f294e73ccadce0efba784e4
-225:V3.0 Signer: certificate SHA-1 digest: ed0d96424bd305cb8eb2238d93ba831f72b36883
-226:V3.0 Signer: certificate MD5 digest: 9e6d1d835d99f5e5c0aee1c1d1df48c1
+121:rc(slice)=0
+122:-rw-r--r-- 1 runner runner 240 Oct 31 10:11 apk-analiz/literals.json
+123:[arena/a59d6787-soccerchampssandbox 82f72ba] analiz(bitlife): unity + içerik + literal dökümü [skip ci]
+125: create mode 100644 apk-analiz/literals.json
+162:| `.kotlin_builtins` | 8 |
+221:değişiklik yok — yine de imzalama zinciri sınanacak
+222:değişen girdi: 0
+228:V3.0 Signer: certificate DN: CN=The Boys Mod, O=BitLifeSandbox, C=TR
+229:V3.0 Signer: certificate SHA-256 digest: 4c23343b95eb2e1e79e0b5ad938f0fd1ea94b6480f294e73ccadce0efba784e4
+230:V3.0 Signer: certificate SHA-1 digest: ed0d96424bd305cb8eb2238d93ba831f72b36883
+231:V3.0 Signer: certificate MD5 digest: 9e6d1d835d99f5e5c0aee1c1d1df48c1
 --- son 120 satır ---
 I: Copying assets and libs...
 I: Copying unknown files...
@@ -71,15 +74,15 @@ I: Copying META-INF/services directory
 → apk-analiz/ANALIZ.md
 → apk-analiz/model.json
 veritabanı: 0 · json: 4 · anahtar dosya: 86080
-(node:3758) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(node:3847) ExperimentalWarning: SQLite is an experimental feature and might change at any time
 (Use `node --trace-warnings ...` to show where the warning was created)
-[arena/a59d6787-soccerchampssandbox 0dfef62] analiz(bitlife): APK içerik modeli [skip ci]
+[arena/a59d6787-soccerchampssandbox 1acc727] analiz(bitlife): APK içerik modeli [skip ci]
  1 file changed, 1 insertion(+), 1 deletion(-)
 From https://github.com/StrongBomber/SoccerChampsSandbox
  * branch            arena/a59d6787-soccerchampssandbox -> FETCH_HEAD
 Current branch arena/a59d6787-soccerchampssandbox is up to date.
 To https://github.com/StrongBomber/SoccerChampsSandbox
-   da44d4d..0dfef62  HEAD -> arena/a59d6787-soccerchampssandbox
+   82f72ba..1acc727  HEAD -> arena/a59d6787-soccerchampssandbox
 # The Boys enjeksiyonu (APK içi)
 
 Toplam eklenen satır/kayıt: **0**
@@ -101,18 +104,18 @@ JSON içerik dosyası yok.
 
 → apk-analiz/INJEKSIYON.md
 exit=3
-[arena/a59d6787-soccerchampssandbox 1b54511] enjeksiyon(bitlife): The Boys içeriği [skip ci]
+[arena/a59d6787-soccerchampssandbox 43cc360] enjeksiyon(bitlife): The Boys içeriği [skip ci]
  1 file changed, 1 insertion(+), 1 deletion(-)
 From https://github.com/StrongBomber/SoccerChampsSandbox
  * branch            arena/a59d6787-soccerchampssandbox -> FETCH_HEAD
 Current branch arena/a59d6787-soccerchampssandbox is up to date.
 To https://github.com/StrongBomber/SoccerChampsSandbox
-   0dfef62..1b54511  HEAD -> arena/a59d6787-soccerchampssandbox
+   1acc727..43cc360  HEAD -> arena/a59d6787-soccerchampssandbox
 ::warning::Oyunun veri dosyalarında enjekte edilebilir içerik tablosu bulunamadı
 değişiklik yok — yine de imzalama zinciri sınanacak
 değişen girdi: 0
 → unsigned.apk (141434800 bayt)
--rw-r--r-- 1 runner runner 141434800 Oct 31 10:03 unsigned.apk
+-rw-r--r-- 1 runner runner 141434800 Oct 31 10:11 unsigned.apk
     testing: stamp-cert-sha256        OK
 No errors detected in compressed data of unsigned.apk.
 mevcut anahtar indirildi
@@ -120,7 +123,7 @@ V3.0 Signer: certificate DN: CN=The Boys Mod, O=BitLifeSandbox, C=TR
 V3.0 Signer: certificate SHA-256 digest: 4c23343b95eb2e1e79e0b5ad938f0fd1ea94b6480f294e73ccadce0efba784e4
 V3.0 Signer: certificate SHA-1 digest: ed0d96424bd305cb8eb2238d93ba831f72b36883
 V3.0 Signer: certificate MD5 digest: 9e6d1d835d99f5e5c0aee1c1d1df48c1
--rw-r--r-- 1 runner runner 141709099 Oct 31 10:03 theboys-signed.apk
+-rw-r--r-- 1 runner runner 141709099 Oct 31 10:12 theboys-signed.apk
 Archive:  theboys-signed.apk
   Length      Date    Time    Name
 ---------  ---------- -----   ----
@@ -146,32 +149,32 @@ Archive:  theboys-signed.apk
 
 ## artifacts
 total 811M
--rw-r--r--  1 runner runner  666 Oct 31 10:03 01ea8b7f-1ac3-45ec-bd8a-38127d2c6181.sh
--rw-r--r--  1 runner runner  584 Oct 31 10:03 11a5c2da-f9ae-4670-bf1c-0fdf129a161f.sh
--rw-r--r--  1 runner runner  212 Oct 31 10:02 1c63f02c-173b-4810-b058-c4a4c711c635.sh
--rw-r--r--  1 runner runner  364 Oct 31 10:03 25772078-fc82-4c35-bb6c-928404ea6529.sh
--rw-r--r--  1 runner runner  381 Oct 31 10:03 2b174846-9974-41ab-bba0-946d1f2d8e5b.sh
--rw-r--r--  1 runner runner  393 Oct 31 09:57 337a382d-fb46-4d9a-b843-2e4562d154d6.sh
--rw-r--r--  1 runner runner 1.1K Oct 31 09:57 38e8b396-3988-47fc-b4ba-f1f3d56c8a46.sh
--rw-r--r--  1 runner runner  464 Oct 31 10:03 79a0c25c-e7f0-4202-8150-bed5e75a0f87.sh
-drwxr-xr-x  2 runner runner 4.0K Oct 31 09:56 _github_workflow
-drwxr-xr-x  2 runner runner  12K Oct 31 10:03 _runner_file_commands
--rw-r--r--  1 runner runner  201 Oct 31 10:03 aa7d4874-5cb7-4208-8282-af335b54c816.sh
--rw-r--r--  1 runner runner 135M Oct 31 10:03 aligned.apk
--rw-r--r--  1 runner runner  863 Oct 31 10:03 apktool.log
--rw-r--r--  1 runner runner  850 Oct 31 10:03 b8eadcbc-c993-4d5c-81d9-af12f54515df.sh
--rw-r--r--  1 runner runner 135M Oct 31 09:57 base.apk
--rw-r--r--  1 runner runner 135M Oct 31 09:57 bitlife.apk
--rw-r--r--  1 runner runner  102 Oct 31 09:57 bitlife.apk.sha256
--rw-r--r--  1 runner runner   46 Oct 31 09:57 bt.txt
--rw-r--r--  1 runner runner  915 Oct 31 09:57 c2853ae0-508e-4175-81c4-354413dc348b.sh
--rw-r--r--  1 runner runner  325 Oct 31 10:03 certs.txt
-drwxr-xr-x 20 runner runner 4.0K Oct 31 10:03 decoded
--rw-r--r--  1 runner runner  13K Oct 31 10:03 diag.log
--rw-r--r--  1 runner runner 1.7K Oct 31 09:56 e095f425-7e95-40f7-8f59-0e2ba75af470.sh
--rw-r--r--  1 runner runner  204 Oct 31 10:03 ef120e2f-77b0-42d0-b9c8-13749edd467f.sh
--rw-r--r--  1 runner runner 2.6K Oct 31 10:03 mod-signing.jks
--rw-r--r--  1 runner runner 135M Oct 31 09:57 original.apk
--rw-r--r--  1 runner runner 136M Oct 31 10:03 theboys-signed.apk
--rw-r--r--  1 runner runner 1.1M Oct 31 10:03 theboys-signed.apk.idsig
--rw-r--r--  1 runner runner   85 Oct 31 10:03 theboys-signed.apk.sha256
+-rw-r--r--  1 runner runner  381 Oct 31 10:11 05089757-6d2b-4eaa-9c15-4db5395f1164.sh
+-rw-r--r--  1 runner runner  915 Oct 31 10:06 0e635942-854b-4f98-bd57-ec7f1b9267d6.sh
+-rw-r--r--  1 runner runner 2.0K Oct 31 10:06 3b64cfc1-5aa0-4702-bf2c-8ddeddba8650.sh
+-rw-r--r--  1 runner runner  212 Oct 31 10:11 60f5fc8e-cbb5-482d-b455-da75ffb117f8.sh
+-rw-r--r--  1 runner runner  364 Oct 31 10:12 61297d62-1db4-4f1b-8634-ecec50a56e75.sh
+-rw-r--r--  1 runner runner  666 Oct 31 10:11 723a62d3-078f-4f77-be02-4acc58ee5c69.sh
+-rw-r--r--  1 runner runner  201 Oct 31 10:11 8bb2b5c3-85d9-416d-b284-63d4bfd35f30.sh
+drwxr-xr-x  2 runner runner 4.0K Oct 31 10:05 _github_workflow
+drwxr-xr-x  2 runner runner  12K Oct 31 10:12 _runner_file_commands
+-rw-r--r--  1 runner runner  464 Oct 31 10:12 a4daa413-87e8-4a93-a7dc-bbe4d75ff73a.sh
+-rw-r--r--  1 runner runner 135M Oct 31 10:12 aligned.apk
+-rw-r--r--  1 runner runner  863 Oct 31 10:11 apktool.log
+-rw-r--r--  1 runner runner  204 Oct 31 10:11 b9922a60-9f85-403e-a175-ad8e0b50ddf1.sh
+-rw-r--r--  1 runner runner 135M Oct 31 10:06 base.apk
+-rw-r--r--  1 runner runner 135M Oct 31 10:06 bitlife.apk
+-rw-r--r--  1 runner runner  102 Oct 31 10:06 bitlife.apk.sha256
+-rw-r--r--  1 runner runner   46 Oct 31 10:06 bt.txt
+-rw-r--r--  1 runner runner  325 Oct 31 10:12 certs.txt
+drwxr-xr-x 20 runner runner 4.0K Oct 31 10:11 decoded
+-rw-r--r--  1 runner runner  13K Oct 31 10:12 diag.log
+-rw-r--r--  1 runner runner  850 Oct 31 10:12 f281a711-6559-46e0-a8f9-c7f1432ed417.sh
+-rw-r--r--  1 runner runner  584 Oct 31 10:12 f36d2666-65d1-486b-a387-f62d792d0615.sh
+-rw-r--r--  1 runner runner 1.7K Oct 31 10:05 f4097213-e768-4ce9-87e5-5621f083769a.sh
+-rw-r--r--  1 runner runner  393 Oct 31 10:06 ff869c2c-d404-417c-bf8e-539ef5a6e572.sh
+-rw-r--r--  1 runner runner 2.6K Oct 31 10:12 mod-signing.jks
+-rw-r--r--  1 runner runner 135M Oct 31 10:06 original.apk
+-rw-r--r--  1 runner runner 136M Oct 31 10:12 theboys-signed.apk
+-rw-r--r--  1 runner runner 1.1M Oct 31 10:12 theboys-signed.apk.idsig
+-rw-r--r--  1 runner runner   85 Oct 31 10:12 theboys-signed.apk.sha256
