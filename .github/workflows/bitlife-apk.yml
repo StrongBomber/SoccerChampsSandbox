@@ -136,6 +136,9 @@ jobs:
           echo "== metadata literal dökümü =="
           python3 tools/metadata-literals.py dump "$RUNNER_TEMP/base.apk" apk-analiz/literals.json
           echo "rc(literals)=$?"
+          echo "== metadata literal tablosu — kesin yer =="
+          python3 tools/meta-map2.py "$RUNNER_TEMP/base.apk" apk-analiz
+          echo "rc(map2)=$?"
           echo "== metadata tablo çözümü =="
           python3 tools/meta-map.py "$RUNNER_TEMP/base.apk" apk-analiz
           echo "rc(map)=$?"
