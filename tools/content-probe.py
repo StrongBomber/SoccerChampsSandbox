@@ -14,8 +14,8 @@ Sınadığı yerler:
 import json
 import os
 import re
+import sys
 import zipfile
-import zlib
 
 apk = sys.argv[1] if len(sys.argv) > 1 else ""
 out = sys.argv[2] if len(sys.argv) > 2 else "apk-analiz"

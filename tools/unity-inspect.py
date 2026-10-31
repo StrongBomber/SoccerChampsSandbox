@@ -70,7 +70,7 @@ for n in entries:
             if tname in ("TextAsset", "MonoBehaviour"):
                 try:
                     data = obj.read()
-                except Exception as e:  # bozuk nesne
+                except Exception:  # bozuk nesne
                     continue
                 name = getattr(data, "m_Name", None) or getattr(data, "name", "") or f"obj_{obj.path_id}"
                 # TextAsset
