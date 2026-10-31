@@ -248,6 +248,13 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 || \
             gh release create "$TAG" --title "BitLife — The Boys (kurulabilir)" --notes-file NOTES.md
           EXT="${ART##*.}"
-          gh release upload "$TAG" "$ART#BitLife-TheBoys.$EXT" "$ART.sha256#BitLife-TheBoys.$EXT.sha256" --clobber
+          # gh, "dosya#ad" sözdizimini yok sayabiliyor: dosyayı doğrudan yeniden adlandır
+          cp "$ART" "BitLife-TheBoys.$EXT"
+          sha256sum "BitLife-TheBoys.$EXT" > "BitLife-TheBoys.$EXT.sha256"
+          gh release upload "$TAG" "BitLife-TheBoys.$EXT" "BitLife-TheBoys.$EXT.sha256" --clobber
+          # eski adlandırılmış kopyaları temizle
+          for old in theboys-final.xapk theboys-final.xapk.sha256 theboys-final.apk theboys-final.apk.sha256 theboys-signed.apk theboys-signed.apk.sha256; do
+            gh release delete-asset "$TAG" "$old" -y 2>/dev/null || true
+          done
           gh release edit "$TAG" --notes-file NOTES.md
           du -h "$ART"
