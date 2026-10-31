@@ -128,6 +128,16 @@ jobs:
           python3 tools/content-probe.py "$RUNNER_TEMP/base.apk" apk-analiz | tail -20 || echo "sonda1 hata"
           python3 -m pip install --quiet brotli || true
           python3 tools/content-probe2.py "$RUNNER_TEMP/base.apk" apk-analiz | tail -20 || echo "sonda2 hata"
+          python3 tools/metadata-literals.py dump "$RUNNER_TEMP/base.apk" apk-analiz/literals.json | tail -10 || echo "literal dökümü hata"
+          python3 - <<'PY' || true
+          import json
+          d = json.load(open("apk-analiz/literals.json", encoding="utf-8"))
+          lit = d["literals"]
+          print("literal sayısı:", len(lit))
+          keep = [x for x in lit if x["printable"] > 0.95]
+          print("okunabilir:", len(keep))
+          json.dump(d, open("apk-analiz/literals.json", "w", encoding="utf-8"), ensure_ascii=False)
+          PY
           ls -la apk-analiz/unity 2>/dev/null | head
           du -sh apk-analiz/unity 2>/dev/null || true
           if [ -d apk-analiz/unity ] && [ "$(du -sm apk-analiz/unity | cut -f1)" -gt 20 ]; then
