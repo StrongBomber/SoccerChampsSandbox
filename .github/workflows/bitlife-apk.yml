@@ -41,16 +41,31 @@ jobs:
           java-version: "21"
 
       - name: Araçlar (apktool, build-tools)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -eu
+          set -eux
           mkdir -p "$HOME/tools"
-          APKTOOL_URL=$(gh api repos/iBotPeaches/Apktool/releases/latest --jq '.assets[] | select(.name | endswith(".jar")) | .browser_download_url' | head -1)
-          echo "apktool: $APKTOOL_URL"
-          curl -fsSL "$APKTOOL_URL" -o "$HOME/tools/apktool.jar"
+          # apktool: en son sürümü API'den al, olmazsa sabit sürüme düş
+          URL=$(curl -fsSL -H "Accept: application/vnd.github+json"             https://api.github.com/repos/iBotPeaches/Apktool/releases/latest             | grep -o 'https://[^"]*apktool_[0-9.]*\.jar' | head -1) || URL=""
+          if [ -z "$URL" ]; then
+            URL="https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar"
+          fi
+          echo "apktool: $URL"
+          curl -fL --retry 3 "$URL" -o "$HOME/tools/apktool.jar"
+          ls -l "$HOME/tools/apktool.jar"
           java -jar "$HOME/tools/apktool.jar" --version
           echo "APKTOOL=java -jar $HOME/tools/apktool.jar" >> "$GITHUB_ENV"
-          BT=$(ls -d "$ANDROID_HOME"/build-tools/* 2>/dev/null | sort -V | tail -1)
+
+          # build-tools (zipalign + apksigner)
+          CANDIDATES=$(ls -d ${ANDROID_HOME:-/nonexistent}/build-tools/* \
+                            ${ANDROID_SDK_ROOT:-/nonexistent}/build-tools/* \
+                            /usr/local/lib/android/sdk/build-tools/* 2>/dev/null || true)
+          echo "adaylar: $CANDIDATES"
+          BT=$(echo "$CANDIDATES" | tr ' ' '\n' | grep -E '^/' | sort -V | tail -1)
+          [ -n "$BT" ] || { echo "build-tools bulunamadı" >&2; exit 1; }
           echo "build-tools: $BT"
+          "$BT/zipalign" 2>&1 | head -2 || true
           echo "$BT" >> "$GITHUB_PATH"
 
       - name: APK'yı Drive'dan indir
