@@ -125,7 +125,9 @@ jobs:
           set -eu
           python3 -m pip install --quiet --disable-pip-version-check UnityPy
           python3 tools/unity-inspect.py "$RUNNER_TEMP/base.apk" apk-analiz | tail -20
-          python3 tools/content-probe.py "$RUNNER_TEMP/base.apk" apk-analiz | tail -20
+          python3 tools/content-probe.py "$RUNNER_TEMP/base.apk" apk-analiz | tail -20 || echo "sonda1 hata"
+          python3 -m pip install --quiet brotli || true
+          python3 tools/content-probe2.py "$RUNNER_TEMP/base.apk" apk-analiz | tail -20 || echo "sonda2 hata"
           ls -la apk-analiz/unity 2>/dev/null | head
           du -sh apk-analiz/unity 2>/dev/null || true
           if [ -d apk-analiz/unity ] && [ "$(du -sm apk-analiz/unity | cut -f1)" -gt 20 ]; then
