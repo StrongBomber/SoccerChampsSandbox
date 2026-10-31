@@ -135,9 +135,24 @@ for (const d of model.databases || []) {
 }
 
 /* ---------------- JSON enjeksiyonu ---------------- */
+
+// Reklam/analitik/onay SDK'larının yapılandırması OYUN İÇERİĞİ DEĞİLDİR.
+// v3.1'den önce buralara yazan sürüm 72 uydurma kayıt üretmişti; artık atlanıyor.
+const NOT_GAME_DATA = /(^|\/)(didomi|applovin|appsflyer|opentelemetry|mopub|vungle|inmobi|hyprmx|unityads|adjust|facebook|ironsource|admob|crashlytics|firebase|billing|consent|privacy|notice|sdk)[^\/]*/i;
+const GAME_DATA_HINT = /(career|job|occupation|event|chapter|story|character|trait|content|life|pack|data)/i;
+
 const pick = (obj, re) => Object.keys(obj).find((k) => re.test(k));
 
 for (const j of model.json || []) {
+  const rel = String(j.path || "");
+  if (NOT_GAME_DATA.test(rel) || (j.keys || []).some((k) => NOT_GAME_DATA.test(String(k)))) {
+    report.skipped.push(`${rel} (SDK yapılandırması — oyun içeriği değil)`);
+    continue;
+  }
+  if (!GAME_DATA_HINT.test(rel) && !(j.roots || []).some((r) => GAME_DATA_HINT.test(String(r.key || "")))) {
+    report.skipped.push(`${rel} (oyun içeriği izi yok)`);
+    continue;
+  }
   const abs = path.join(decodedDir, j.path);
   const entry = { path: j.path, added: 0, error: null };
   try {

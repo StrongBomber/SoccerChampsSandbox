@@ -119,6 +119,25 @@ jobs:
           ls -l base.apk
           echo "apk=$RUNNER_TEMP/base.apk" >> "$GITHUB_OUTPUT"
 
+      - name: Unity paketi + IL2CPP sondası
+        run: |
+          exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
+          set -eu
+          python3 -m pip install --quiet --disable-pip-version-check UnityPy
+          python3 tools/unity-inspect.py "$RUNNER_TEMP/base.apk" apk-analiz | tail -20
+          ls -la apk-analiz/unity 2>/dev/null | head
+          du -sh apk-analiz/unity 2>/dev/null || true
+          if [ -d apk-analiz/unity ] && [ "$(du -sm apk-analiz/unity | cut -f1)" -gt 20 ]; then
+            echo "::warning::unity çıktısı 20 MB üstü, kırpılıyor"
+            find apk-analiz/unity -type f -size +1M -delete
+          fi
+          git config user.name "bitlife-bot"
+          git config user.email "bitlife-bot@users.noreply.github.com"
+          git add -A apk-analiz
+          git commit -m "analiz(bitlife): Unity paket envanteri [skip ci]" || echo "değişiklik yok"
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push atlandı"
+
       - name: APK'yı aç (apktool)
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
@@ -166,18 +185,18 @@ jobs:
             echo "::warning::Oyunun veri dosyalarında enjekte edilebilir içerik tablosu bulunamadı"
           fi
 
-      - name: Yeniden paketle (apktool b)
-        if: ${{ steps.inject.outputs.rows != '' && steps.inject.outputs.rows != '0' }}
+      - name: Yeniden paketle (zip yaması)
+        if: ${{ always() && steps.unpack.outcome == 'success' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
           cd "$RUNNER_TEMP"
-          $APKTOOL b decoded -o unsigned.apk > build.log 2>&1 || { tail -60 build.log; exit 1; }
-          tail -5 build.log
+          python3 "$GITHUB_WORKSPACE/tools/apk-repack.py" base.apk decoded unsigned.apk
           ls -l unsigned.apk
+          unzip -t unsigned.apk | tail -2
 
       - name: İmzalama anahtarı (sabit)
-        if: ${{ steps.inject.outputs.rows != '' && steps.inject.outputs.rows != '0' }}
+        if: ${{ always() && steps.unpack.outcome == 'success' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
@@ -193,11 +212,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Hizala + imzala
-        if: ${{ steps.inject.outputs.rows != '' && steps.inject.outputs.rows != '0' }}
+        if: ${{ always() && steps.unpack.outcome == 'success' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
           cd "$RUNNER_TEMP"
+          BT=$(dirname "$(command -v zipalign || echo /usr/local/lib/android/sdk/build-tools/37.0.0/zipalign)")
+          export PATH="$BT:$PATH"
           zipalign -f -p 4 unsigned.apk aligned.apk
           apksigner sign --ks mod-signing.jks --ks-pass pass:theboysmod --key-pass pass:theboysmod \
             --ks-key-alias theboys --out theboys-signed.apk aligned.apk
