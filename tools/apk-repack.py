@@ -42,7 +42,11 @@ for c in changed:
     print("  ~", c)
 
 if not changed:
-    print("değişiklik yok — yine de imzalama zinciri sınanacak", file=sys.stderr)
+    # Hiçbir girdi değişmediyse zip'i yeniden YAZMA: bayt bayt kopyala.
+    # (her yeniden yazma, kurulumu bozabilecek bir fırsattır)
+    shutil.copyfile(src_apk, out_apk)
+    print(f"değişiklik yok — dosya birebir kopyalandı: {out_apk}")
+    sys.exit(0)
 
 tmp = out_apk + ".tmp"
 with zipfile.ZipFile(src_apk) as zin, zipfile.ZipFile(tmp, "w") as zout:
@@ -53,9 +57,16 @@ with zipfile.ZipFile(src_apk) as zin, zipfile.ZipFile(tmp, "w") as zout:
             with open(os.path.join(decoded, item.filename), "rb") as fh:
                 data = fh.read()
             print(f"  yamalandı: {item.filename} ({len(data)} bayt)")
+        # ZipInfo alanlarını EKSİKSİZ koru (extra/comment/create_system dahil);
+        # eksik alan kurulum hatasına yol açabilir.
         info = zipfile.ZipInfo(item.filename, date_time=item.date_time)
         info.compress_type = item.compress_type
         info.external_attr = item.external_attr
+        info.internal_attr = item.internal_attr
+        info.create_system = item.create_system
+        info.extra = item.extra
+        info.comment = item.comment
+        info.flag_bits = item.flag_bits
         zout.writestr(info, data if data is not None else zin.read(item.filename))
     # Yeni girdi (ör. yeni bir veri dosyası) eklenmişse onu da koy
     for c in changed:
