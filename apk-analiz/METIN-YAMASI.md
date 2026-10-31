@@ -1,7 +1,7 @@
 # The Boys metin yaması (gerçek APK)
 
 - Girdi: `base.apk` (141483685 bayt)
-- Çıktı: `patched.apk` (141434895 bayt)
+- Çıktı: `base-patched.apk` (141434895 bayt)
 - Metadata: 19293888 bayt (boyut değişmedi)
 - Uygulanan yama: **23/23**
 

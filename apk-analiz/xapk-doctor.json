@@ -1,0 +1,84 @@
+{
+  "parts": [
+    {
+      "part": "UnityDataAssetPack.apk",
+      "bytes": 143225134,
+      "package": "com.candywriter.bitlife",
+      "versionCode": "1069",
+      "versionName": "",
+      "native": [],
+      "so": 0,
+      "cert": {
+        "sha256": null,
+        "verified": false
+      }
+    },
+    {
+      "part": "base.apk",
+      "bytes": 141450854,
+      "package": "com.candywriter.bitlife",
+      "versionCode": "1069",
+      "versionName": "3.26.0",
+      "native": [],
+      "so": 0,
+      "cert": {
+        "sha256": "4c23343b95eb2e1e79e0b5ad938f0fd1ea94b6480f294e73ccadce0efba784e4",
+        "verified": true
+      }
+    },
+    {
+      "part": "config.arm64_v8a.apk",
+      "bytes": 44525860,
+      "package": "com.candywriter.bitlife",
+      "versionCode": "1069",
+      "versionName": "",
+      "native": [
+        "arm64-v8a"
+      ],
+      "so": 28,
+      "cert": {
+        "sha256": null,
+        "verified": false
+      }
+    }
+  ],
+  "checks": [
+    {
+      "name": "base.apk var",
+      "ok": true,
+      "detail": "parçalar: UnityDataAssetPack.apk, base.apk, config.arm64_v8a.apk",
+      "fatal": true
+    },
+    {
+      "name": "tüm parçalar aynı pakette",
+      "ok": true,
+      "detail": "com.candywriter.bitlife",
+      "fatal": true
+    },
+    {
+      "name": "tüm parçalar aynı versionCode",
+      "ok": true,
+      "detail": "1069",
+      "fatal": true
+    },
+    {
+      "name": "tüm parçalar aynı sertifika",
+      "ok": true,
+      "detail": "4c23343b95eb2e1e79e0b5ad938f0fd1ea94b6480f294e73ccadce0efba784e4",
+      "fatal": true
+    },
+    {
+      "name": "set yerel kütüphane içeriyor (.so)",
+      "ok": true,
+      "detail": "28 .so · dosyalar: config.arm64_v8a.apk",
+      "fatal": true
+    },
+    {
+      "name": "en az bir ABI",
+      "ok": true,
+      "detail": "arm64-v8a",
+      "fatal": true
+    }
+  ],
+  "fails": 0
+}

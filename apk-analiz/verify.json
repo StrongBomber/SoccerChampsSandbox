@@ -1,5 +1,5 @@
 {
-  "apk": "/home/runner/work/_temp/theboys-signed.apk",
+  "apk": "signed/base.apk",
   "bytes": 141450854,
   "entries": 3103,
   "dex": [
