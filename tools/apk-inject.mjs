@@ -139,7 +139,9 @@ for (const d of model.databases || []) {
 // Reklam/analitik/onay SDK'larının yapılandırması OYUN İÇERİĞİ DEĞİLDİR.
 // v3.1'den önce buralara yazan sürüm 72 uydurma kayıt üretmişti; artık atlanıyor.
 const NOT_GAME_DATA = /(^|\/)(didomi|applovin|appsflyer|opentelemetry|mopub|vungle|inmobi|hyprmx|unityads|adjust|facebook|ironsource|admob|crashlytics|firebase|billing|consent|privacy|notice|sdk)[^\/]*/i;
-const GAME_DATA_HINT = /(career|job|occupation|event|chapter|story|character|trait|content|life|pack|data)/i;
+const GAME_DATA_HINT = /(career|job|occupation|events?|chapter|story|character|trait|content)/i;
+// Unity'nin kendi çalışma zamanı dosyaları — asla içerik muamelesi görmez
+const RUNTIME_FILE = /(RuntimeInitializeOnLoads|ScriptingAssemblies|unity_app_guid|package\.json|version\.json)/i;
 
 const pick = (obj, re) => Object.keys(obj).find((k) => re.test(k));
 
@@ -149,7 +151,11 @@ for (const j of model.json || []) {
     report.skipped.push(`${rel} (SDK yapılandırması — oyun içeriği değil)`);
     continue;
   }
-  if (!GAME_DATA_HINT.test(rel) && !(j.roots || []).some((r) => GAME_DATA_HINT.test(String(r.key || "")))) {
+  if (RUNTIME_FILE.test(rel)) {
+    report.skipped.push(`${rel} (Unity çalışma zamanı dosyası)`);
+    continue;
+  }
+  if (!GAME_DATA_HINT.test(path.basename(rel)) && !(j.roots || []).some((r) => GAME_DATA_HINT.test(String(r.key || "")))) {
     report.skipped.push(`${rel} (oyun içeriği izi yok)`);
     continue;
   }
