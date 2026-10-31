@@ -136,6 +136,25 @@ jobs:
           echo "== metadata literal dökümü =="
           python3 tools/metadata-literals.py dump "$RUNNER_TEMP/base.apk" apk-analiz/literals.json
           echo "rc(literals)=$?"
+          echo "== metadata dilimi (yerel çözümleme için) =="
+          python3 - "$RUNNER_TEMP/base.apk" <<'PYH'
+          import struct, sys, zipfile
+          apk = sys.argv[1]
+          with zipfile.ZipFile(apk) as z:
+              raw = z.read("assets/bin/Data/Managed/Metadata/global-metadata.dat")
+          hdr = struct.unpack_from("<IIIIII", raw, 0)
+          print("başlık:", hdr, "dosya:", len(raw))
+          lit_off, lit_size, data_off, data_size = struct.unpack_from("<IIII", raw, 8)
+          parts = [raw[:1024], raw[lit_off:lit_off + min(lit_size, 32000)],
+                   raw[data_off:data_off + min(data_size, 200000)]]
+          blob = b"".join(parts)
+          open("apk-analiz/meta-slice.bin", "wb").write(blob)
+          open("apk-analiz/meta-headers.txt", "w").write(
+              "header u32: %s\nlit_off=%d lit_size=%d data_off=%d data_size=%d\n"
+              "slice=%d bayt\n" % (hdr, lit_off, lit_size, data_off, data_size, len(blob)))
+          print("dilim:", len(blob), "bayt")
+          PYH
+          echo "rc(slice)=$?"
           ls -la apk-analiz/literals.json 2>/dev/null || echo "literals.json YOK"
           # 40 MB üstü artefakt kırp
           find apk-analiz -type f -size +20M -delete || true

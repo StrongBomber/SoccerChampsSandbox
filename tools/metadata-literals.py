@@ -111,6 +111,8 @@ def cmd_dump(apk: str, out_json: str) -> int:
         except UnicodeDecodeError:
             text = blob.decode("utf-8", "replace")
         literals.append({"i": i, "len": ln, "index": di, "text": text, "printable": printable_ratio(blob)})
+    # 4 KB üstü / okunamayan kayıtlar döküme girmez (dosya şişmesin)
+    literals = [x for x in literals if x["len"] <= 4096 and x["printable"] > 0.9]
     good = [x for x in literals if x["printable"] > 0.95]
     print(f"literal: {len(literals)} · okunabilir: {len(good)}")
     json.dump({"header": h, "order": best["order"], "base": best["base"], "literals": literals},
