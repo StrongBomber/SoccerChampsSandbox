@@ -57,15 +57,20 @@ const utf8 = {
   decode: (bytes) => new TextDecoder().decode(bytes),
 };
 
-export function createAndroidMock({ files = new Map(), density = 2.75 } = {}) {
+import { createSqliteMock } from "./sqlite-mock.mjs";
+
+export function createAndroidMock({ files = new Map(), density = 2.75, sqliteDir = null } = {}) {
   const calls = { addContentView: 0 };
   const hooked = new Map(); // "Cls.metod" -> { implementation }
 
   const FS = files; // path -> string | Uint8Array
+  const sqlite = createSqliteMock({ sqliteDir, FS });
 
   class FileShim {
     constructor(p) { this.path = String(p); }
     getAbsolutePath() { return this.path; }
+    exists() { return FS.has(this.path) || this.isDirectory(); }
+    getParent() { return this.path.replace(/\/[^/]+$/, ""); }
     getName() { return this.path.split("/").filter(Boolean).pop() || ""; }
     isDirectory() { return [...FS.keys()].some((k) => k.startsWith(this.path.endsWith("/") ? this.path : this.path + "/")); }
     length() {
@@ -149,6 +154,7 @@ export function createAndroidMock({ files = new Map(), density = 2.75 } = {}) {
       case "java.io.FileInputStream": return { $new: (p) => new FileInputStreamShim(p) };
       case "java.io.FileOutputStream": return { $new: (p, a) => new FileOutputStreamShim(p, a) };
       case "java.nio.charset.StandardCharsets": return { UTF_8: { $new: () => ({ toString: () => "UTF-8" }) } };
+      case "android.database.sqlite.SQLiteDatabase": return sqlite.SQLiteDatabase;
       case "java.lang.String": return {
         $new: (...a) => {
           if (a.length === 4) return utf8.decode(a[0].slice(a[1], a[1] + a[2]));
@@ -208,6 +214,10 @@ export function createAndroidMock({ files = new Map(), density = 2.75 } = {}) {
     getApplicationContext() { return this; }
     getResources() { return { getDisplayMetrics: () => ({ density }) }; }
     getFilesDir() { return new FileShim(this._files); }
+    getDatabasePath(name) {
+      const base = String(this._files).replace(/\/files$/, "");
+      return new FileShim(`${base}/databases/${name}`);
+    }
     getExternalFilesDir() { return new FileShim(this._external); }
     addContentView(v, lp) { calls.addContentView++; this.views.push(v); if (lp) v.lp = lp; }
     onCreate(b) { this.created = true; }
@@ -223,5 +233,5 @@ export function createAndroidMock({ files = new Map(), density = 2.75 } = {}) {
     _Activity: ActivityShim,
   };
 
-  return { Java, calls, files: FS, View, hooked };
+  return { Java, calls, files: FS, View, hooked, sqlite };
 }

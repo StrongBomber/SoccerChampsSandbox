@@ -200,6 +200,32 @@ const target = { a: { b: 0 } };
 MOD.setByPath(target, "a.b", 1);
 check("setByPath iç içe yazdı", target.a.b === 1);
 
+section("Enjeksiyon mantığı");
+check("sqlLit sayı", MOD.sqlLit(96000) === "96000");
+check("sqlLit metin kaçışı", MOD.sqlLit("O'Brien") === "'O''Brien'", MOD.sqlLit("O'Brien"));
+check("sqlLit null", MOD.sqlLit(null) === "NULL" && MOD.sqlLit(undefined) === "NULL");
+check("sqlLit boolean", MOD.sqlLit(true) === "1");
+const careerRecipes = MOD.recipesFor("careers");
+check("careers tablosu → 12 meslek", careerRecipes.length === 12, `${careerRecipes.length}`);
+check("meslek kaydı alanları", careerRecipes[0].name === "Vought PR Uzmanı" && careerRecipes[0].pay === 96000);
+check("character tablosu → 10 karakter", MOD.recipesFor("characters").length === 10);
+check("events tablosu → 30 bölüm", MOD.recipesFor("events").length === 30);
+check("bilinmeyen tablo → meslek varsayılanı", MOD.recipesFor("foo").length === 12);
+
+const colName = { name: "name", type: "TEXT", pk: 0, notnull: 0 };
+const colSalary = { name: "salary", type: "INTEGER", pk: 0, notnull: 0 };
+const colPk = { name: "id", type: "INTEGER", pk: 1, notnull: 0 };
+const colCompany = { name: "company", type: "TEXT", pk: 0, notnull: 0 };
+const tmpl = { id: 1, name: "Police", salary: 45000, company: "City" };
+const rec = { name: "Vought PR Uzmanı", pay: 96000, tag: "Vought International", kind: "career", desc: "x" };
+check("pk sütunu atlanır", MOD.valueFor(colPk, rec, tmpl) === null);
+check("ad sütununa meslek adı", MOD.valueFor(colName, rec, tmpl) === "Vought PR Uzmanı");
+check("maaş sütununa ücret", MOD.valueFor(colSalary, rec, tmpl) === 96000);
+check("şirket sütununa işveren", MOD.valueFor(colCompany, rec, tmpl) === "Vought International");
+check("eşleşmeyen sütun şablonu korur", MOD.valueFor({ name: "weight", type: "INTEGER" }, rec, { weight: 7 }) === 7);
+check("uzun metin 2000 karakterde kırpılır", MOD.valueFor({ name: "body", type: "TEXT" }, { desc: "a".repeat(5000) }, null).length === 2000);
+check("tarama öncesi durum boş", MOD.SQLI.scanned === false && MOD.SQLI.dbs.length === 0);
+
 section("Oyunun kendi kayıt dosyaları (BitLife)");
 check("Java yokken liste boş (çökmez)", Array.isArray(MOD.saveList()) && MOD.saveList().length === 0);
 check("okuma hatayı yutar", String(MOD.saveRead("/yok/dosya", 100)).startsWith("HATA"));

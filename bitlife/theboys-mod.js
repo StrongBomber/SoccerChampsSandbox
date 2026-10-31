@@ -707,6 +707,405 @@ function universeReset() {
 }
 
 /* ------------------------------------------------------------------ */
+/* GERÇEK ENJEKSİYON — oyunun kendi veri tabanına / JSON'una satır ekler */
+/* ------------------------------------------------------------------ */
+
+const INJECT_LOG = "boys-inject.json";
+const CONTENT_TABLE_RE = /(career|job|occupation|profession|employ|event|scenario|story|chapter|episode|character|npc|actor|choice|decision|random|activity|life)/i;
+const TEXT_COL_RE = /(name|title|label|text|desc|description|body|content|story|bio|summary|note)/i;
+const NAME_COL_RE = /(^|_)(name|title|label|displayname|display_name|fullname|full_name)($|_)/i;
+const DESC_COL_RE = /(desc|description|detail|body|content|story|bio|summary|note|text)/i;
+const PAY_COL_RE = /(salary|pay|wage|income|earn|revenue|price|cost|value)/i;
+const ID_COL_RE = /^(id|_id|uid|pk|key|row_id|rowid)$/i;
+
+const SQLI = {
+  scanned: false,
+  dbs: [],        // [{path, tables:[{name, rows, score, cols}]}]
+  json: [],        // [{path, arrayKey, count}]
+  last: null,      // son enjeksiyon (geri almak için)
+};
+
+/** SQL metni için güvenli literal. */
+function sqlLit(v) {
+  if (v === null || v === undefined) return "NULL";
+  if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  if (typeof v === "boolean") return v ? "1" : "0";
+  return "'" + String(v).replace(/'/g, "''") + "'";
+}
+
+/** SQLite veritabanı aç (0 = okuma-yazma, 1 = salt okunur). */
+function sqlOpen(path, readOnly) {
+  const DB = Java.use("android.database.sqlite.SQLiteDatabase");
+  return DB.openDatabase(path, null, readOnly ? 1 : 0);
+}
+
+function sqlClose(db) {
+  try { db.close(); } catch (_) { /* yok say */ }
+}
+
+/** Tek sorgu → {cols, rows}. Satır değerleri JS tipine çevrilir. */
+function sqlQuery(db, sql) {
+  const cur = db.rawQuery(sql, null);
+  const cols = [];
+  const names = cur.getColumnNames();
+  const len = Number(names.length);
+  for (let i = 0; i < len; i++) cols.push(String(names[i]));
+  const rows = [];
+  while (cur.moveToNext()) {
+    const row = {};
+    for (let i = 0; i < cols.length; i++) {
+      let type = 3;
+      try { type = Number(cur.getType(i)); } catch (_) { /* eski API */ }
+      let v = null;
+      try {
+        if (type === 0) v = null;
+        else if (type === 1) v = Number(cur.getLong(i));
+        else if (type === 2) v = Number(cur.getDouble(i));
+        else if (type === 3) v = String(cur.getString(i));
+        else v = "<blob>";
+      } catch (_) {
+        try { v = String(cur.getString(i)); } catch (__) { v = null; }
+      }
+      row[cols[i]] = v;
+    }
+    rows.push(row);
+  }
+  cur.close();
+  return { cols, rows };
+}
+
+function sqlExec(db, sql) {
+  db.execSQL(sql);
+  return true;
+}
+
+/* ---------------- keşif ---------------- */
+
+function appDatabaseDirs() {
+  const out = [];
+  try {
+    const dirs = appDirs();
+    dirs.forEach(([d]) => out.push(d));
+    if (S.activity) {
+      try {
+        const p = S.activity.getDatabasePath("x").getParent();
+        if (p) out.push(p);
+      } catch (_) { /* yok say */ }
+    }
+  } catch (_) { /* yok say */ }
+  return out.filter((d, i) => d && out.indexOf(d) === i);
+}
+
+function listFiles(dir, depth) {
+  const out = [];
+  try {
+    const File = Java.use("java.io.File");
+    const root = File.$new(dir);
+    if (!root.exists()) return out;
+    const arr = root.listFiles();
+    if (!arr) return out;
+    for (let i = 0; i < arr.length; i++) {
+      const f = arr[i];
+      const path = String(f.getAbsolutePath());
+      let isDir = false;
+      try { isDir = f.isDirectory(); } catch (_) { /* yok say */ }
+      if (isDir) {
+        if (depth > 0) out.push.apply(out, listFiles(path, depth - 1));
+        continue;
+      }
+      out.push({ path, name: String(f.getName()), size: Number(f.length()) });
+    }
+  } catch (_) { /* yok say */ }
+  return out;
+}
+
+/** Tablo envanteri + içerik tablosu puanı. */
+function dbTables(path) {
+  let db = null;
+  const tables = [];
+  try {
+    db = sqlOpen(path, true);
+    const list = sqlQuery(db, "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+    list.rows.forEach((r) => {
+      const name = String(r.name || "");
+      if (!name || /^(android_metadata|room_master_table)$/.test(name)) return;
+      let rows = 0;
+      const cols = [];
+      try {
+        const c = sqlQuery(db, `SELECT COUNT(*) AS n FROM "${name}"`);
+        rows = c.rows.length ? Number(c.rows[0].n) : 0;
+      } catch (_) { return; }
+      try {
+        const info = sqlQuery(db, `PRAGMA table_info("${name}")`);
+        info.rows.forEach((c) => cols.push({ name: String(c.name), type: String(c.type || ""), pk: Number(c.pk || 0) }));
+      } catch (_) { /* yok say */ }
+      let score = 0;
+      if (CONTENT_TABLE_RE.test(name)) score += 3;
+      cols.forEach((c) => { if (TEXT_COL_RE.test(c.name)) score += 1; });
+      if (rows > 0 && rows < 50000) score += 1;
+      if (cols.length >= 2) score += 1;
+      tables.push({ name, rows, score, cols });
+    });
+  } catch (_) {
+    /* açılamadı — SQLite değil */
+  } finally {
+    if (db) sqlClose(db);
+  }
+  tables.sort((a, b) => b.score - a.score || b.rows - a.rows);
+  return tables;
+}
+
+/** JSON içerik dosyaları: en üst düzey dizi ya da nesne içinde dizi. */
+function scanJsonContent(files) {
+  const out = [];
+  files.forEach((f) => {
+    if (!/\.(json|txt|dat|save)$/i.test(f.name) || f.size < 4 || f.size > 8 * 1024 * 1024) return;
+    const raw = saveRead(f.path, 262144);
+    if (!raw || raw.indexOf("HATA") === 0) return;
+    const t = raw.trim();
+    if (!(t.startsWith("[") || t.startsWith("{"))) return;
+    let json = null;
+    try { json = JSON.parse(t); } catch (_) { return; }
+    let arrayKey = null;
+    let count = 0;
+    if (Array.isArray(json) && json.length && typeof json[0] === "object" && json[0] !== null) {
+      arrayKey = "";
+      count = json.length;
+    }
+    else if (json && typeof json === "object") {
+      const keys = Object.keys(json).filter((k) => Array.isArray(json[k]) && json[k].length > 0
+        && typeof json[k][0] === "object" && json[k][0] !== null);
+      if (keys.length) {
+        arrayKey = keys[0];
+        count = json[arrayKey].length;
+      }
+    }
+    if (!arrayKey && arrayKey !== "") return;
+    if (!count) return;
+    out.push({ path: f.path, name: f.name, arrayKey, count, size: f.size });
+  });
+  return out;
+}
+
+/** Tüm uygulama dizinlerini tara: veritabanları + JSON içerik. */
+function sqlScan() {
+  SQLI.dbs = [];
+  SQLI.json = [];
+  const files = [];
+  appDatabaseDirs().forEach((d) => {
+    listFiles(d, 2).forEach((f) => files.push(f));
+  });
+  files.forEach((f) => {
+    const tables = dbTables(f.path);
+    if (tables.length) SQLI.dbs.push({ path: f.path, name: f.name, size: f.size, tables });
+  });
+  SQLI.json = scanJsonContent(files);
+  SQLI.scanned = true;
+  return { dbs: SQLI.dbs.length, tables: SQLI.dbs.reduce((a, d) => a + d.tables.length, 0), json: SQLI.json.length };
+}
+
+/* ---------------- enjeksiyon ---------------- */
+
+/** Tablo adına göre The Boys içeriğini seçer. */
+function recipesFor(tableName) {
+  const p = universePack();
+  const empty = [];
+  if (!p) return empty;
+  if (/career|job|occupation|profession|employ/i.test(tableName)) {
+    return p.careers.map((c) => ({ name: c.name, desc: c.note, pay: c.pay, tag: c.employer, kind: "career" }));
+  }
+  if (/character|npc|actor|person|supe|hero/i.test(tableName)) {
+    return p.characters.map((c) => ({ name: c.name, desc: c.perk, pay: 0, tag: c.tag, kind: "character" }));
+  }
+  if (/event|scenario|story|chapter|episode|activity|random|life|choice|decision/i.test(tableName)) {
+    return p.chapters.map((c) => ({ name: c.title, desc: c.text, pay: 0, tag: c.career, kind: "chapter" }));
+  }
+  return p.careers.map((c) => ({ name: c.name, desc: c.note, pay: c.pay, tag: c.employer, kind: "career" }));
+}
+
+function tableInfo(db, table) {
+  const info = sqlQuery(db, `PRAGMA table_info("${table}")`);
+  return info.rows.map((c) => ({
+    name: String(c.name),
+    type: String(c.type || ""),
+    notnull: Number(c.notnull || 0),
+    pk: Number(c.pk || 0),
+  }));
+}
+
+function sampleRow(db, table, cols) {
+  const names = cols.map((c) => `"${c.name}"`).join(", ");
+  try {
+    const r = sqlQuery(db, `SELECT ${names} FROM "${table}" LIMIT 1`);
+    return r.rows[0] || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+/** Bir sütun için The Boys değerini seçer; eşleşme yoksa örnek satırın değeri korunur. */
+function valueFor(col, recipe, template) {
+  const n = col.name.toLowerCase();
+  const base = template ? template[col.name] : null;
+  if (col.pk === 1 && /int/i.test(col.type)) return null;      // otomatik artan
+  if (/auto/i.test(col.type)) return null;
+  if (ID_COL_RE.test(n)) return null;
+  if (NAME_COL_RE.test(n)) return String(recipe.name || "").slice(0, 200);
+  if (DESC_COL_RE.test(n)) return String(recipe.desc || "").slice(0, 2000);
+  if (PAY_COL_RE.test(n)) return Number(recipe.pay || 0);
+  if (/(tag|category|type|group|kind|class|family|sector|employer|company|org)/i.test(n)) {
+    return String(recipe.tag || recipe.kind || base || "").slice(0, 120);
+  }
+  if (typeof base === "number") return base;
+  if (typeof base === "string") return String(recipe.desc || base).slice(0, 500);
+  return base === undefined ? null : base;
+}
+
+/** Tabloya The Boys satırlarını ekler; eklenen rowid'leri döndürür. */
+function injectTable(dbPath, table, opts) {
+  const limit = opts && opts.limit ? opts.limit : 0;
+  const recipes = recipesFor(table);
+  if (!recipes.length) return { ok: false, msg: "içerik paketi yok" };
+
+  // önce yedek
+  const backup = saveBackup(dbPath);
+
+  let db = null;
+  const added = [];
+  try {
+    db = sqlOpen(dbPath, false);
+    const cols = tableInfo(db, table);
+    if (!cols.length) return { ok: false, msg: `${table}: sütun okunamadı`, backup };
+    const tmpl = sampleRow(db, table, cols);
+    const insertable = cols.filter((c) => !(c.pk === 1 && /int/i.test(c.type)) && !ID_COL_RE.test(c.name.toLowerCase()));
+
+    const list = limit > 0 ? recipes.slice(0, limit) : recipes;
+    sqlExec(db, "BEGIN TRANSACTION");
+    let n = 0;
+    list.forEach((recipe) => {
+      const names = insertable.map((c) => `"${c.name}"`).join(", ");
+      const values = insertable.map((c) => sqlLit(valueFor(c, recipe, tmpl))).join(", ");
+      try {
+        sqlExec(db, `INSERT INTO "${table}" (${names}) VALUES (${values})`);
+        const rid = sqlQuery(db, "SELECT last_insert_rowid() AS id");
+        added.push(Number(rid.rows[0].id));
+        n++;
+      } catch (e) {
+        log(`ekleme hatası (${table}): ${e}`);
+      }
+    });
+    sqlExec(db, "COMMIT");
+
+    const after = sqlQuery(db, `SELECT COUNT(*) AS n FROM "${table}"`);
+    const rows = after.rows.length ? Number(after.rows[0].n) : 0;
+    SQLI.last = { db: dbPath, table, ids: added, at: Date.now(), backup };
+    saveInjectLog();
+    return { ok: added.length > 0, added: added.length, rows, backup, msg: `${table}: +${added.length} satır (toplam ${rows})` };
+  } catch (e) {
+    try { if (db) sqlExec(db, "ROLLBACK"); } catch (_) { /* yok say */ }
+    return { ok: false, msg: `${table}: ${e}`, backup };
+  } finally {
+    if (db) sqlClose(db);
+  }
+}
+
+/** Son enjeksiyonu geri alır (eklenen rowid'leri siler). */
+function injectRollback() {
+  const last = SQLI.last;
+  if (!last || !last.ids || !last.ids.length) return { ok: false, msg: "geri alınacak enjeksiyon yok" };
+  let db = null;
+  try {
+    db = sqlOpen(last.db, false);
+    sqlExec(db, "BEGIN TRANSACTION");
+    let n = 0;
+    last.ids.forEach((id) => {
+      try {
+        sqlExec(db, `DELETE FROM "${last.table}" WHERE rowid = ${Number(id)}`);
+        n++;
+      } catch (_) { /* yok say */ }
+    });
+    sqlExec(db, "COMMIT");
+    const after = sqlQuery(db, `SELECT COUNT(*) AS n FROM "${last.table}"`);
+    const rows = after.rows.length ? Number(after.rows[0].n) : 0;
+    SQLI.last = null;
+    saveInjectLog();
+    return { ok: true, removed: n, rows, msg: `${last.table}: −${n} satır geri alındı (toplam ${rows})` };
+  } catch (e) {
+    try { if (db) sqlExec(db, "ROLLBACK"); } catch (_) { /* yok say */ }
+    return { ok: false, msg: "geri alma hatası: " + e };
+  } finally {
+    if (db) sqlClose(db);
+  }
+}
+
+/* ---------------- JSON içerik enjeksiyonu ---------------- */
+
+function injectJson(path, arrayKey) {
+  const raw = saveRead(path, 8 * 1024 * 1024);
+  if (!raw || raw.indexOf("HATA") === 0) return { ok: false, msg: "dosya okunamadı" };
+  let json = null;
+  try { json = JSON.parse(raw); } catch (_) { return { ok: false, msg: "JSON değil" }; }
+  const arr = arrayKey === "" ? json : json && json[arrayKey];
+  if (!Array.isArray(arr) || !arr.length) return { ok: false, msg: "dizi bulunamadı" };
+  if (typeof arr[0] !== "object" || arr[0] === null) return { ok: false, msg: "nesne dizisi değil" };
+
+  const pack = universePack();
+  if (!pack) return { ok: false, msg: "içerik paketi yok" };
+  const templates = pack.careers.map((c) => ({ name: c.name, desc: c.note, pay: c.pay }));
+  const backup = saveBackup(path);
+
+  let added = 0;
+  templates.forEach((t) => {
+    const clone = JSON.parse(JSON.stringify(arr[0]));
+    Object.keys(clone).forEach((k) => {
+      const lower = k.toLowerCase();
+      const v = clone[k];
+      if (typeof v === "string") {
+        if (/(name|title|label)/.test(lower)) clone[k] = t.name;
+        else if (/(desc|text|body|note|summary|bio)/.test(lower)) clone[k] = t.desc;
+        else if (/(id|key)/.test(lower)) clone[k] = `${v}_boys${added}`.slice(0, 64);
+      } else if (typeof v === "number" && /(salary|pay|wage|income)/.test(lower)) {
+        clone[k] = t.pay;
+      } else if (typeof v === "number" && /(id|key)/.test(lower)) {
+        const maxId = arr.reduce((m, o) => (typeof o[k] === "number" && o[k] > m ? o[k] : m), 0);
+        clone[k] = maxId + 1 + added;
+      }
+    });
+    arr.push(clone);
+    added++;
+  });
+
+  const ok = saveWrite(path, JSON.stringify(json));
+  if (!ok) return { ok: false, msg: "yazılamadı" };
+  return { ok: true, added, backup, msg: `${path.split("/").pop()}: +${added} kayıt` };
+}
+
+/* ---------------- enjeksiyon kaydı ---------------- */
+
+function injectLogFile() {
+  const dirs = appDirs();
+  return dirs.length ? dirs[0][0] + "/" + INJECT_LOG : null;
+}
+
+function saveInjectLog() {
+  const path = injectLogFile();
+  if (!path) return false;
+  return saveWrite(path, JSON.stringify({ last: SQLI.last, at: Date.now() }));
+}
+
+function loadInjectLog() {
+  const path = injectLogFile();
+  if (!path) return false;
+  const raw = saveRead(path, 16384);
+  if (!raw || raw.indexOf("HATA") === 0) return false;
+  try {
+    const j = JSON.parse(raw);
+    SQLI.last = j.last || null;
+    return !!SQLI.last;
+  } catch (_) { return false; }
+}
+
+/* ------------------------------------------------------------------ */
 /* arayüz                                                              */
 /* ------------------------------------------------------------------ */
 
@@ -777,9 +1176,10 @@ function buildUi() {
     Object.keys(pages).forEach((k) => pages[k].setVisibility(k === id ? 0 : 8));
     Object.keys(tabBtns).forEach((k) => tabBtns[k].setTextColor(color(k === id ? "#c4b5fd" : "#7c7c92")));
   };
-  ["scan", "universe", "boys", "presets", "save"].forEach((id) => {
+  ["scan", "universe", "inject", "boys", "presets", "save"].forEach((id) => {
     const label = id === "scan" ? "Tara"
       : id === "universe" ? "Evren"
+      : id === "inject" ? "Enjekte"
       : id === "boys" ? "The Boys"
       : id === "presets" ? "İstatistik" : "Kayıt";
     tabBtns[id] = button(tabsRow, label, () => showTab(id));
@@ -1047,6 +1447,103 @@ function buildUi() {
 
   uniPage.addView(uniBody);
   renderUniverse();
+
+  /* ---------------- ENJEKTE (oyunun kendi verisi) ---------------- */
+  const injPage = makePage("inject");
+  const injBody = box(LinearLayout.VERTICAL.getValue());
+  injPage.addView(text("Oyunun kendi verisine ekle", 11, "#ffd9a0"));
+  injPage.addView(text("SQLite tabloları ve JSON içerik dosyaları taranır; seçtiğin tabloya", 8, "#b8a8d8"));
+  injPage.addView(text("The Boys satırları eklenir. Önce yedek alınır, geri alınabilir.", 8, "#b8a8d8"));
+
+  const renderInject = (UI.renderInject = function () {
+    injBody.removeAllViews();
+
+    const bar = box(LinearLayout.HORIZONTAL.getValue());
+    button(bar, "Veriyi tara", () => {
+      const r = sqlScan();
+      setStatus(`tarama: ${r.dbs} veritabanı, ${r.tables} tablo, ${r.json} JSON`);
+      renderInject();
+    });
+    button(bar, "Geri al", () => {
+      const r = injectRollback();
+      setStatus(r.msg);
+      renderInject();
+    });
+    injBody.addView(bar);
+
+    if (!SQLI.scanned) {
+      injBody.addView(text("henüz taranmadı — 'Veriyi tara'", 9, "#8fa2b1"));
+      return;
+    }
+    if (!SQLI.dbs.length && !SQLI.json.length) {
+      injBody.addView(text("uygulama dizininde SQLite/JSON içerik bulunamadı.", 8, "#e0a13f"));
+      injBody.addView(text("İçerik APK'nın içinde (salt okunur) veya native kodda olabilir.", 8, "#6f6f85"));
+      return;
+    }
+
+    SQLI.dbs.forEach((db) => {
+      injBody.addView(text(`▸ ${db.name} (${db.tables.length} tablo)`, 9, "#e9e4fb"));
+      db.tables.slice(0, 14).forEach((t) => {
+        const row = box(LinearLayout.HORIZONTAL.getValue());
+        const b = button(row, "Ekle", () => {
+          const r = injectTable(db.path, t.name);
+          setStatus(r.msg);
+          renderInject();
+        }, 0.35);
+        b.setTextSize(9);
+        if (t.score < 3) b.setEnabled(false);
+        const label = `${t.name}  ·  ${t.rows} satır  ·  ${t.cols.length} sütun`;
+        row.addView(text(label, 8, t.score >= 3 ? "#a9c2d3" : "#6f6f85"));
+        injBody.addView(row);
+      });
+    });
+
+    if (SQLI.json.length) {
+      injBody.addView(text("▸ JSON içerik dosyaları", 9, "#e9e4fb"));
+      SQLI.json.slice(0, 10).forEach((j) => {
+        const row = box(LinearLayout.HORIZONTAL.getValue());
+        const b = button(row, "Ekle", () => {
+          const r = injectJson(j.path, j.arrayKey);
+          setStatus(r.msg);
+          renderInject();
+        }, 0.35);
+        b.setTextSize(9);
+        row.addView(text(`${j.name}${j.arrayKey ? " › " + j.arrayKey : ""}  ·  ${j.count} kayıt`, 8, "#a9c2d3"));
+        injBody.addView(row);
+      });
+    }
+
+    // ---- hepsine birden ----
+    const all = box(LinearLayout.HORIZONTAL.getValue());
+    button(all, "THE BOYS'U EKLE (tüm içerik tabloları)", () => {
+      const targets = [];
+      SQLI.dbs.forEach((db) => db.tables.forEach((t) => {
+        if (t.score >= 3) targets.push([db.path, t.name]);
+      }));
+      if (!targets.length) { setStatus("içerik tablosu bulunamadı"); return; }
+      let total = 0;
+      const parts = [];
+      const lastIds = [];
+      targets.forEach(([p, t]) => {
+        const r = injectTable(p, t);
+        if (r.ok) { total += r.added; parts.push(`${t}+${r.added}`); lastIds.push({ db: p, table: t, ids: SQLI.last ? SQLI.last.ids : [] }); }
+      });
+      SQLI.last = { db: lastIds.length ? lastIds[0].db : null, table: lastIds.length ? lastIds[0].table : null, ids: [].concat.apply([], lastIds.map((x) => x.ids)), multi: lastIds };
+      saveInjectLog();
+      setStatus(`${total} satır eklendi — ${parts.join(", ")} (oyunu yeniden başlat)`);
+      renderInject();
+    });
+    injBody.addView(all);
+
+    if (SQLI.last) {
+      injBody.addView(text(`son: ${SQLI.last.table} +${SQLI.last.ids.length} satır (geri alınabilir)`, 8, "#7fd1a8"));
+    } else {
+      injBody.addView(text("son enjeksiyon yok", 8, "#6f6f85"));
+    }
+  });
+
+  injPage.addView(injBody);
+  renderInject();
 
   /* ---------------- THE BOYS ---------------- */
   const boysPage = makePage("boys");
@@ -1353,6 +1850,8 @@ globalThis.BOYS = {
   UNI_STATS, U, BINDS, universePack, universeStart, universeChoose, universeNeed,
   universeCurrent, universePlay, universeEnding, universeStatus, universeApply,
   universeBind, universeSave, universeLoad, universeReset, uCareerChapters, uGlobalChapters,
+  SQLI, sqlScan, sqlQuery, sqlExec, sqlLit, dbTables, recipesFor, valueFor, tableInfo,
+  injectTable, injectRollback, injectJson, saveInjectLog, loadInjectLog,
   findNumberFields, findFlags, setByPath, isTargetActivity, liveValues, compoundV, rankFor, RANKS,
   candidateRanges, startWatcher, stopWatcher,
 };

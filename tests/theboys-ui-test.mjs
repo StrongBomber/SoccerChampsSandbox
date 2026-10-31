@@ -8,10 +8,12 @@
  *   node tests/theboys-ui-test.mjs
  */
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRuntime } from "./frida-mock.mjs";
 import { createAndroidMock } from "./android-mock.mjs";
+import { DatabaseSync } from "node:sqlite";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = fs.readFileSync(path.join(ROOT, "bitlife", "theboys-mod.js"), "utf8");
@@ -81,15 +83,17 @@ const all = () => walk(panel);
 const byText = (t) => all().filter((n) => n.text === t);
 
 section("Sekmeler");
-const tabLabels = ["Tara", "Evren", "The Boys", "İstatistik", "Kayıt"];
-check("5 sekme", tabLabels.every((t) => byText(t)[0]), tabLabels.join(","));
+const tabLabels = ["Tara", "Evren", "Enjekte", "The Boys", "İstatistik", "Kayıt"];
+check("6 sekme", tabLabels.every((t) => byText(t)[0]), tabLabels.join(","));
 const pages = panel.children[3].children;
-check("5 sayfa", pages.length === 5, `${pages.length}`);
-const [scanPage, uniPage, boysPage, presetsPage, savePage] = pages;
+check("6 sayfa", pages.length === 6, `${pages.length}`);
+const [scanPage, uniPage, injPage, boysPage, presetsPage, savePage] = pages;
 byText("Evren")[0].click();
 check("Evren sekmesi açıldı", uniPage.visibility === 0 && scanPage.visibility === 8);
+byText("Enjekte")[0].click();
+check("Enjekte sekmesi açıldı", injPage.visibility === 0 && uniPage.visibility === 8);
 byText("The Boys")[0].click();
-check("The Boys sekmesi açıldı", boysPage.visibility === 0 && uniPage.visibility === 8);
+check("The Boys sekmesi açıldı", boysPage.visibility === 0 && injPage.visibility === 8);
 byText("İstatistik")[0].click();
 check("İstatistik sekmesi açıldı", presetsPage.visibility === 0);
 byText("Kayıt")[0].click();
@@ -175,6 +179,107 @@ check("sıfırlama temizledi", BOYS.U.done.length === 0 && BOYS.U.character === 
 walk(uniPage).filter((n) => n.kind === "Button").find((b) => b.text === "Yükle").click();
 check("geri yüklendi", BOYS.U.done.length === savedDone && BOYS.U.character === "homelander",
   `${BOYS.U.done.length} bölüm, karakter ${BOYS.U.character}`);
+
+section("Enjekte — oyunun kendi SQLite verisi");
+const apkDb = `/data/user/0/${PKG}/databases/game.db`;
+const realDb = android.sqlite.realPath(apkDb);
+{
+  const d = new DatabaseSync(realDb);
+  d.exec(`CREATE TABLE careers (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
+          salary INTEGER NOT NULL, company TEXT, description TEXT)`);
+  d.exec(`CREATE TABLE events (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL,
+          body TEXT, category TEXT)`);
+  d.exec(`CREATE TABLE settings (id INTEGER PRIMARY KEY AUTOINCREMENT, sound INTEGER, music INTEGER)`);
+  d.exec(`INSERT INTO careers (name, salary, company, description) VALUES
+          ('Police Officer', 45000, 'City', 'Keep the peace'),
+          ('Teacher', 38000, 'School', 'Teach kids')`);
+  d.exec(`INSERT INTO events (title, body, category) VALUES ('Birthday', 'You turn one year older', 'life')`);
+  d.exec("INSERT INTO settings (sound, music) VALUES (1, 1)");
+  d.close();
+}
+const dbBytes = fs.readFileSync(realDb);
+files.set(apkDb, new Uint8Array(dbBytes));
+
+byText("Enjekte")[0].click();
+const injBtn = (t) => walk(injPage).filter((n) => n.kind === "Button").find((b) => b.text === t);
+injBtn("Veriyi tara").click();
+check("tarama veritabanı buldu", BOYS.SQLI.dbs.length === 1, `${BOYS.SQLI.dbs.length}`);
+const tables = BOYS.SQLI.dbs[0].tables.map((t) => t.name);
+check("3 tablo listelendi", tables.length === 3, tables.join(", "));
+const careersT = BOYS.SQLI.dbs[0].tables.find((t) => t.name === "careers");
+const settingsT = BOYS.SQLI.dbs[0].tables.find((t) => t.name === "settings");
+check("careers içerik tablosu sayıldı", careersT.score >= 3, `puan ${careersT.score}`);
+check("settings içerik tablosu değil", settingsT.score < 3, `puan ${settingsT.score}`);
+
+const rowOf = (name) => walk(injPage).filter((n) => n.kind === "TextView" && n.text.startsWith(name + " "))[0];
+check("tablo satırı çizildi", !!rowOf("careers"), rowOf("careers") && rowOf("careers").text);
+const careersAdd = walk(injPage).filter((n) => {
+  const i = injPage ? null : null;
+  return n.kind === "Button" && n.text === "Ekle";
+});
+check("her tablo için Ekle düğmesi", careersAdd.length === 3, `${careersAdd.length}`);
+check("ayarlar tablosunun Ekle'si pasif", careersAdd[2].enabled === false || careersAdd.some((b) => b.enabled === false));
+
+const before = 2;
+careersAdd[0].click();
+check("12 meslek eklendi", BOYS.SQLI.last && BOYS.SQLI.last.ids.length === 12, JSON.stringify(BOYS.SQLI.last && BOYS.SQLI.last.ids.length));
+
+// gerçek dosyada doğrula
+const checkDb = new DatabaseSync(realDb);
+const rows = checkDb.prepare("SELECT name, salary, company FROM careers WHERE id > 2 ORDER BY id").all();
+check("gerçek veritabanında 14 satır", before === 2 && checkDb.prepare("SELECT COUNT(*) AS n FROM careers").get().n === 14,
+  `${checkDb.prepare("SELECT COUNT(*) AS n FROM careers").get().n}`);
+check("ilk eklenen Vought PR", rows[0].name === "Vought PR Uzmanı", rows[0] && rows[0].name);
+check("maaş yazıldı", rows[0].salary === 96000, String(rows[0] && rows[0].salary));
+check("şirket yazıldı", rows[0].company === "Vought International", rows[0] && rows[0].company);
+check("12 The Boys mesleği", rows.length === 12 && new Set(rows.map((r) => r.name)).size === 12, `${rows.length}`);
+check("mevcut satırlar bozulmadı", checkDb.prepare("SELECT name FROM careers WHERE id = 1").get().name === "Police Officer");
+checkDb.close();
+
+injBtn("Geri al").click();
+const afterDb = new DatabaseSync(realDb);
+check("geri alma 14 → 2", afterDb.prepare("SELECT COUNT(*) AS n FROM careers").get().n === 2,
+  String(afterDb.prepare("SELECT COUNT(*) AS n FROM careers").get().n));
+check("geri alma kaydı temizledi", BOYS.SQLI.last === null);
+afterDb.close();
+
+section("Enjekte — hepsine birden");
+files.set(apkDb, new Uint8Array(fs.readFileSync(realDb)));
+BOYS.SQLI.scanned = false;
+byText("Enjekte")[0].click();
+injBtn("Veriyi tara").click();
+const allBtn = walk(injPage).filter((n) => n.kind === "Button").find((b) => b.text.startsWith("THE BOYS'U EKLE"));
+check("'hepsine ekle' düğmesi var", !!allBtn);
+allBtn.click();
+const allDb = new DatabaseSync(realDb);
+const cCareers = allDb.prepare("SELECT COUNT(*) AS n FROM careers").get().n;
+const cEvents = allDb.prepare("SELECT COUNT(*) AS n FROM events").get().n;
+const cSettings = allDb.prepare("SELECT COUNT(*) AS n FROM settings").get().n;
+check("careers tablosuna 12 eklendi", cCareers === 14, `${cCareers}`);
+check("events tablosuna 30 bölüm eklendi", cEvents === 31, `${cEvents}`);
+check("ayarlar tablosuna dokunulmadı", cSettings === 1, `${cSettings}`);
+check("durum satırı toplamı yazdı", /42 satır eklendi/.test(BOYS.S.status.text), BOYS.S.status.text);
+check("çoklu geri alma kaydı", BOYS.SQLI.last && BOYS.SQLI.last.ids.length === 42, `${BOYS.SQLI.last && BOYS.SQLI.last.ids.length}`);
+allDb.close();
+// temizle: gerçek dosyayı baştaki hâline döndür
+const resetDb = new DatabaseSync(realDb);
+resetDb.exec("DELETE FROM careers WHERE id > 2");
+resetDb.exec("DELETE FROM events WHERE id > 1");
+resetDb.close();
+files.set(apkDb, new Uint8Array(fs.readFileSync(realDb)));
+
+section("Enjekte — JSON içerik dosyası");
+const jsonPath = `/data/user/0/${PKG}/files/content.json`;
+files.set(jsonPath, JSON.stringify([{ id: 1, name: "Police Officer", description: "x", salary: 45000 }], null, 0));
+BOYS.sqlScan();
+const jsonEntry = BOYS.SQLI.json.find((j) => j.path === jsonPath);
+check("JSON içerik dosyası bulundu", !!jsonEntry && jsonEntry.count === 1, jsonEntry ? `${jsonEntry.count}` : "yok");
+const jres = BOYS.injectJson(jsonPath, jsonEntry.arrayKey);
+check("JSON'a 12 kayıt eklendi", jres.ok && jres.added === 12, jres.msg);
+const parsed = JSON.parse(files.get(jsonPath));
+check("JSON dizisi büyüdü", parsed.length === 13, `${parsed.length}`);
+check("eklenen kayıt adı Vought", parsed[1].name === "Vought PR Uzmanı", parsed[1].name);
+check("ilk kayıt korundu", parsed[0].name === "Police Officer");
 
 section("The Boys karakter paketleri");
 byText("Tara")[0].click();

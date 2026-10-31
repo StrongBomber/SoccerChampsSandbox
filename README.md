@@ -17,6 +17,7 @@ tools/theboys.sh --server /yol/frida-server-arm   # sunucuyu at + oyunu menüyle
 | Sekme | İçerik |
 |---|---|
 | **Tara** | int32/int64/float/double tarama · *İlk Ara → Değişti/Aynı/Arttı/Azaldı* · Seçilene Yaz · Tümüne Yaz · Dondur |
+| **Enjekte** | **Oyunun kendi verisine yazma.** SQLite tablolarını ve JSON içerik dosyalarını tarar, içerik tablolarını puanlar, seçtiğine The Boys satırları ekler (12 meslek / 30 bölüm / 10 karakter). Yedek alır, satır satır geri alır. **THE BOYS'U EKLE** ile hepsine birden |
 | **Evren** | **The Boys Evreni**: 10 karakter × 12 meslek × 30 bölüm. Karakteri seç, mesleğe gir, bölümleri oyna; seçimlerin sonucu oyunun canlı istatistiklerine yazılır (para/şöhret/sağlık/karma…). Terfi, bayrak (Vought içi, supe, aranan…), final ve kayıt/yükleme var |
 | **The Boys** | 10 karakter paketi (Homelander 100 · Black Noir 100 · Butcher 95 · Starlight 92 · A-Train 90 · Soldier Boy 88 · Kimiko 85 · Frenchie 78 · Hughie 70 · The Deep 60) + **Vought parası** + **Vought Modu** + **Compound V** + **Sıralamam** |
 | **İstatistik** | Para · Yaş · Görünüm · Zeka · Sağlık · Mutluluk · Şöhret · Karma şablonları |
@@ -33,8 +34,8 @@ tools/theboys.sh --server /yol/frida-server-arm   # sunucuyu at + oyunu menüyle
 ## Testler (cihaz gerekmez)
 
 ```bash
-node tests/theboys-test.mjs      # 87 iddia — içerik paketi + hikâye motoru + tarayıcı
-node tests/theboys-ui-test.mjs   # 63 iddia — arayüz (Android çerçeve taklidi)
+node tests/theboys-test.mjs      # 103 iddia — içerik paketi + hikâye motoru + tarayıcı
+node tests/theboys-ui-test.mjs   # 91 iddia — arayüz (Android çerçeve taklidi)
 node tests/rea-scan-test.mjs     # 15 iddia — REA içerik tarayıcısı
 ```
 
@@ -62,8 +63,8 @@ Dürüst sınırlar: [`docs/BITLIFE-MOD.md`](docs/BITLIFE-MOD.md)
 | `tools/theboys.sh` | Tek komut başlatıcı (iki dosyayı da yükler) |
 | `tools/build-mod-zip.sh` | Magisk/KernelSU paketi üretir |
 | `tools/rea-analyze.sh` · `tools/rea-content-scan.mjs` | REA analiz hattı + içerik avı |
-| `tests/` | `theboys-test` (87) · `theboys-ui-test` (63) · `rea-scan-test` (15) · `frida-mock` · `android-mock` |
-| `docs/` | `BITLIFE-MOD.md` · `REA-ANALIZ.md` |
+| `tests/` | `theboys-test` (103) · `theboys-ui-test` (91) · `rea-scan-test` (15) · `sqlite-mock` · `frida-mock` · `android-mock` |
+| `docs/` | `BITLIFE-MOD.md` · `ENJEKSIYON.md` · `REA-ANALIZ.md` |
 | `.github/workflows/build-mod.yml` | Testler → paket → doğrulama → release |
 
 ## Not
