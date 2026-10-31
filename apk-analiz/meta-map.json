@@ -1,0 +1,179 @@
+{
+  "file_bytes": 19293888,
+  "magic": "0xfab11baf",
+  "version": 39,
+  "lit_off": 380,
+  "lit_size": 289888,
+  "data_off": 72472,
+  "data_size": 290268,
+  "str_off": 1919309,
+  "str_size": 72471,
+  "needles": [
+    {
+      "text": "You went to the witch doctor, who says you have V. Coli",
+      "count": 1,
+      "offsets": [
+        295674
+      ]
+    },
+    {
+      "text": "Your teacher sent you to the principal's office!",
+      "count": 1,
+      "offsets": [
+        297010
+      ]
+    },
+    {
+      "text": "I began training to be an astronaut at the ",
+      "count": 1,
+      "offsets": [
+        299057
+      ]
+    },
+    {
+      "text": "Astronaut",
+      "count": 864,
+      "offsets": [
+        628282,
+        628291,
+        628309,
+        628326,
+        628350,
+        628379,
+        628415,
+        628452
+      ]
+    },
+    {
+      "text": "You are a strict JSON translation engine",
+      "count": 1,
+      "offsets": [
+        297485
+      ]
+    },
+    {
+      "text": "Space Academy",
+      "count": 13,
+      "offsets": [
+        317626,
+        317640,
+        317699,
+        317757,
+        317778,
+        317804,
+        317855,
+        317870
+      ]
+    }
+  ],
+  "solutions": [
+    {
+      "order": "len,idx",
+      "base": "zero",
+      "hits": 0,
+      "total": 6,
+      "log": []
+    },
+    {
+      "order": "len,idx",
+      "base": "data_off",
+      "hits": 0,
+      "total": 6,
+      "log": []
+    },
+    {
+      "order": "len,idx",
+      "base": "lit_off",
+      "hits": 0,
+      "total": 6,
+      "log": []
+    },
+    {
+      "order": "len,idx",
+      "base": "str_off",
+      "hits": 0,
+      "total": 6,
+      "log": []
+    },
+    {
+      "order": "idx,len",
+      "base": "zero",
+      "hits": 0,
+      "total": 6,
+      "log": []
+    },
+    {
+      "order": "idx,len",
+      "base": "data_off",
+      "hits": 1,
+      "total": 6,
+      "log": [
+        "  ✓ 'I began training to be an astronaut at t' → tablo#4517"
+      ]
+    },
+    {
+      "order": "idx,len",
+      "base": "lit_off",
+      "hits": 0,
+      "total": 6,
+      "log": []
+    },
+    {
+      "order": "idx,len",
+      "base": "str_off",
+      "hits": 0,
+      "total": 6,
+      "log": []
+    }
+  ],
+  "context": [
+    {
+      "text": "You went to the witch doctor, who says you have V.",
+      "offset": 295674,
+      "start": 295578,
+      "len": 247
+    },
+    {
+      "text": "Your teacher sent you to the principal's office!",
+      "offset": 297010,
+      "start": 296914,
+      "len": 240
+    },
+    {
+      "text": "I began training to be an astronaut at the ",
+      "offset": 299057,
+      "start": 298961,
+      "len": 235
+    },
+    {
+      "text": "Astronaut",
+      "offset": 628282,
+      "start": 628186,
+      "len": 201
+    },
+    {
+      "text": "Astronaut",
+      "offset": 628291,
+      "start": 628195,
+      "len": 201
+    },
+    {
+      "text": "You are a strict JSON translation engine",
+      "offset": 297485,
+      "start": 297389,
+      "len": 232
+    },
+    {
+      "text": "Space Academy",
+      "offset": 317626,
+      "start": 317530,
+      "len": 205
+    },
+    {
+      "text": "Space Academy",
+      "offset": 317640,
+      "start": 317544,
+      "len": 205
+    }
+  ]
+}
