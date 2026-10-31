@@ -181,6 +181,11 @@ check("geri yüklendi", BOYS.U.done.length === savedDone && BOYS.U.character ===
   `${BOYS.U.done.length} bölüm, karakter ${BOYS.U.character}`);
 
 section("Enjekte — oyunun kendi SQLite verisi");
+if (!android.sqlite.available) {
+  console.log("  ! node:sqlite yok (Node 22.5+ gerekir) — SQLite bölümü atlandı");
+}
+const HAS_SQLITE = android.sqlite.available;
+if (HAS_SQLITE) {
 const apkDb = `/data/user/0/${PKG}/databases/game.db`;
 const realDb = android.sqlite.realPath(apkDb);
 {
@@ -267,6 +272,8 @@ resetDb.exec("DELETE FROM careers WHERE id > 2");
 resetDb.exec("DELETE FROM events WHERE id > 1");
 resetDb.close();
 files.set(apkDb, new Uint8Array(fs.readFileSync(realDb)));
+
+}  // HAS_SQLITE sonu
 
 section("Enjekte — JSON içerik dosyası");
 const jsonPath = `/data/user/0/${PKG}/files/content.json`;

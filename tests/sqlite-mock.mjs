@@ -11,7 +11,13 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { DatabaseSync } from "node:sqlite";
+let DatabaseSync = null;
+let sqliteError = null;
+try {
+  ({ DatabaseSync } = await import("node:sqlite"));
+} catch (e) {
+  sqliteError = e;
+}
 
 const utf8 = new TextEncoder();
 const dec = new TextDecoder();
@@ -74,6 +80,8 @@ export function createSqliteMock({ sqliteDir, FS } = {}) {
     close() { this.rows = []; }
   }
 
+  const available = typeof DatabaseSync === "function";
+
   class SQLiteDatabaseShim {
     constructor(apkPath, flags) {
       this.path = String(apkPath);
@@ -109,10 +117,13 @@ export function createSqliteMock({ sqliteDir, FS } = {}) {
   }
 
   const SQLiteDatabase = {
-    openDatabase: (p, factory, flags) => new SQLiteDatabaseShim(p, flags),
+    openDatabase: (p, factory, flags) => {
+      if (!available) throw new Error("node:sqlite yok (Node 22.5+ gerekir)");
+      return new SQLiteDatabaseShim(p, flags);
+    },
     OPEN_READONLY: 1,
     OPEN_READWRITE: 0,
   };
 
-  return { SQLiteDatabase, CursorShim, calls, dir, realPath, syncBack };
+  return { SQLiteDatabase, CursorShim, calls, dir, realPath, syncBack, available, sqliteError };
 }
