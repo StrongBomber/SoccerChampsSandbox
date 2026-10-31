@@ -73,17 +73,32 @@ sorunu değil, paketin eksik olmasının sonucu.
 
 Ölçümün ayrıntısı: [`../apk-analiz/TANI-APK.md`](../apk-analiz/TANI-APK.md)
 
-## 5. Çözüm: XAPK hattı
+## 5. Çözüm: tam paket + tek imza (kurulabilir)
 
-`.github/workflows/bitlife-xapk.yml` base + config split'lerini içeren XAPK'yı alır:
+`.github/workflows/bitlife-xapk.yml` artık **kendi başına** kurulabilir paket üretiyor:
 
-1. `manifest.json`'dan base'i bulur, parçaları ayırır
-2. **base'in** metin havuzunu The Boys evrenine çevirir (23 çift)
-3. **tüm parçaları aynı anahtarla** imzalar (split'ler farklı imzalanırsa kurulum reddedilir)
-4. `tools/xapk-assemble.py` ile tek bir `bitlife-theboys.xapk` üretir (SAI/APKPure kurar)
+1. Tam paketi edinir: `DRIVE_XAPK_ID` verilmişse Drive'dan, yoksa halka açık aynadan
+   (`tools/get-package.sh`). Çalışan kaynak: **`d.apkpure.net/b/XAPK/com.candywriter.bitlife`**
+   → 329.365.951 bayt, base + `config.arm64_v8a` + `UnityDataAssetPack`, sürüm 1069 / 3.26.0
+   (elimizdeki base ile **aynı versionCode**).
+2. Parçaları ayırır, `manifest.json`'ı korur, `.obb` varsa taşır.
+3. İçeriği **hangi parçada varsa** orada yamalar (`global-metadata.dat` taraması).
+4. **Tüm parçaları aynı anahtarla imzalar** — split kurulumunun şartı.
+5. `xapk-doctor` ile ölçer: aynı paket, aynı versionCode, **aynı sertifika**, `.so` var mı.
+6. Geçerse Release'e koyar.
 
-Girdi: `DRIVE_XAPK_ID` (Drive'daki `.xapk` / `.apks` / `.apkm` dosyası).
-Şu an boş — tam paket bekleniyor.
+Son üretim (`theboys-final.xapk`, 329.202.748 bayt):
+
+| Parça | Bayt | versionCode | .so |
+|---|---|---|---|
+| `base.apk` | 141.450.854 | 1069 | 0 |
+| `config.arm64_v8a.apk` | 44.525.860 | 1069 | 28 |
+| `UnityDataAssetPack.apk` | 143.225.134 | 1069 | 0 |
+
+Sertifika (üçünde de): `4c23343b95eb…784e4` · ABI: arm64-v8a · yama: base'de 23/23 doğrulandı.
+
+**Kurulum:** eski BitLife'ı kaldır → `BitLife-TheBoys.xapk` dosyasını **SAI (Split APKs
+Installer)** veya APKPure ile aç. Root gerekmez.
 
 ## 6. Neden apktool ile yeniden derlenmiyor?
 

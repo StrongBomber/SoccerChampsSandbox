@@ -248,6 +248,6 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 || \
             gh release create "$TAG" --title "BitLife — The Boys (kurulabilir)" --notes-file NOTES.md
           EXT="${ART##*.}"
-          gh release upload "$TAG" "$ART#bitlife-theboys.$EXT" "$ART.sha256#bitlife-theboys.$EXT.sha256" --clobber
+          gh release upload "$TAG" "$ART#BitLife-TheBoys.$EXT" "$ART.sha256#BitLife-TheBoys.$EXT.sha256" --clobber
           gh release edit "$TAG" --notes-file NOTES.md
           du -h "$ART"

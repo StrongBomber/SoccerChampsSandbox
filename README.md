@@ -46,20 +46,27 @@ node tests/rea-scan-test.mjs     # 15 iddia — REA içerik tarayıcısı
 (`ICERIK-HARITASI.md`). Bu hattı BitLife üzerinde çalıştıramadım — dosya 141 MB, bu
 ortama aktarılabilen sınır 100 MiB. Ayrıntı: [`docs/REA-ANALIZ.md`](docs/REA-ANALIZ.md)
 
-## Kurulum — hangi yol çalışıyor?
+## Kurulum (root gerekmez)
 
-| Yol | Durum | Not |
-|---|---|---|
-| **Magisk/Frida modu** (`theboys-mod`) | ✅ **çalışıyor** | Kurulu BitLife üzerinde çalışır; imza sorunu yok |
-| **Tek APK** (`theboys-signed.apk`) | ❌ **kurulamıyor** | Drive'daki dosya Play App Bundle'ının yalnızca *base split*'i: içinde `lib/` yok, manifest `requiredSplitTypes="base__abi"` diyor → `INSTALL_FAILED_MISSING_SPLIT` |
-| **XAPK** (base + split'ler) | ⏳ hat hazır, paket bekleniyor | `bitlife-xapk.yml` tüm parçaları aynı anahtarla imzalayıp SAI/APKPure'un kurduğu tek dosyayı üretir |
+**İndir:** Release `bitlife-theboys` → **`BitLife-TheBoys.xapk`** (329 MB)
 
-Ölçüm ve kanıt: [`apk-analiz/TANI-APK.md`](apk-analiz/TANI-APK.md) ·
+1. Eski BitLife'ı kaldır (imza farklı).
+2. `BitLife-TheBoys.xapk` dosyasını **SAI (Split APKs Installer)** veya APKPure ile aç.
+3. Kur.
+
+Paket, Play'in App Bundle dağıtımının **tam** halidir: base + `config.arm64_v8a`
+(28 `.so`) + `UnityDataAssetPack`, üçü de **aynı anahtarla** imzalı. İçerik `base`
+parçasında The Boys metnine çevrildi (23/23 doğrulandı).
+
+| Yol | Durum |
+|---|---|
+| **XAPK (tam paket)** | ✅ kurulabilir — yayında |
+| Tek `BitLife.apk` (base split) | ❌ kurulamaz: `lib/` yok, `requiredSplitTypes="base__abi"` |
+| Magisk/Frida modu | ❌ root gerektirir (sende root yok) |
+
+Kanıt: [`apk-analiz/TANI-XAPK.md`](apk-analiz/TANI-XAPK.md) ·
+Ölçüm/kök neden: [`apk-analiz/TANI-APK.md`](apk-analiz/TANI-APK.md) ·
 Ayrıntı: [`docs/APK-HATTI.md`](docs/APK-HATTI.md)
-
-141 MB'lık `BitLife.apk` bu çalışma alanına aktarılamıyor (100 MiB sınırı) ama
-GitHub runner'ı Drive'dan doğrudan indirebiliyor — hat bu yüzden GitHub Actions'ta
-çalışır. Oyunun kopyası depoda tutulmaz.
 
 ## Klasörler
 
