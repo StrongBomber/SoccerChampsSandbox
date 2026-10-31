@@ -1,0 +1,141 @@
+{
+  "table": {
+    "lit_off": 380,
+    "lit_size": 289888,
+    "data_off": 72472,
+    "data_size": 290268
+  },
+  "targets": [
+    {
+      "text": "You went to the witch doctor, who says you have V. Coli",
+      "offset": 295674,
+      "runtime_start": 295674,
+      "prefix_in_pool": "",
+      "index_if_data": 223202
+    },
+    {
+      "text": "Your teacher sent you to the principal's office!",
+      "offset": 297010,
+      "runtime_start": 297010,
+      "prefix_in_pool": "",
+      "index_if_data": 224538
+    },
+    {
+      "text": "You are a strict JSON translation engine",
+      "offset": 297485,
+      "runtime_start": 297485,
+      "prefix_in_pool": "",
+      "index_if_data": 225013
+    }
+  ],
+  "candidates": [
+    {
+      "text": "You went to the witch doctor, who says y",
+      "base": "pool_start",
+      "table_pos": 380,
+      "record_index": 0,
+      "prev_u32": 2609,
+      "next_u32": 0,
+      "hex": "00000000fc3d2601c4280000310a000000000000000000000100000005000000"
+    },
+    {
+      "text": "You went to the witch doctor, who says y",
+      "base": "pool_start",
+      "table_pos": 381,
+      "record_index": 0,
+      "prev_u32": 10,
+      "next_u32": 16777216,
+      "hex": "000000fc3d2601c4280000310a00000000000000000000010000000500000009"
+    },
+    {
+      "text": "You went to the witch doctor, who says y",
+      "base": "pool_start",
+      "table_pos": 382,
+      "record_index": 0,
+      "prev_u32": 0,
+      "next_u32": 65536,
+      "hex": "0000fc3d2601c4280000310a0000000000000000000001000000050000000900"
+    },
+    {
+      "text": "You went to the witch doctor, who says y",
+      "base": "pool_start",
+      "table_pos": 383,
+      "record_index": 0,
+      "prev_u32": 0,
+      "next_u32": 256,
+      "hex": "00fc3d2601c4280000310a000000000000000000000100000005000000090000"
+    },
+    {
+      "text": "Your teacher sent you to the principal's",
+      "base": "pool_start",
+      "table_pos": 380,
+      "record_index": 0,
+      "prev_u32": 2609,
+      "next_u32": 0,
+      "hex": "00000000fc3d2601c4280000310a000000000000000000000100000005000000"
+    },
+    {
+      "text": "Your teacher sent you to the principal's",
+      "base": "pool_start",
+      "table_pos": 381,
+      "record_index": 0,
+      "prev_u32": 10,
+      "next_u32": 16777216,
+      "hex": "000000fc3d2601c4280000310a00000000000000000000010000000500000009"
+    },
+    {
+      "text": "Your teacher sent you to the principal's",
+      "base": "pool_start",
+      "table_pos": 382,
+      "record_index": 0,
+      "prev_u32": 0,
+      "next_u32": 65536,
+      "hex": "0000fc3d2601c4280000310a0000000000000000000001000000050000000900"
+    },
+    {
+      "text": "Your teacher sent you to the principal's",
+      "base": "pool_start",
+      "table_pos": 383,
+      "record_index": 0,
+      "prev_u32": 0,
+      "next_u32": 256,
+      "hex": "00fc3d2601c4280000310a000000000000000000000100000005000000090000"
+    },
+    {
+      "text": "You are a strict JSON translation engine",
+      "base": "pool_start",
+      "table_pos": 380,
+      "record_index": 0,
+      "prev_u32": 2609,
+      "next_u32": 0,
+      "hex": "00000000fc3d2601c4280000310a000000000000000000000100000005000000"
+    },
+    {
+      "text": "You are a strict JSON translation engine",
+      "base": "pool_start",
+      "table_pos": 381,
+      "record_index": 0,
+      "prev_u32": 10,
+      "next_u32": 16777216,
+      "hex": "000000fc3d2601c4280000310a00000000000000000000010000000500000009"
+    },
+    {
+      "text": "You are a strict JSON translation engine",
+      "base": "pool_start",
+      "table_pos": 382,
+      "record_index": 0,
+      "prev_u32": 0,
+      "next_u32": 65536,
+      "hex": "0000fc3d2601c4280000310a0000000000000000000001000000050000000900"
+    },
+    {
+      "text": "You are a strict JSON translation engine",
+      "base": "pool_start",
+      "table_pos": 383,
+      "record_index": 0,
+      "prev_u32": 0,
+      "next_u32": 256,
+      "hex": "00fc3d2601c4280000310a000000000000000000000100000005000000090000"
+    }
+  ]
+}
