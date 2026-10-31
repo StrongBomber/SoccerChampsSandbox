@@ -109,6 +109,11 @@ jobs:
           unzip -l "$RUNNER_TEMP/bitlife.apk" | head -30
           echo "--- en büyük 20 girdi ---"
           unzip -l "$RUNNER_TEMP/bitlife.apk" | sort -k1 -n -r | head -22
+          echo "--- üst düzey bileşenler ---"
+          unzip -Z1 "$RUNNER_TEMP/bitlife.apk" | awk -F/ '{print $1}' | sort | uniq -c | sort -rn | head -20
+          echo "--- lib/ ve .so sayısı ---"
+          unzip -Z1 "$RUNNER_TEMP/bitlife.apk" | grep -c '^lib/' || echo "lib/ YOK"
+          unzip -Z1 "$RUNNER_TEMP/bitlife.apk" | grep '\.so$' | head -10 || echo ".so YOK"
           exit 0
 
       - name: XAPK/APKS ise base APK'yı çıkar
@@ -310,9 +315,9 @@ jobs:
           echo "== APK doktoru (kurulabilirlik) =="
           BT=$(dirname "$(command -v zipalign)")
           if [ -x "$BT/aapt2" ]; then
-            "$BT/aapt2" dump badging "$RUNNER_TEMP/theboys-signed.apk" 2>&1 | head -12
+            "$BT/aapt2" dump badging "$RUNNER_TEMP/theboys-signed.apk" 2>&1 | head -30
           elif [ -x "$BT/aapt" ]; then
-            "$BT/aapt" dump badging "$RUNNER_TEMP/theboys-signed.apk" 2>&1 | head -12
+            "$BT/aapt" dump badging "$RUNNER_TEMP/theboys-signed.apk" 2>&1 | head -30
           fi
           python3 "$GITHUB_WORKSPACE/tools/apk-doctor.py" "$RUNNER_TEMP/theboys-signed.apk" \
             --reference "$RUNNER_TEMP/base.apk" --out apk-analiz

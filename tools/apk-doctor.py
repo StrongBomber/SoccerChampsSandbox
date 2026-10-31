@@ -68,10 +68,22 @@ by_name = {x.filename: x for x in infos}
 arsc = by_name.get("resources.arsc")
 
 
+_fh = open(apk, "rb")
+
+
 def data_offset(info):
-    """Yerel başlıktaki gerçek veri ofseti."""
-    off = info.header_offset + 30 + len(info.filename.encode("utf-8")) + len(info.extra)
-    return off
+    """Yerel başlıktaki GERÇEK veri ofseti.
+
+    Dikkat: zip merkezi dizindeki `extra` alanı ile yerel başlıktaki `extra`
+    alanı farklı olabilir (zipalign hizalamayı YEREL başlığa yazar). Bu yüzden
+    ofset yerel başlıktan okunur; aksi halde hizalama yanlış ölçülür.
+    """
+    _fh.seek(info.header_offset)
+    hdr = _fh.read(30)
+    if len(hdr) < 30 or hdr[:4] != b"PK\x03\x04":
+        return -1
+    fnlen, extralen = struct.unpack_from("<HH", hdr, 26)
+    return info.header_offset + 30 + fnlen + extralen
 
 
 if arsc is None:
@@ -156,6 +168,19 @@ if reference and os.path.exists(reference):
                   len(diff), ", ".join(diff[:5]) or "-", len(added), len(removed),
                   (" · BEKLENMEYEN: " + ", ".join(unexpected[:8])) if unexpected else ""))
 
+# ------------------------------------------------------------------ 7) üst düzey yapı
+tops = {}
+for x in infos:
+    top = x.filename.split("/")[0]
+    tops.setdefault(top + ("/" if "/" in x.filename else ""), 0)
+    tops[top + ("/" if "/" in x.filename else "")] += 1
+top_line = ", ".join(f"{k}={v}" for k, v in sorted(tops.items(), key=lambda kv: -kv[1])[:12])
+check("yerel kütüphane (lib/) var", any(n.startswith("lib/") for n in by_name),  # fatal: .so yoksa oyun açılmaz
+      "lib/ girdisi: %d · .so: %d%s" % (
+          sum(1 for n in by_name if n.startswith("lib/")), len(sos),
+          (" · " + ", ".join(x.filename for x in sos[:6])) if sos else
+          " · YOK: bu APK tek başına çalışamaz (yerel kod ayrı split'te olabilir)"))
+
 # ------------------------------------------------------------------ rapor
 fails = [c for c in checks if not c["ok"] and c["fatal"]]
 warn = [c for c in checks if not c["ok"] and not c["fatal"]]
@@ -163,6 +188,7 @@ warn = [c for c in checks if not c["ok"] and not c["fatal"]]
 L = ["# APK tanısı", "",
      f"- Dosya: `{os.path.basename(apk)}` — {len(raw):,} bayt",
      f"- Giriş: {len(infos)} · dex: {len(dex)} · .so: {len(sos)} · ABI: {', '.join(abis) or '-'}",
+     f"- Üst düzey: {top_line}",
      f"- Sonuç: **{'GEÇTİ' if not fails else 'KALDI'}** ({len(fails)} hata, {len(warn)} uyarı)", "",
      "| Denetim | Sonuç | Ayrıntı |", "|---|---|---|"]
 for c in checks:
