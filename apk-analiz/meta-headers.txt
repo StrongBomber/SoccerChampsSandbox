@@ -1,0 +1,3 @@
+header u32: (4205910959, 39, 380, 289888, 72472, 290268)
+lit_off=380 lit_size=289888 data_off=72472 data_size=290268
+slice=233024 bayt
