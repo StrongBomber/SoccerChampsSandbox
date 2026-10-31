@@ -46,20 +46,20 @@ node tests/rea-scan-test.mjs     # 15 iddia — REA içerik tarayıcısı
 (`ICERIK-HARITASI.md`). Bu hattı BitLife üzerinde çalıştıramadım — dosya 141 MB, bu
 ortama aktarılabilen sınır 100 MiB. Ayrıntı: [`docs/REA-ANALIZ.md`](docs/REA-ANALIZ.md)
 
-## İki kurulum yolu
+## Kurulum — hangi yol çalışıyor?
 
-| Yol | Ne yapar | Nerede |
+| Yol | Durum | Not |
 |---|---|---|
-| **APK (metin yaması)** | Gerçek BitLife APK'sı Drive'dan GitHub runner'ına indirilir, metin havuzu The Boys evrenine çevrilir, imzalanır | Release `bitlife-theboys` → `theboys-signed.apk` |
-| **Magisk/Frida modu** | Çalışma anında SQLite/JSON içerik tablolarına The Boys içeriği yazar (12 meslek, 30 bölüm, 10 karakter) | Release `theboys-mod` → `theboys-mod-magisk.zip` |
+| **Magisk/Frida modu** (`theboys-mod`) | ✅ **çalışıyor** | Kurulu BitLife üzerinde çalışır; imza sorunu yok |
+| **Tek APK** (`theboys-signed.apk`) | ❌ **kurulamıyor** | Drive'daki dosya Play App Bundle'ının yalnızca *base split*'i: içinde `lib/` yok, manifest `requiredSplitTypes="base__abi"` diyor → `INSTALL_FAILED_MISSING_SPLIT` |
+| **XAPK** (base + split'ler) | ⏳ hat hazır, paket bekleniyor | `bitlife-xapk.yml` tüm parçaları aynı anahtarla imzalayıp SAI/APKPure'un kurduğu tek dosyayı üretir |
 
-APK'nın ne yaptığı ve neyi **yapmadığı** (meslek/bölüm sınıfları derlenmiş IL2CPP
-kodudur, veri tablosu yoktur): [`docs/APK-HATTI.md`](docs/APK-HATTI.md)
+Ölçüm ve kanıt: [`apk-analiz/TANI-APK.md`](apk-analiz/TANI-APK.md) ·
+Ayrıntı: [`docs/APK-HATTI.md`](docs/APK-HATTI.md)
 
 141 MB'lık `BitLife.apk` bu çalışma alanına aktarılamıyor (100 MiB sınırı) ama
 GitHub runner'ı Drive'dan doğrudan indirebiliyor — hat bu yüzden GitHub Actions'ta
-çalışır. Modlanmış APK yalnızca kendi cihazın için üretilir; oyunun kopyası depoda
-tutulmaz.
+çalışır. Oyunun kopyası depoda tutulmaz.
 
 ## Klasörler
 

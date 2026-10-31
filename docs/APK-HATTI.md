@@ -55,14 +55,44 @@ tam olarak neyi değiştirdiğini anlatır. Hepsi gerçek dosyalarla, gerçek ru
 Yapmadığı şey (dürüstçe): yeni meslek/bölüm **sınıfı** eklemez. Bu, oyunun
 derlenmiş kodunu değiştirmeyi gerektirir; APK içindeki veri dosyalarıyla mümkün değil.
 
-## 4. Neden apktool ile yeniden derlenmiyor?
+## 4. Neden tek APK kurulamıyor? (ölçülmüş kök neden)
+
+`theboys-signed.apk` cihaza kurulamadı. Tahmin değil, `tools/apk-doctor.py`
+denetimi ve `aapt2 dump badging` ile ölçüldü:
+
+| Bulgu | Değer |
+|---|---|
+| APK içinde `lib/` | **yok** — tek bir `.so` bile yok |
+| Manifest | `android:requiredSplitTypes="base__abi"` |
+| Sonuç | Android `INSTALL_FAILED_MISSING_SPLIT` → "Uygulama yüklenemedi" |
+
+Yani elimizdeki 141 MB'lık dosya Google Play **App Bundle**'ının yalnızca
+**base split**'idir. Native kod (`libil2cpp.so`) ve yoğunluk/ABI parçaları ayrı
+split dosyalarında. Tek dosya olarak hiçbir yükleyici kuramaz — bu, modun
+sorunu değil, paketin eksik olmasının sonucu.
+
+Ölçümün ayrıntısı: [`../apk-analiz/TANI-APK.md`](../apk-analiz/TANI-APK.md)
+
+## 5. Çözüm: XAPK hattı
+
+`.github/workflows/bitlife-xapk.yml` base + config split'lerini içeren XAPK'yı alır:
+
+1. `manifest.json`'dan base'i bulur, parçaları ayırır
+2. **base'in** metin havuzunu The Boys evrenine çevirir (23 çift)
+3. **tüm parçaları aynı anahtarla** imzalar (split'ler farklı imzalanırsa kurulum reddedilir)
+4. `tools/xapk-assemble.py` ile tek bir `bitlife-theboys.xapk` üretir (SAI/APKPure kurar)
+
+Girdi: `DRIVE_XAPK_ID` (Drive'daki `.xapk` / `.apks` / `.apkm` dosyası).
+Şu an boş — tam paket bekleniyor.
+
+## 6. Neden apktool ile yeniden derlenmiyor?
 
 `apktool b` bu APK'da kaynak derleme hatasına düşüyor (34 MB `res/` + 85 bin smali
 + Unity varlıkları). Hattın yaptığı şu: orijinal APK'nın **zip'i birebir kopyalanır**,
 yalnızca değiştirilen girdiler (`global-metadata.dat`, varsa `.bak` bırakılmış veri
 dosyaları) yenisiyle değiştirilir, sonra imzalanır. dex/arsc/kaynaklar hiç ellenmez.
 
-## 5. Tekrar çalıştırma
+## 7. Tekrar çalıştırma
 
 ```bash
 # tetikleme (dal üzerinde)
@@ -77,7 +107,7 @@ python3 tools/apk-text-patch.py bitlife.apk tools/theboys-text-patch.json patche
 python3 tools/apk-verify-patch.py patched.apk tools/theboys-text-patch.json apk-analiz
 ```
 
-## 6. Çıktılar
+## 8. Çıktılar
 
 - `apk-analiz/ANALIZ.md` — APK içerik analizi
 - `apk-analiz/UNITY.md`, `CONTENT-PROBE.md`, `META-MAP.md` — içerik nerede?
