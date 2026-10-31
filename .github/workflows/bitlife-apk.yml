@@ -136,6 +136,9 @@ jobs:
           echo "== metadata literal dökümü =="
           python3 tools/metadata-literals.py dump "$RUNNER_TEMP/base.apk" apk-analiz/literals.json
           echo "rc(literals)=$?"
+          echo "== metadata tablo çözümü =="
+          python3 tools/meta-map.py "$RUNNER_TEMP/base.apk" apk-analiz
+          echo "rc(map)=$?"
           echo "== metadata dilimi (yerel çözümleme için) =="
           python3 - "$RUNNER_TEMP/base.apk" <<'PYH'
           import struct, sys, zipfile
