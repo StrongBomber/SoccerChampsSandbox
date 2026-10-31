@@ -98,23 +98,21 @@ jobs:
       - name: XAPK/APKS ise base APK'yı çıkar
         id: unpack
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
           cd "$RUNNER_TEMP"
-          if unzip -l bitlife.apk | grep -qE '\.apk$'; then
-            echo "paket içinde APK var → XAPK/APKS olarak açılıyor"
-            mkdir -p xapk && unzip -q -o bitlife.apk -d xapk
+          TOP=$(unzip -l bitlife.apk | awk 'NF>=4 && $4 ~ /^[^\/]+\.apk$/ {print $4}' | head -5)
+          echo "üst düzey .apk girdileri: ${TOP:-yok}"
+          if [ -n "$TOP" ]; then
+            echo "→ XAPK/APKS, base ayrılıyor"
+            rm -rf xapk && mkdir -p xapk && unzip -q -o bitlife.apk -d xapk
             if [ -f xapk/manifest.json ]; then
-              BASE=$(node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync("xapk/manifest.json","utf8"));(m.split_apks||[]).forEach(a=>console.log(a.id+" "+a.file));')
-              echo "$BASE"
-              F=$(echo "$BASE" | awk '$1=="base"{print $2}')
-              [ -n "$F" ] || F=$(echo "$BASE" | head -1 | awk '{print $2}')
-              cp "xapk/$F" base.apk
-              echo "base: $F"
-            else
-              F=$(find xapk -maxdepth 1 -name '*.apk' | head -1)
-              cp "$F" base.apk
-              echo "base: $F"
+              node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync("xapk/manifest.json","utf8"));(m.split_apks||[]).forEach(a=>console.log(a.id+" "+a.file));'
+              F=$(node -e 'const fs=require("fs");const m=JSON.parse(fs.readFileSync("xapk/manifest.json","utf8"));const b=(m.split_apks||[]).find(a=>a.id==="base");console.log(b?b.file:"")')
             fi
+            [ -n "${F:-}" ] || F=$(echo "$TOP" | head -1)
+            cp "xapk/$F" base.apk
+            echo "base: $F"
           else
             cp bitlife.apk base.apk
           fi
@@ -123,6 +121,7 @@ jobs:
 
       - name: APK'yı aç (apktool)
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
           cd "$RUNNER_TEMP"
           rm -rf decoded
@@ -132,12 +131,14 @@ jobs:
 
       - name: İçerik modelini çıkar
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
           node tools/apk-analyze.mjs "$RUNNER_TEMP/decoded" apk-analiz | tee apk-analiz-stdout.txt
           cp "$RUNNER_TEMP/apktool.log" apk-analiz/apktool.log || true
 
       - name: Analizi repoya işle
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
           git config user.name "bitlife-bot"
           git config user.email "bitlife-bot@users.noreply.github.com"
@@ -149,6 +150,7 @@ jobs:
       - name: The Boys içeriğini oyunun verisine yaz
         id: inject
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
           set +e
           node tools/apk-inject.mjs "$RUNNER_TEMP/decoded" apk-analiz/model.json apk-analiz
@@ -167,6 +169,7 @@ jobs:
       - name: Yeniden paketle (apktool b)
         if: ${{ steps.inject.outputs.rows != '' && steps.inject.outputs.rows != '0' }}
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
           cd "$RUNNER_TEMP"
           $APKTOOL b decoded -o unsigned.apk > build.log 2>&1 || { tail -60 build.log; exit 1; }
@@ -176,6 +179,7 @@ jobs:
       - name: İmzalama anahtarı (sabit)
         if: ${{ steps.inject.outputs.rows != '' && steps.inject.outputs.rows != '0' }}
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
           if gh release download bitlife-theboys -p mod-signing.jks -O "$RUNNER_TEMP/mod-signing.jks" 2>/dev/null; then
             echo "mevcut anahtar indirildi"
@@ -191,6 +195,7 @@ jobs:
       - name: Hizala + imzala
         if: ${{ steps.inject.outputs.rows != '' && steps.inject.outputs.rows != '0' }}
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
           cd "$RUNNER_TEMP"
           zipalign -f -p 4 unsigned.apk aligned.apk
