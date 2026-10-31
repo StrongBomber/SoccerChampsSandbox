@@ -1,32 +1,38 @@
-name: BitLife XAPK — tam paket, The Boys metin yaması
+name: BitLife — kurulabilir modlu APK (tam paket)
 
-# Neden ayrı hat: Google Play BitLife'ı App Bundle olarak dağıtır. Tek başına
-# indirilen "BitLife.apk" yalnızca base split'tir; manifest
-# requiredSplitTypes="base__abi" der ve lib/ içermez. Bu yüzden tek başına
-# kurulamaz (INSTALL_FAILED_MISSING_SPLIT).
+# Amaç: cihaza KURULABİLEN, imzası doğru, The Boys metin yaması uygulanmış tek
+# bir paket üretmek. Root gerekmez.
 #
-# Bu hat, base + config split'lerini içeren XAPK/APKS dosyasını alır:
-#   1. base'in metin havuzunu The Boys evrenine çevirir
-#   2. TÜM parçaları aynı anahtarla imzalar (kurulum için zorunlu)
-#   3. SAI/APKPure'un kurduğu tek bir XAPK üretir
+# Neden: elimizdeki 141 MB'lık BitLife.apk, Play App Bundle'ının yalnızca base
+# split'idir (içinde lib/ yok, manifest requiredSplitTypes="base__abi" der).
+# Tek başına kurulamaz → INSTALL_FAILED_MISSING_SPLIT.
 #
-# Tetikleme: trigger/bitlife-xapk/ altındaki dosyayı değiştirip push et.
-# Girdi: DRIVE_XAPK_ID (aşağıdaki env) — Drive'daki .xapk / .apks / .apkm dosyası.
+# Bu hat sırayla:
+#   1. Tam paketi edinir: DRIVE_XAPK_ID verilmişse Drive'dan, yoksa halka açık
+#      aynalardan (tools/get-package.sh) — universal APK ya da XAPK
+#   2. base'in metin havuzunu The Boys evrenine çevirir (23 çift, eşit uzunluk)
+#   3. TÜM parçaları aynı anahtarla imzalar (split kurulumu bunu şart koşar)
+#   4. apk-doctor / xapk-doctor ile kurulabilirliği ölçer
+#   5. geçerse Release'e koyar
+#
+# Tetikleme: trigger/bitlife-apk/run.txt dosyasını değiştirip push et.
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - "trigger/bitlife-xapk/**"
+      - "trigger/bitlife-apk/**"
 
 concurrency:
-  group: bitlife-xapk
+  group: bitlife-installable
   cancel-in-progress: false
 
 permissions:
   contents: write
 
 env:
+  # İsteğe bağlı: Drive'daki .xapk/.apks/.apkm dosyasının kimliği.
+  # Boşsa halka açık aynalardan otomatik indirilir.
   DRIVE_XAPK_ID: ""
 
 jobs:
@@ -46,70 +52,71 @@ jobs:
 
       - name: Araçlar (build-tools)
         run: |
+          set -eu
           BT=$(ls -d "${ANDROID_HOME:-/usr/local/lib/android/sdk}"/build-tools/* 2>/dev/null | sort -V | tail -1)
           echo "build-tools: $BT"
-          [ -n "$BT" ] && echo "$BT" >> "$GITHUB_PATH"
-          zipalign -h >/dev/null 2>&1 && echo "zipalign ok"
-          apksigner --version || echo "apksigner yok"
+          [ -n "$BT" ] && echo "$BT" >> "$GITHUB_PATH" && echo "$BT"
+          "$BT/zipalign" -h >/dev/null 2>&1 && echo "zipalign ok"
+          "$BT/apksigner" --version || echo "apksigner YOK"
+          "$BT/aapt2" version || echo "aapt2 YOK"
 
-      - name: XAPK'yı Drive'dan indir
-        id: dl
+      - name: Tam paketi edin
+        id: acquire
         run: |
           set +e
-          if [ -z "$DRIVE_XAPK_ID" ]; then
-            echo "::notice::DRIVE_XAPK_ID boş — tam paket bekleniyor"
-            echo "ok=0" >> "$GITHUB_OUTPUT"
-            exit 0
+          mkdir -p pkg apk-analiz
+          if [ -n "$DRIVE_XAPK_ID" ]; then
+            echo "kaynak: Drive ($DRIVE_XAPK_ID)"
+            bash tools/drive-fetch.sh "$DRIVE_XAPK_ID" pkg/file
+            [ -s pkg/file ] || { echo "kind=none" >> "$GITHUB_OUTPUT"; exit 0; }
+            KIND=$(python3 -c "import zipfile;z=zipfile.ZipFile('pkg/file');n=z.namelist();so=[x for x in n if x.startswith('lib/') and x.endswith('.so')];top=[x for x in n if '/' not in x and x.endswith('.apk')];print('universal' if so else ('xapk' if any(('config' in a or 'split' in a) for a in top) else 'none'))")
+            echo "$KIND" > pkg/KIND
+          else
+            bash tools/get-package.sh pkg || true
           fi
-          bash tools/drive-fetch.sh "$DRIVE_XAPK_ID" "$RUNNER_TEMP/bundle.xapk"
-          if [ $? -ne 0 ] || [ ! -s "$RUNNER_TEMP/bundle.xapk" ]; then
-            echo "::error::XAPK indirilemedi (dosya özel olabilir ya da kimlik yanlış)"
-            echo "ok=0" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "ok=1" >> "$GITHUB_OUTPUT"
-          unzip -l "$RUNNER_TEMP/bundle.xapk" | head -20
+          KIND=$(cat pkg/KIND 2>/dev/null || echo none)
+          echo "kind=$KIND" >> "$GITHUB_OUTPUT"
+          echo "--- sonda ---"; cat pkg/SONDA.md 2>/dev/null || true
+          cp pkg/SONDA.md apk-analiz/PAKET-KAYNAK.md 2>/dev/null || true
 
-      - name: Parçaları çıkar ve base'i belirle
+      - name: Parçaları hazırla
         id: parts
-        if: ${{ steps.dl.outputs.ok == '1' }}
+        if: ${{ steps.acquire.outputs.kind != 'none' && steps.acquire.outputs.kind != '' }}
         run: |
           set -eu
-          cd "$RUNNER_TEMP"
+          KIND="${{ steps.acquire.outputs.kind }}"
           rm -rf parts && mkdir parts
-          unzip -q -o bundle.xapk -d extracted
-          find extracted -name '*.apk' -maxdepth 3 -exec cp {} parts/ \;
-          echo "--- parçalar ---"; ls -l parts
-          BASE=""
-          if [ -f extracted/manifest.json ]; then
-            BASE=$(python3 -c "import json;m=json.load(open('extracted/manifest.json'));b=[a for a in m.get('split_apks',[]) if a.get('id')=='base'];print(b[0]['file'] if b else '')")
+          if [ "$KIND" = "universal" ]; then
+            cp pkg/file parts/base.apk
+          else
+            rm -rf x && mkdir x && unzip -q -o pkg/file -d x
+            find x -name '*.apk' -maxdepth 3 -exec cp {} parts/ \;
+            if [ ! -f parts/base.apk ]; then
+              B=$(python3 -c "import json;m=json.load(open('x/manifest.json'));b=[a for a in m.get('split_apks',[]) if a.get('id')=='base'];print(b[0]['file'] if b else '')" 2>/dev/null || echo "")
+              if [ -n "$B" ] && [ -f "parts/$B" ]; then mv "parts/$B" parts/base.apk; fi
+            fi
+            [ -f parts/base.apk ] || { B=$(ls parts | grep -vi 'config\|split' | head -1); [ -n "$B" ] && mv "parts/$B" parts/base.apk; }
           fi
-          [ -n "$BASE" ] || BASE=$(ls parts | grep -vi 'config\|split' | head -1)
-          echo "base: $BASE"
-          cp "parts/$BASE" parts/base.apk
-          [ "$BASE" = "base.apk" ] || rm -f "parts/$BASE"
-          echo "base=base.apk" >> "$GITHUB_OUTPUT"
+          cp parts/base.apk base-original.apk
           ls -l parts
+          echo "parça: $(ls parts | wc -l)"
 
       - name: base'i yamala (The Boys metin havuzu)
         id: patch
-        if: ${{ steps.dl.outputs.ok == '1' }}
+        if: ${{ steps.acquire.outputs.kind != 'none' && steps.acquire.outputs.kind != '' }}
         run: |
           set -eu
-          cd "$RUNNER_TEMP"
-          cp parts/base.apk base-original.apk
-          python3 "$GITHUB_WORKSPACE/tools/apk-text-patch.py" \
-            parts/base.apk "$GITHUB_WORKSPACE/tools/theboys-text-patch.json" parts/base-patched.apk apk-analiz
+          python3 tools/apk-text-patch.py parts/base.apk tools/theboys-text-patch.json parts/base-patched.apk apk-analiz
           mv parts/base-patched.apk parts/base.apk
           N=$(python3 -c 'import json;print(json.load(open("apk-analiz/text-patch.json"))["applied"])')
           echo "applied=$N" >> "$GITHUB_OUTPUT"
           echo "yamalanan çift: $N"
 
-      - name: Tüm parçaları aynı anahtarla imzala
-        if: ${{ steps.dl.outputs.ok == '1' && steps.patch.outputs.applied != '0' }}
+      - name: İmzala (tüm parçalar aynı anahtarla)
+        id: sign
+        if: ${{ steps.patch.outputs.applied != '' && steps.patch.outputs.applied != '0' }}
         run: |
           set -eu
-          cd "$RUNNER_TEMP"
           if gh release download bitlife-theboys -p mod-signing.jks -O mod-signing.jks 2>/dev/null; then
             echo "mevcut anahtar indirildi"
           else
@@ -120,39 +127,47 @@ jobs:
           rm -rf signed && mkdir signed
           for f in parts/*.apk; do
             n=$(basename "$f")
-            zipalign -P 16 -f -p 4 "$f" "signed/aligned-$n" 2>/dev/null || zipalign -f -p 4 "$f" "signed/aligned-$n"
+            zipalign -P 16 -f -p 4 "$f" "signed/_$n" 2>/dev/null || zipalign -f -p 4 "$f" "signed/_$n"
             apksigner sign --ks mod-signing.jks --ks-pass pass:theboysmod --key-pass pass:theboysmod \
               --ks-key-alias theboys --min-sdk-version 25 \
               --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled true \
-              --out "signed/$n" "signed/aligned-$n"
-            rm -f "signed/aligned-$n"
-            echo "imzalandı: $n"
+              --out "signed/$n" "signed/_$n"
+            rm -f "signed/_$n"
+            echo "imzalandı: $n ($(wc -c < "signed/$n") bayt)"
           done
-          echo "--- imza özetleri (hepsi aynı olmalı) ---"
+          echo "--- sertifika özetleri (hepsi aynı olmalı) ---"
           for f in signed/*.apk; do
-            apksigner verify --print-certs "$f" 2>/dev/null | grep -m1 "SHA-256 digest" | sed "s|^|$(basename "$f"): |"
+            echo "$(basename "$f"): $(apksigner verify --print-certs "$f" 2>/dev/null | grep -m1 'SHA-256 digest' || echo '?')"
           done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: base'i denetle
-        if: ${{ steps.dl.outputs.ok == '1' && steps.patch.outputs.applied != '0' }}
+      - name: Kurulabilirlik denetimi
+        id: doctor
+        if: ${{ steps.patch.outputs.applied != '' && steps.patch.outputs.applied != '0' }}
         run: |
           set +e
-          python3 "$GITHUB_WORKSPACE/tools/apk-doctor.py" "$RUNNER_TEMP/signed/base.apk" \
-            --reference "$RUNNER_TEMP/base-original.apk" --out apk-analiz
-          echo "rc=$?"
-          python3 "$GITHUB_WORKSPACE/tools/apk-verify-patch.py" "$RUNNER_TEMP/signed/base.apk" \
-            tools/theboys-text-patch.json apk-analiz
-
-      - name: XAPK'yı kur
-        if: ${{ steps.dl.outputs.ok == '1' && steps.patch.outputs.applied != '0' }}
-        run: |
-          set -eu
-          cd "$RUNNER_TEMP"
-          python3 "$GITHUB_WORKSPACE/tools/xapk-assemble.py" signed "$RUNNER_TEMP/bitlife-theboys.xapk"
-          sha256sum bitlife-theboys.xapk | tee bitlife-theboys.xapk.sha256
-          unzip -l bitlife-theboys.xapk
+          KIND="${{ steps.acquire.outputs.kind }}"
+          RC=0
+          if [ "$KIND" = "universal" ]; then
+            python3 tools/apk-doctor.py signed/base.apk --reference base-original.apk --out apk-analiz
+            RC=$?
+            cp signed/base.apk theboys-final.apk
+            sha256sum theboys-final.apk > theboys-final.apk.sha256
+            echo "artifact=theboys-final.apk" >> "$GITHUB_OUTPUT"
+          else
+            python3 tools/xapk-doctor.py signed apk-analiz
+            RC=$?
+            python3 tools/xapk-assemble.py signed theboys-final.xapk
+            sha256sum theboys-final.xapk > theboys-final.xapk.sha256
+            echo "artifact=theboys-final.xapk" >> "$GITHUB_OUTPUT"
+          fi
+          python3 tools/apk-verify-patch.py signed/base.apk tools/theboys-text-patch.json apk-analiz
+          echo "rc_verify=$?"
+          echo "rc=$RC" >> "$GITHUB_OUTPUT"
+          echo "doctor rc=$RC"
+          cat apk-analiz/TANI-APK.md apk-analiz/TANI-XAPK.md 2>/dev/null | head -40
+          exit 0
 
       - name: Raporu işle
         if: always()
@@ -161,34 +176,37 @@ jobs:
           git config user.name "bitlife-bot"
           git config user.email "bitlife-bot@users.noreply.github.com"
           git add -A apk-analiz
-          git commit -m "xapk(bitlife): tam paket raporu [skip ci]" || echo "değişiklik yok"
+          git commit -m "kurulum(bitlife): tam paket raporu [skip ci]" || echo "değişiklik yok"
           git pull --rebase origin "${GITHUB_REF_NAME}" || true
           git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push atlandı"
 
       - name: Release'e yükle
-        if: ${{ steps.patch.outputs.applied != '' && steps.patch.outputs.applied != '0' }}
+        if: ${{ steps.doctor.outputs.rc == '0' && steps.patch.outputs.applied != '' && steps.patch.outputs.applied != '0' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -eu
-          TAG="bitlife-theboys-xapk"
+          TAG="bitlife-theboys"
+          ART="${{ steps.doctor.outputs.artifact }}"
           cat > NOTES.md <<'EOF'
-          BitLife — The Boys metin yamasi (TAM PAKET, XAPK).
+          BitLife — The Boys metin yamasi. KURULABILIR tam paket.
 
-          Google Play BitLife'i App Bundle olarak dagittigi icin tek bir APK
-          kurulamaz (base split, requiredSplitTypes="base__abi"). Bu XAPK
-          base + config split'lerini icerir ve hepsi AYNI anahtarla imzalanmistir.
+          Root GEREKMEZ. Paket, oyunun kendi metin havuzu (global-metadata.dat
+          string literalleri) The Boys evrenine cevrilerek uretildi; tum parcalar
+          ayni anahtarla imzalandi.
 
-          Kurulum: XAPK dosyasini SAI (Split APKs Installer) veya APKPure ile ac.
-          Onceki BitLife kurulumunu kaldir (imza farkli).
+          Kurulum:
+            - Dosya .apk ise: normal kur, "bilinmeyen kaynaklara izin ver".
+            - Dosya .xapk ise: SAI (Split APKs Installer) veya APKPure ile ac.
+            - Imza farkli oldugu icin once eski BitLife'i kaldir.
 
-          - Degisen: base icindeki global-metadata.dat metin havuzu (The Boys)
-          - Degismeyen: split'lerin icerigi, oyun kodu
+          Degisen: 23 oyun metni (Vought, Homelander, Supe gonderileri).
+          Degismeyen: oyun kodu, gorseller, ses.
+          Raporlar: apk-analiz/ (TANI-APK.md / TANI-XAPK.md / METIN-YAMASI.md)
+          Yalnizca kendi cihazin icin.
           EOF
           gh release view "$TAG" >/dev/null 2>&1 || \
-            gh release create "$TAG" --title "BitLife — The Boys (XAPK, tam paket)" --notes-file NOTES.md
-          gh release upload "$TAG" \
-            "$RUNNER_TEMP/bitlife-theboys.xapk#bitlife-theboys.xapk" \
-            "$RUNNER_TEMP/bitlife-theboys.xapk.sha256#bitlife-theboys.xapk.sha256" \
-            --clobber
+            gh release create "$TAG" --title "BitLife — The Boys (kurulabilir)" --notes-file NOTES.md
+          gh release upload "$TAG" "$ART#bitlife-theboys-${ART##*.}" "$ART.sha256" --clobber
           gh release edit "$TAG" --notes-file NOTES.md
+          du -h "$ART"
