@@ -85,18 +85,35 @@ jobs:
           true
 
       - name: APK'yı Drive'dan indir
+        id: download
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
-          set -eu
+          set +e
           bash tools/drive-fetch.sh "${DRIVE_ID:-19nxS1vrw5oP56ymsumXNRUMXmgA90-ef}" "$RUNNER_TEMP/bitlife.apk"
+          RC=$?
+          if [ "$RC" != "0" ] || [ ! -s "$RUNNER_TEMP/bitlife.apk" ]; then
+            echo "::notice::Drive dosyası indirilemedi (dosya özel olabilir). Mevcut yayın korunuyor."
+            echo "ok=0" >> "$GITHUB_OUTPUT"
+            echo "Drive indirmesi başarısız — dosyayı 'bağlantıya sahip olan herkes' ile paylaşıp tekrar çalıştırın." > apk-analiz/DRIVE-DURUM.md
+            git config user.name "bitlife-bot"
+            git config user.email "bitlife-bot@users.noreply.github.com"
+            git add -A apk-analiz
+            git commit -m "durum(bitlife): Drive dosyası özel, yayın korunuyor [skip ci]" || true
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push origin "HEAD:${GITHUB_REF_NAME}" || true
+            exit 0
+          fi
+          echo "ok=1" >> "$GITHUB_OUTPUT"
           cp "$RUNNER_TEMP/bitlife.apk" "$RUNNER_TEMP/original.apk"
           ls -l "$RUNNER_TEMP/bitlife.apk"
           unzip -l "$RUNNER_TEMP/bitlife.apk" | head -30
           echo "--- en büyük 20 girdi ---"
           unzip -l "$RUNNER_TEMP/bitlife.apk" | sort -k1 -n -r | head -22
+          exit 0
 
       - name: XAPK/APKS ise base APK'yı çıkar
         id: unpack
+        if: ${{ always() && steps.download.outputs.ok == '1' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
@@ -120,6 +137,7 @@ jobs:
           echo "apk=$RUNNER_TEMP/base.apk" >> "$GITHUB_OUTPUT"
 
       - name: Unity + içerik + literal sondaları
+        if: ${{ always() && steps.download.outputs.ok == '1' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set +e
@@ -155,6 +173,7 @@ jobs:
           true
 
       - name: APK'yı aç (apktool)
+        if: ${{ always() && steps.download.outputs.ok == '1' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
@@ -165,6 +184,7 @@ jobs:
           du -sh decoded
 
       - name: İçerik modelini çıkar
+        if: ${{ always() && steps.download.outputs.ok == '1' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
@@ -172,6 +192,7 @@ jobs:
           cp "$RUNNER_TEMP/apktool.log" apk-analiz/apktool.log || true
 
       - name: Analizi repoya işle
+        if: ${{ always() && steps.download.outputs.ok == '1' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
@@ -184,6 +205,7 @@ jobs:
 
       - name: The Boys içeriğini oyunun verisine yaz
         id: inject
+        if: ${{ always() && steps.download.outputs.ok == '1' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
@@ -203,6 +225,7 @@ jobs:
 
       - name: The Boys metin yaması (oyunun kendi metin havuzu)
         id: textpatch
+        if: ${{ always() && steps.download.outputs.ok == '1' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
@@ -220,7 +243,7 @@ jobs:
           git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push atlandı"
 
       - name: Yeniden paketle (zip yaması)
-        if: ${{ always() && steps.unpack.outcome == 'success' }}
+        if: ${{ always() && steps.download.outputs.ok == '1' && steps.unpack.outcome == 'success' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
@@ -233,7 +256,7 @@ jobs:
           unzip -t unsigned.apk | tail -2
 
       - name: İmzalama anahtarı (sabit)
-        if: ${{ always() && steps.unpack.outcome == 'success' }}
+        if: ${{ always() && steps.download.outputs.ok == '1' && steps.unpack.outcome == 'success' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
@@ -249,7 +272,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Hizala + imzala
-        if: ${{ always() && steps.unpack.outcome == 'success' }}
+        if: ${{ always() && steps.download.outputs.ok == '1' && steps.unpack.outcome == 'success' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
