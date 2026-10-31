@@ -23,6 +23,7 @@ class View {
     this.minLines = 0;
     this.textSize = 0;
     this.props = {};
+    this.enabled = true;
   }
   setText(v) { this.text = String(v); return this; }
   getText() { const self = this; return { toString: () => self.editValue !== undefined ? self.editValue : self.text }; }
@@ -37,6 +38,8 @@ class View {
   getVisibility() { return this.visibility; }
   setOnClickListener(l) { this.listener = l; return this; }
   setAllCaps(v) { this.props.allCaps = v; return this; }
+  setEnabled(v) { this.enabled = !!v; return this; }
+  isEnabled() { return this.enabled; }
   setInputType(v) { this.props.inputType = v; return this; }
   setMinLines(v) { this.minLines = v; return this; }
   addView(v, lp) { this.children.push(v); if (lp) v.lp = lp; return this; }
@@ -140,7 +143,7 @@ export function createAndroidMock({ files = new Map(), density = 2.75 } = {}) {
       case "android.widget.FrameLayout$LayoutParams": return class { constructor(w, h) { this.width = w; this.height = h; } };
       case "android.widget.LinearLayout$LayoutParams": return class { constructor(w, h, weight) { this.width = w; this.height = h; this.weight = weight; } };
       case "android.view.View$OnClickListener": return class { constructor(obj) { Object.assign(this, obj); } };
-      case "android.view.Gravity": return { CENTER: { getValue: () => 17 }, TOP: { getValue: () => 48 }, RIGHT: { getValue: () => 5 } };
+      case "android.view.Gravity": return { CENTER: { getValue: () => 17 }, TOP: { getValue: () => 48 }, RIGHT: { getValue: () => 5 }, LEFT: { getValue: () => 3 }, START: { getValue: () => 8388611 } };
       case "android.graphics.Color": return { parseColor: (hex) => ({ intValue: () => 0xff000000 + parseInt(String(hex).replace("#", "").slice(-6), 16) }) };
       case "java.io.File": return { $new: (p) => new FileShim(p) };
       case "java.io.FileInputStream": return { $new: (p) => new FileInputStreamShim(p) };

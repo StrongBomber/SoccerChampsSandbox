@@ -4,7 +4,7 @@ BitLife (`com.candywriter.bitlife`) için **oyun içinde çalışan** mod. Ayrı
 ajan, oyunun kendi penceresine `◢ THE BOYS` düğmesi ekler.
 
 ```
-◢ THE BOYS  →  [ Tara ] [ The Boys ] [ İstatistik ] [ Kayıt ]
+◢ THE BOYS  →  [ Tara ] [ Evren ] [ The Boys ] [ İstatistik ] [ Kayıt ]
 ```
 
 ## Neden modlanmış APK değil?
@@ -35,6 +35,7 @@ Alternatif (paket kurmadan): `tools/theboys.sh --server /yol/frida-server-arm`
 | Sekme | İşlev |
 |---|---|
 | **Tara** | int32 / int64 / float / double değer taraması. *İlk Ara → oyunda değeri değiştir → Değişti/Aynı/Arttı/Azaldı* ile daralt → satıra dokun → **Seçilene Yaz** / **Tümüne Yaz** / **Dondur** |
+| **Evren** | **The Boys Evreni** içerik paketi: 10 karakter, 12 meslek, 30 bölüm. Karakter → meslek → bölüm akışı; seçim sonuçları hem hikâye sayacına hem **bağladığın** oyun adreslerine yazılır. Terfi, 20+ bayrak, karma'ya göre final, Kaydet/Yükle/Sıfırla |
 | **The Boys** | 10 karakter paketi. Seçili adreslere karakterin imza değerini yazar: Homelander 100 · Black Noir 100 · Billy Butcher 95 · Starlight 92 · A-Train 90 · Soldier Boy 88 · Kimiko 85 · Frenchie 78 · Hughie 70 · The Deep 60. Ayrıca **Vought parası** (999.999.999), **Vought Modu** (değeri mevcut halinde kilitler), **Compound V** (her doz +5, 100'de durur) ve **Sıralamam** (bulunan adreslerin canlı ortalamasından Homelander…The Deep sıralaması) |
 | **İstatistik** | Para · Yaş · Görünüm · Zeka · Sağlık · Mutluluk · Şöhret · Karma için doğru tip ve ipucu şablonları |
 | **Kayıt** | Oyunun kendi `files/` dizinini listeler; dosyayı okur, **yedekler**, metinse düzenleyip geri yazar; JSON kayıtta **Bayrakları bul** ile 0/1 ayarları tek dokunuşla çevirir |
@@ -50,8 +51,8 @@ Alternatif (paket kurmadan): `tools/theboys.sh --server /yol/frida-server-arm`
 ## Testler (cihaz gerekmez)
 
 ```bash
-node tests/theboys-test.mjs      # 48 iddia — ajan mantığı
-node tests/theboys-ui-test.mjs   # 39 iddia — arayüz, Android çerçeve taklidi
+node tests/theboys-test.mjs      # 87 iddia — ajan mantığı
+node tests/theboys-ui-test.mjs   # 63 iddia — arayüz, Android çerçeve taklidi
 ```
 
 Arayüz testi ajanın **gerçek kod yolunu** çalıştırır: `android.app.Activity.onCreate` hook'u →
@@ -64,10 +65,11 @@ dosyalarını listeleme/yedekleme.
 
 1. **Cihazda denenmedi.** Bu ortamda Android emülatörü/KVM yok. Kod yolu taklit katmanlarında
    yürütüldü; gerçek cihazda ilk çalıştırmada sürtünme olabilir.
-2. **Bu bir istatistik şablonu, içerik paketi değil.** "The Boys modu" burada para/sağlık/şöhret
-   gibi **değerleri** değiştirir ve karakter adlarını şablon olarak kullanır. Oyuna yeni bölüm,
-   yeni meslek veya yeni karakter **verisi** eklemez — bunun için oyunun APK'sını ve kayıt/asset
-   biçimini incelemek gerekir, o da yukarıdaki iki engel yüzünden bu ortamda mümkün değil.
+2. **"Evren" modu oyunun veri tablosuna yazmıyor.** 10 karakter, 12 meslek ve 30 bölüm
+   `bitlife/universe.js` içinde tanımlı ve ajan onları **kendi motorunda** oynatıyor; sonuç
+   oyunun canlı istatistiklerine (bellekten bağlanan adreslere) yazılıyor. BitLife'ın kendi
+   meslek/olay tablosuna satır eklemek için oyunun APK'sını ve veri biçimini görmek gerekir —
+   `docs/REA-ANALIZ.md` bu hattı anlatıyor, ama dosya 141 MB olduğu için burada çalıştırılamadı.
 3. **Telif:** The Boys karakter adları yalnızca kişisel kullanım için şablon etiketi olarak
    geçiyor; hiçbir görsel, ses veya oyun varlığı kopyalanmadı.
 4. **Yalnızca kendi cihazın ve kendi kopyan için.** Modlanmış APK dağıtımı bu projenin dışında.

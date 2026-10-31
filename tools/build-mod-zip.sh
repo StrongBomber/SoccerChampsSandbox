@@ -19,8 +19,8 @@ OUT_DIR="$ROOT/dist"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-VERSION="${MOD_VERSION:-1.1}"
-VERSION_CODE="${MOD_VERSION_CODE:-2}"
+VERSION="${MOD_VERSION:-2.0}"
+VERSION_CODE="${MOD_VERSION_CODE:-3}"
 PKG="com.candywriter.bitlife"
 PORT=27042
 
@@ -41,6 +41,7 @@ mkdir -p "$MOD/system/bin" "$MOD/agent"
 cp "$SRV" "$MOD/system/bin/frida-server"
 chmod 755 "$MOD/system/bin/frida-server"
 cp "$ROOT/bitlife/theboys-mod.js" "$MOD/agent/theboys-mod.js"
+cp "$ROOT/bitlife/universe.js" "$MOD/agent/universe.js"
 
 cat > "$MOD/module.prop" <<EOF
 id=boysmod
@@ -59,14 +60,16 @@ set_perm_recursive "$MODPATH/agent" 0 0 0755 0644
 set_perm "$MODPATH/system/bin/frida-server" 0 0 0755
 mkdir -p /data/adb/boysmod
 cp "$MODPATH/agent/theboys-mod.js" /data/adb/boysmod/theboys-mod.js
+cp "$MODPATH/agent/universe.js" /data/adb/boysmod/universe.js
 set_perm /data/adb/boysmod/theboys-mod.js 0 0 0644
-ui_print "- Ajan: /data/adb/boysmod/theboys-mod.js"
+set_perm /data/adb/boysmod/universe.js 0 0 0644
+ui_print "- Ajan: /data/adb/boysmod/theboys-mod.js + universe.js"
 EOF
 
 cat > "$MOD/post-fs-data.sh" <<EOF
 #!/system/bin/sh
 # frida-server'ı erken başlat (oyun açılmadan hazır olsun)
-MODDIR=\${MODDIR:-/data/adb/modules/wscmod}
+MODDIR=\${MODDIR:-/data/adb/modules/boysmod}
 LOG=/data/local/tmp/boysmod.log
 (
   until [ "\$(getprop sys.boot_completed)" = "1" ]; do sleep 2; done
@@ -79,7 +82,7 @@ EOF
 cat > "$MOD/service.sh" <<EOF
 #!/system/bin/sh
 # Geç önyükleme: sunucu düştüyse yeniden başlat
-MODDIR=\${MODDIR:-/data/adb/modules/wscmod}
+MODDIR=\${MODDIR:-/data/adb/modules/boysmod}
 LOG=/data/local/tmp/boysmod.log
 sleep 20
 if ! pgrep -f frida-server >/dev/null 2>&1; then
@@ -95,14 +98,14 @@ cat > "$MOD/README.md" <<EOF
 
 - **BitLife APK'sı değişmez ve bu pakette yoktur.**
 - \`frida-server\` açılışta kendiliğinden başlar (port $PORT).
-- Mod ajanı: \`/data/adb/boysmod/theboys-mod.js\`
+- Mod ajanı: \`/data/adb/boysmod/theboys-mod.js\` (önce \`universe.js\` yüklenir)
 
 ## Kullanım
 
 Telefonda oyunu aç, sonra bilgisayardan:
 
 \`\`\`bash
-frida -U -n $PKG -l /data/adb/boysmod/theboys-mod.js
+frida -U -n $PKG -l /data/adb/boysmod/universe.js -l /data/adb/boysmod/theboys-mod.js
 \`\`\`
 
 veya repodaki tek komut:

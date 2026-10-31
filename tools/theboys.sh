@@ -14,6 +14,7 @@ set -euo pipefail
 PKG="com.candywriter.bitlife"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 AGENT="$ROOT/bitlife/theboys-mod.js"
+UNIVERSE="$ROOT/bitlife/universe.js"   # The Boys Evreni içeriği (önce bu yüklenir)
 REMOTE="/data/local/tmp/frida-server"
 PORT=27042
 
@@ -57,7 +58,7 @@ echo "android sdk: ${SDK:-?}"
 echo "abilist    : ${ABI:-?}"
 echo "root       : $HAS_ROOT"
 echo "oyun       : $GAME_INSTALLED ($PKG)"
-echo "ajan       : $AGENT"
+echo "ajan       : $AGENT (+ universe.js)"
 
 if [ "$MODE" = "check" ]; then
   echo
@@ -82,8 +83,8 @@ fi
 
 if [ "$MODE" = "attach" ]; then
   echo "==> çalışan oyuna enjekte ediliyor"
-  exec frida -U -n "$PKG" -l "$AGENT"
+  exec frida -U -n "$PKG" -l "$UNIVERSE" -l "$AGENT"
 fi
 
 echo "==> BitLife THE BOYS moduyla başlatılıyor"
-exec frida -U -f "$PKG" -l "$AGENT" --no-pause
+exec frida -U -f "$PKG" -l "$UNIVERSE" -l "$AGENT" --no-pause

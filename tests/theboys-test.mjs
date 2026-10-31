@@ -14,6 +14,8 @@ import { createRuntime } from "./frida-mock.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = fs.readFileSync(path.join(ROOT, "bitlife", "theboys-mod.js"), "utf8");
+const universeSrc = fs.readFileSync(path.join(ROOT, "bitlife", "universe.js"), "utf8");
+new Function(universeSrc)();   // globalThis.BOYS_UNIVERSE
 
 const rt = createRuntime();
 const logs = [];
@@ -37,6 +39,78 @@ const check = (name, cond, detail = "") => {
 const section = (t) => console.log(`\n${t}`);
 
 /* ---------------------------------------------------------------- */
+section("İçerik paketi");
+const pack = MOD.universePack();
+check("paket yüklendi", !!pack && pack.version === 2, pack ? pack.title : "yok");
+check("10 karakter", pack.characters.length === 10);
+check("12 meslek", pack.careers.length === 12);
+check("30 bölüm", pack.chapters.length === 30, `${pack.chapters.length}`);
+check("kimlikler benzersiz", (() => {
+  const ids = [].concat(pack.characters, pack.careers, pack.chapters).map((x) => x.id);
+  return new Set(ids).size === ids.length;
+})());
+check("her bölüm geçerli mesleğe bağlı", pack.chapters.every((c) => c.career === "*" || pack.careers.some((k) => k.id === c.career)));
+check("her bölümün 2–3 seçimi var", pack.chapters.every((c) => c.choices.length >= 2 && c.choices.length <= 3));
+check("her seçimin sonucu yazılı", pack.chapters.every((c) => c.choices.every((ch) => typeof ch.outcome === "string" && ch.outcome.length > 5)));
+check("etki anahtarları geçerli", pack.chapters.every((c) => c.choices.every((ch) =>
+  Object.keys(ch.effects || {}).every((k) => MOD.UNI_STATS.indexOf(k) >= 0))));
+check("her mesleğin 4 kademesi var", pack.careers.every((c) => c.ladder.length === 4));
+check("her mesleğin bölümleri var", pack.careers.every((c) => MOD.uCareerChapters(c.id).length >= 2));
+check("her bölüm oynanabilir (bölüm→final akışı)", pack.chapters.every((c) => c.choices.length > 0));
+
+section("Meslek gereksinimleri");
+MOD.U.flags = {}; MOD.U.career = null;
+check("Seven: supe şartı", MOD.universeNeed("seven").ok === false && MOD.universeNeed("seven").missing.indexOf("supe") >= 0);
+check("Seven: supe bayrağıyla açılır", (() => { MOD.U.flags.supe = true; return MOD.universeNeed("seven").ok; })());
+check("The Boys: Vought çalışanı engellenir", (() => {
+  MOD.U.flags = { vought_insider: true };
+  const n = MOD.universeNeed("boys");
+  return n.ok === false && n.blocked.indexOf("vought_insider") >= 0;
+})());
+check("kimyager: Vought içinden olmalı", MOD.universeNeed("chemist").ok === true);
+MOD.U.flags = {};
+check("PR uzmanı herkese açık", MOD.universeNeed("vought-pr").ok === true);
+
+section("Karakter ve hikâye akışı");
+MOD.universeReset();
+const start = MOD.universeStart("butcher");
+check("karakter başladı", start.ok && MOD.U.character === "butcher");
+check("başlangıç etkileri (karma 0'da kırpılır)", MOD.U.stat.karma === 0 && MOD.U.stat.health === 15 && MOD.U.stat.money === -5000, JSON.stringify(MOD.U.stat));
+check("meslek seçimi (boys)", MOD.universeChoose("boys").ok === true);
+check("ilk bölüm boys-1", MOD.universeCurrent().id === "boys-1");
+
+const r1 = MOD.universePlay(0);
+check("seçim uygulandı", r1.ok && MOD.U.done.indexOf("boys-1") >= 0);
+check("maaş eklendi", MOD.U.stat.money > 0, `${MOD.U.stat.money}`);
+check("bayrak açıldı", MOD.U.flags.boys_member === true && MOD.U.flags.wanted === true);
+check("sıradaki bölüm boys-2", MOD.universeCurrent().id === "boys-2");
+
+const r2 = MOD.universePlay(1);
+check("terfi (2 meslek bölümü bitti)", r2.promoted === "Ekip Üyesi", r2.promoted);
+check("sonra final bölümü geldi", MOD.universeCurrent().career === "*");
+
+// bütün final bölümlerini oyna
+let guard = 0;
+while (MOD.universeCurrent() && guard++ < 20) MOD.universePlay(0);
+check("tüm bölümler bitti", MOD.universeCurrent() === null, `${MOD.U.done.length} bölüm`);
+check("final üretildi", !!MOD.U.ending && typeof MOD.U.ending.title === "string", MOD.U.ending && MOD.U.ending.title);
+check("toplam bölüm sayısı 2 + 6 final", MOD.U.done.length === 8, `${MOD.U.done.length}`);
+check("bölüm kalmayınca oynanamaz", MOD.universePlay(0).ok === false);
+
+section("Durum, kayıt ve sıfırlama (bellek yok)");
+const st = MOD.universeStatus();
+check("durum karakteri gösteriyor", st.character === "Billy Butcher" && st.characterId === "butcher", st.character);
+check("durum bölüm sayısı", st.done === 8 && st.total === 8, `${st.done}/${st.total}`);
+check("bayraklar listelendi", st.flags.indexOf("boys_member") >= 0, st.flags.join(","));
+check("günlük dolu", MOD.U.log.length > 0 && MOD.U.log.length <= 12);
+check("bağlama tarama olmadan 0", MOD.universeBind("fame") === 0);
+check("bilinmeyen istatistik bağlanmaz", MOD.universeBind("torque") === 0);
+check("kayıt: oyun dizini yoksa sessiz", MOD.universeSave().ok === false);
+check("sıfırlama her şeyi temizler", (() => {
+  MOD.universeReset();
+  return MOD.U.character === null && MOD.U.done.length === 0 && Object.keys(MOD.BINDS).length === 0;
+})());
+
 section("Ajan yükleme");
 check("MOD API yüklendi", !!MOD && typeof MOD.firstScan === "function");
 check("ajan çökmeden sonlandı", logs.some((l) => l.includes("test modu")), logs.slice(-1)[0]);

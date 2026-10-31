@@ -15,6 +15,7 @@ import { createAndroidMock } from "./android-mock.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const src = fs.readFileSync(path.join(ROOT, "bitlife", "theboys-mod.js"), "utf8");
+const universeSrc = fs.readFileSync(path.join(ROOT, "bitlife", "universe.js"), "utf8");
 
 let pass = 0;
 let fail = 0;
@@ -35,6 +36,8 @@ const ext = `/storage/emulated/0/Android/data/${PKG}/files`;
 
 const android = createAndroidMock({ files });
 const timers = [];
+
+new Function(universeSrc)();   // globalThis.BOYS_UNIVERSE
 
 const factory = new Function(
   "Process", "Module", "Interceptor", "Int64", "setInterval", "clearInterval", "setTimeout", "console", "Java",
@@ -78,27 +81,30 @@ const all = () => walk(panel);
 const byText = (t) => all().filter((n) => n.text === t);
 
 section("Sekmeler");
-const tabLabels = ["Tara", "The Boys", "İstatistik", "Kayıt"];
-check("4 sekme", tabLabels.every((t) => byText(t)[0]), tabLabels.join(","));
+const tabLabels = ["Tara", "Evren", "The Boys", "İstatistik", "Kayıt"];
+check("5 sekme", tabLabels.every((t) => byText(t)[0]), tabLabels.join(","));
 const pages = panel.children[3].children;
-check("4 sayfa", pages.length === 4, `${pages.length}`);
+check("5 sayfa", pages.length === 5, `${pages.length}`);
+const [scanPage, uniPage, boysPage, presetsPage, savePage] = pages;
+byText("Evren")[0].click();
+check("Evren sekmesi açıldı", uniPage.visibility === 0 && scanPage.visibility === 8);
 byText("The Boys")[0].click();
-check("The Boys sekmesi açıldı", pages[1].visibility === 0 && pages[0].visibility === 8);
+check("The Boys sekmesi açıldı", boysPage.visibility === 0 && uniPage.visibility === 8);
 byText("İstatistik")[0].click();
-check("İstatistik sekmesi açıldı", pages[2].visibility === 0);
+check("İstatistik sekmesi açıldı", presetsPage.visibility === 0);
 byText("Kayıt")[0].click();
-check("Kayıt sekmesi açıldı", pages[3].visibility === 0);
+check("Kayıt sekmesi açıldı", savePage.visibility === 0);
 
 section("İstatistik şablonları");
-const presetButtons = walk(pages[2]).filter((n) => n.kind === "Button");
+const presetButtons = walk(presetsPage).filter((n) => n.kind === "Button");
 check("8 istatistik düğmesi", presetButtons.length === 8, `${presetButtons.length}`);
 presetButtons[3].click(); // Zeka
-check("şablon seçimi Tara'ya attı", pages[0].visibility === 0 && pages[2].visibility === 8);
+check("şablon seçimi Tara'ya attı", scanPage.visibility === 0 && presetsPage.visibility === 8);
 check("Zeka ipucu durum satırında", /0–100/.test(BOYS.S.status.text), BOYS.S.status.text);
 
 section("Değer tarama (para)");
-const input = walk(pages[0]).find((n) => n.kind === "EditText" && n.hint === "değer");
-const btn = (label, page = pages[0]) => walk(page).find((n) => n.kind === "Button" && n.text === label);
+const input = walk(scanPage).find((n) => n.kind === "EditText" && n.hint === "değer");
+const btn = (label, page = scanPage) => walk(page).find((n) => n.kind === "Button" && n.text === label);
 rt.plant.int32(0x200, 5000);
 rt.plant.int32(0x240, 5000);
 input.editValue = "5000";
@@ -106,9 +112,78 @@ btn("İlk Ara").click();
 flush();
 check("para 2 adreste bulundu", BOYS.S.hits.length === 2, `${BOYS.S.hits.length} aday`);
 
+section("The Boys Evreni — karakter ve meslek");
+byText("Evren")[0].click();
+check("evren paketi yüklendi", !!BOYS.universePack(), BOYS.universePack() ? BOYS.universePack().title : "yok");
+const uniButtons = () => walk(uniPage).filter((n) => n.kind === "Button");
+const names = BOYS.universePack().characters.map((c) => c.name);
+const charBtns = uniButtons().filter((b) => names.indexOf(b.text) >= 0);
+check("10 karakter düğmesi", charBtns.length === 10, `${charBtns.length}`);
+check("kaydet/yükle/sıfırla her ekranda", ["Kaydet", "Yükle", "Sıfırla"].every((t) => uniButtons().some((b) => b.text === t)));
+uniButtons().find((b) => b.text === "Homelander").click();
+check("Homelander seçildi", BOYS.U.character === "homelander");
+check("başlangıç etkisi uygulandı", BOYS.U.stat.fame === 35 && BOYS.U.stat.money === 2500000, JSON.stringify(BOYS.U.stat));
+check("12 meslek listelendi", uniButtons().filter((b) => b.text.includes("·")).length >= 12, `${uniButtons().length}`);
+const sevenBtn = uniButtons().find((b) => b.text.startsWith("The Seven Üyesi"));
+check("Compound V olmadan Seven kilitli", sevenBtn.enabled === false);
+uniButtons().find((b) => b.text.startsWith("Vought PR Uzmanı")).click();
+check("Vought PR seçildi", BOYS.U.career === "vought-pr" && BOYS.U.rank === 0);
+check("bölüm 1 açıldı", /Bölüm 1/.test(BOYS.universeCurrent().title), BOYS.universeCurrent().title);
+
+section("The Boys Evreni — bölüm oynama");
+const beforeMoney = BOYS.U.stat.money;
+const choiceBtn = () => walk(uniPage).filter((n) => n.kind === "Button").find((b) => b.text.startsWith("1. "));
+check("3 seçim düğmesi", walk(uniPage).filter((n) => n.kind === "Button" && /^[123]\. /.test(n.text)).length === 3);
+choiceBtn().click();
+check("seçim uygulandı, maaş eklendi", BOYS.U.stat.money > beforeMoney, `${beforeMoney} → ${BOYS.U.stat.money}`);
+check("bölüm tamamlandı", BOYS.U.done.includes("vought-pr-1"));
+check("Vought bayrağı açıldı", BOYS.U.flags.vought_insider === true);
+check("sıradaki bölüm 2", /Bölüm 2/.test(BOYS.universeCurrent().title), BOYS.universeCurrent().title);
+
+section("The Boys Evreni — istatistik bağlama");
+// oyunda 0–100 arası bir istatistik gibi davranan iki adres hazırla
+rt.plant.int32(0x300, 42);
+rt.plant.int32(0x304, 42);
+byText("Tara")[0].click();
+input.editValue = "42";
+btn("İlk Ara").click();
+flush();
+check("tarama yeniden yapıldı", BOYS.S.hits.length === 2, `${BOYS.S.hits.length} aday`);
+byText("Evren")[0].click();
+const uniBtn = (t) => walk(uniPage).filter((n) => n.kind === "Button").find((b) => b.text === t);
+uniBtn("fame").click();
+check("fame iki adrese bağlandı", BOYS.BINDS.fame && BOYS.BINDS.fame.addrs.length === 2,
+  JSON.stringify(BOYS.BINDS.fame && BOYS.BINDS.fame.addrs.length));
+BOYS.universeApply({ fame: 10 });
+check("bağlı adreslere fame +10 yazıldı", rt.plant.readInt32(0x300) === 52 && rt.plant.readInt32(0x304) === 52,
+  `${rt.plant.readInt32(0x300)}, ${rt.plant.readInt32(0x304)}`);
+BOYS.universeApply({ fame: 200 });
+check("istatistik 100'de kırpılıyor", rt.plant.readInt32(0x300) === 100, String(rt.plant.readInt32(0x300)));
+BOYS.universeApply({ health: 5 });
+check("bağlanmayan istatistik belleğe yazılmıyor", rt.plant.readInt32(0x300) === 100 && BOYS.U.stat.health === 15,
+  `sağlık ${BOYS.U.stat.health}`);
+const prevMoney = BOYS.U.stat.money;
+walk(uniPage).filter((n) => n.kind === "Button").find((b) => b.text.startsWith("1. ")).click();
+check("para sayacı arttı", BOYS.U.stat.money > prevMoney, `${prevMoney} → ${BOYS.U.stat.money}`);
+
+section("The Boys Evreni — kaydet/yükle/sıfırla");
+walk(uniPage).filter((n) => n.kind === "Button").find((b) => b.text === "Kaydet").click();
+check("evren kaydedildi", files.has(`/data/user/0/${PKG}/files/boys-universe.json`));
+const savedDone = BOYS.U.done.length;
+walk(uniPage).filter((n) => n.kind === "Button").find((b) => b.text === "Sıfırla").click();
+check("sıfırlama temizledi", BOYS.U.done.length === 0 && BOYS.U.character === null);
+walk(uniPage).filter((n) => n.kind === "Button").find((b) => b.text === "Yükle").click();
+check("geri yüklendi", BOYS.U.done.length === savedDone && BOYS.U.character === "homelander",
+  `${BOYS.U.done.length} bölüm, karakter ${BOYS.U.character}`);
+
 section("The Boys karakter paketleri");
+byText("Tara")[0].click();
+input.editValue = "5000";
+btn("İlk Ara").click();
+flush();
 byText("The Boys")[0].click();
-const charButtons = walk(pages[1]).filter((n) => n.kind === "Button");
+byText("The Boys")[0].click();
+const charButtons = walk(boysPage).filter((n) => n.kind === "Button");
 check("10 karakter + 2 Vought + 2 güç düğmesi", charButtons.length === 14, `${charButtons.length}`);
 check("Homelander düğmesi", charButtons.some((b) => b.text.startsWith("Homelander · 100")));
 
@@ -145,15 +220,15 @@ charButtons.find((b) => b.text === "Sıralamam").click();
 check("Sıralamam 75 → Kimiko", /Kimiko/.test(BOYS.S.status.text), BOYS.S.status.text);
 
 section("Oyunun kendi kayıt dosyaları");
-const saveButtons = walk(pages[3]).filter((n) => n.kind === "Button");
+const saveButtons = walk(savePage).filter((n) => n.kind === "Button");
 check("kayıt düğmeleri", ["Yenile", "Yedekle", "Geri Yaz"].every((t) => saveButtons.some((b) => b.text === t)));
-const fileRows = walk(pages[3]).filter((n) => n.kind === "TextView" && n.text.includes("files/"));
+const fileRows = walk(savePage).filter((n) => n.kind === "TextView" && n.text.includes("files/"));
 check("BitLife dosyaları listelendi", fileRows.length === 2, fileRows.map((r) => r.text).join(" | "));
 fileRows.find((r) => r.text.includes("savegame")).click();
-const preview = walk(pages[3]).find((n) => n.kind === "EditText");
+const preview = walk(savePage).find((n) => n.kind === "EditText");
 check("dosya önizlendi", preview.getText().toString().includes("5000"));
 saveButtons.find((b) => b.text === "Bayrakları bul").click();
-const flagRows = walk(pages[3]).filter((n) => n.kind === "TextView" && /vought|premium/.test(n.text));
+const flagRows = walk(savePage).filter((n) => n.kind === "TextView" && /vought|premium/.test(n.text));
 check("bayraklar bulundu", flagRows.length === 2, flagRows.map((r) => r.text).join(" | "));
 flagRows.find((r) => r.text.startsWith("vought")).click();
 check("bayrak 0 → 1 çevrildi", preview.getText().toString().includes('"vought":1'), preview.getText().toString().slice(0, 60));

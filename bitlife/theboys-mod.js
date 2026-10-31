@@ -435,6 +435,278 @@ function stopWatcher() {
 }
 
 /* ------------------------------------------------------------------ */
+/* THE BOYS EVRENİ — içerik motoru                                     */
+/* ------------------------------------------------------------------ */
+
+const UNI_FILE = "boys-universe.json";
+const UNI_STATS = ["money", "health", "happy", "fame", "karma", "smarts", "looks"];
+
+/** Ajanla birlikte yüklenen içerik paketi (bitlife/universe.js). */
+function universePack() {
+  const p = globalThis.BOYS_UNIVERSE;
+  if (!p || !Array.isArray(p.characters) || !Array.isArray(p.careers) || !Array.isArray(p.chapters)) return null;
+  return p;
+}
+
+/** Evren oyun durumu (kayıt dosyasına yazılır). */
+const U = {
+  character: null,
+  career: null,
+  done: [],
+  flags: {},
+  stat: { money: 0, health: 0, happy: 0, fame: 0, karma: 0, smarts: 0, looks: 0 },
+  log: [],
+  rank: 0,
+  ending: null,
+};
+
+/** Hangi istatistik hangi bellek adreslerine bağlı. */
+const BINDS = {};
+
+const uChar = (id) => (universePack() || { characters: [] }).characters.find((c) => c.id === id) || null;
+const uCareer = (id) => (universePack() || { careers: [] }).careers.find((c) => c.id === id) || null;
+
+function uCareerChapters(careerId) {
+  const pack = universePack();
+  if (!pack) return [];
+  return pack.chapters.filter((c) => c.career === careerId);
+}
+
+function uGlobalChapters() {
+  const pack = universePack();
+  if (!pack) return [];
+  return pack.chapters.filter((c) => c.career === "*");
+}
+
+/** Meslek gereksinimleri: gereken bayraklar var mı, yasaklı bayrak var mı? */
+function universeNeed(careerId) {
+  const c = uCareer(careerId);
+  if (!c) return { ok: false, missing: ["meslek yok"] };
+  const missing = (c.need || []).filter((f) => !U.flags[f]);
+  const blocked = (c.blockedBy || []).filter((f) => U.flags[f]);
+  return { ok: missing.length === 0 && blocked.length === 0, missing, blocked };
+}
+
+/** Bir etkiyi hem hikâye sayacına hem bağlı bellek adreslerine uygular. */
+function universeApply(effects, opts) {
+  const write = !opts || opts.write !== false;
+  const applied = {};
+  Object.keys(effects || {}).forEach((k) => {
+    if (UNI_STATS.indexOf(k) < 0) return;
+    const d = Number(effects[k]);
+    if (!Number.isFinite(d)) return;
+    applied[k] = d;
+    if (k === "money") U.stat.money += d;
+    else U.stat[k] = Math.max(0, Math.min(100, (U.stat[k] || 0) + d));
+
+    const bind = BINDS[k];
+    if (!write || !bind) return;
+    const t = TYPES[bind.type] || TYPES.int32;
+    bind.addrs.forEach((addr) => {
+      try {
+        const cur = t.read(addr);
+        if (!Number.isFinite(cur)) return;
+        let next = cur + d;
+        if (k !== "money") next = Math.max(0, Math.min(100, next));
+        t.write(addr, next);
+      } catch (_) { /* adres gitti */ }
+    });
+  });
+  return applied;
+}
+
+/** Tara sekmesindeki bulguları bir istatistiğe bağlar. */
+function universeBind(stat) {
+  if (UNI_STATS.indexOf(stat) < 0) return 0;
+  const hits = S.selected ? [S.selected] : S.hits;
+  if (!hits || !hits.length) return 0;
+  const addrs = hits.slice(0, 64).map((h) => h.addr);
+  BINDS[stat] = { addrs, type: S.type };
+  return addrs.length;
+}
+
+/** Karakteri seçer ve başlangıç etkilerini uygular. */
+function universeStart(charId) {
+  if (!universePack()) return { ok: false, msg: "içerik paketi yok (universe.js yüklenmedi)" };
+  const c = uChar(charId);
+  if (!c) return { ok: false, msg: "karakter bulunamadı" };
+  U.character = c.id;
+  universeApply(c.start || {});
+  U.log.unshift(`${c.name} olarak başladın.`);
+  return { ok: true, msg: `${c.name}: ${c.perk}` };
+}
+
+/** Mesleği seçer; gereksinim karşılanmıyorsa nedeni döner. */
+function universeChoose(careerId) {
+  const c = uCareer(careerId);
+  if (!c) return { ok: false, msg: "meslek bulunamadı" };
+  const need = universeNeed(careerId);
+  if (!need.ok) {
+    const parts = [];
+    if (need.missing.length) parts.push("gerekli: " + need.missing.join(", "));
+    if (need.blocked.length) parts.push("engel: " + need.blocked.join(", "));
+    return { ok: false, msg: `${c.name} açılmadı (${parts.join(" · ")})` };
+  }
+  U.career = c.id;
+  U.rank = 0;
+  U.done = [];
+  U.ending = null;
+  U.log.unshift(`${c.name} — ${c.ladder[0]}`);
+  return { ok: true, msg: `${c.name}: ${c.ladder[0]} · yıllık ${c.pay}`, career: c };
+}
+
+/** Sıradaki bölüm: önce mesleğin bölümleri, sonra sezon finalleri. */
+function universeCurrent() {
+  if (!U.career) return null;
+  const own = uCareerChapters(U.career).filter((c) => U.done.indexOf(c.id) < 0);
+  if (own.length) return own[0];
+  const glob = uGlobalChapters().filter((c) => U.done.indexOf(c.id) < 0);
+  if (glob.length) return glob[0];
+  return null;
+}
+
+/** Tüm bölümler bittiğinde kapanış metni. */
+function universeEnding() {
+  const karma = U.stat.karma;
+  let title = "Final";
+  let text = "";
+  if (U.flags.vought_face) {
+    title = "Vought'un Yeni Yüzü";
+    text = "Spot ışığı sende. Gölgende 41 isim var ve hiçbiri konuşmuyor.";
+  } else if (U.flags.truth_out) {
+    title = "Gerçek Ortaya Çıktı";
+    text = "Vought çöktü, sen halk kahramanı oldun. Bazı geceler hâlâ kameralardan kaçıyorsun.";
+  } else if (U.flags.retired) {
+    title = "Sessiz Bir Hayat";
+    text = "Küçük bir kasaba, kapalı bir telefon. Bu da bir zafer.";
+  } else if (karma >= 30) {
+    title = "Vicdanını Korudun";
+    text = "Sistem seni kıramadı. Kariyerin parlak değil ama uykun temiz.";
+  } else if (karma <= -30) {
+    title = "Karanlık Taraf Kazandı";
+    text = "Herkes seni tanıyor, kimse sana güvenmiyor. Vought bunu sever.";
+  } else {
+    title = "Gri Bölge";
+    text = "Ne kahraman ne düşman. The Boys Evreni'nde ayakta kalanlar genelde böyle olur.";
+  }
+  U.ending = { title, text, karma, rank: U.rank };
+  return U.ending;
+}
+
+/** Sıradaki bölümün seçimini uygular. */
+function universePlay(choiceIndex) {
+  const chapter = universeCurrent();
+  if (!chapter) {
+    const end = universeEnding();
+    return { ok: false, msg: "bölüm kalmadı", ending: end };
+  }
+  const choice = (chapter.choices || [])[choiceIndex];
+  if (!choice) return { ok: false, msg: "seçim yok" };
+
+  const career = uCareer(U.career);
+  const pay = career ? Math.round((career.pay * (1 + 0.25 * U.rank)) / 12) : 0;
+  const effects = Object.assign({}, choice.effects || {});
+  if (pay) effects.money = (effects.money || 0) + pay;
+
+  Object.keys(choice.flags || {}).forEach((f) => { U.flags[f] = !!choice.flags[f]; });
+  universeApply(effects);
+  if (U.done.indexOf(chapter.id) < 0) U.done.push(chapter.id);
+
+  // mesleğin kendi bölümleri bittiyse terfi
+  const own = uCareerChapters(U.career);
+  const ownDone = own.every((c) => U.done.indexOf(c.id) >= 0);
+  let promoted = null;
+  if (ownDone && career && U.rank < career.ladder.length - 1) {
+    U.rank++;
+    promoted = career.ladder[U.rank];
+  }
+
+  U.log.unshift(`${chapter.title.replace(/^Bölüm \d+ · /, "")}: ${choice.outcome}`);
+  if (U.log.length > 12) U.log.length = 12;
+
+  const next = universeCurrent();
+  return {
+    ok: true,
+    outcome: choice.outcome,
+    effects,
+    promoted,
+    next: next ? next.title : null,
+    ending: next ? null : universeEnding(),
+  };
+}
+
+/** Durum özeti (arayüz ve testler için). */
+function universeStatus() {
+  const c = uChar(U.character);
+  const car = uCareer(U.career);
+  const cur = universeCurrent();
+  return {
+    character: c ? c.name : null,
+    characterId: U.character,
+    career: car ? car.name : null,
+    careerId: U.career,
+    rank: car ? car.ladder[U.rank] : null,
+    chapter: cur ? cur.title : null,
+    done: U.done.length,
+    total: car ? uCareerChapters(car.id).length + uGlobalChapters().length : uGlobalChapters().length,
+    flags: Object.keys(U.flags).filter((k) => U.flags[k]),
+    stat: Object.assign({}, U.stat),
+    binds: Object.keys(BINDS),
+    ending: U.ending,
+    log: U.log.slice(0, 6),
+  };
+}
+
+function universeFile() {
+  const dirs = appDirs();
+  if (!dirs.length) return null;
+  return dirs[0][0] + "/" + UNI_FILE;
+}
+
+function universeSave() {
+  const path = universeFile();
+  if (!path) return { ok: false, msg: "oyun dizini yok" };
+  const data = {
+    v: 2,
+    character: U.character,
+    career: U.career,
+    done: U.done,
+    flags: U.flags,
+    stat: U.stat,
+    log: U.log,
+    rank: U.rank,
+  };
+  const ok = saveWrite(path, JSON.stringify(data));
+  return { ok: !!ok, path };
+}
+
+function universeLoad() {
+  const path = universeFile();
+  if (!path) return { ok: false, msg: "oyun dizini yok" };
+  const raw = saveRead(path, 65536);
+  if (!raw || raw.indexOf("HATA") === 0) return { ok: false, msg: "kayıt yok" };
+  let data;
+  try { data = JSON.parse(raw); } catch (_) { return { ok: false, msg: "kayıt bozuk" }; }
+  U.character = data.character || null;
+  U.career = data.career || null;
+  U.done = Array.isArray(data.done) ? data.done.slice() : [];
+  U.flags = data.flags || {};
+  U.stat = Object.assign({ money: 0, health: 0, happy: 0, fame: 0, karma: 0, smarts: 0, looks: 0 }, data.stat || {});
+  U.log = Array.isArray(data.log) ? data.log.slice(0, 12) : [];
+  U.rank = data.rank || 0;
+  U.ending = null;
+  return { ok: true, path, done: U.done.length };
+}
+
+function universeReset() {
+  U.character = null; U.career = null; U.done = []; U.flags = {};
+  U.stat = { money: 0, health: 0, happy: 0, fame: 0, karma: 0, smarts: 0, looks: 0 };
+  U.log = []; U.rank = 0; U.ending = null;
+  Object.keys(BINDS).forEach((k) => { delete BINDS[k]; });
+  return true;
+}
+
+/* ------------------------------------------------------------------ */
 /* arayüz                                                              */
 /* ------------------------------------------------------------------ */
 
@@ -505,8 +777,11 @@ function buildUi() {
     Object.keys(pages).forEach((k) => pages[k].setVisibility(k === id ? 0 : 8));
     Object.keys(tabBtns).forEach((k) => tabBtns[k].setTextColor(color(k === id ? "#c4b5fd" : "#7c7c92")));
   };
-  ["scan", "boys", "presets", "save"].forEach((id) => {
-    const label = id === "scan" ? "Tara" : id === "boys" ? "The Boys" : id === "presets" ? "İstatistik" : "Kayıt";
+  ["scan", "universe", "boys", "presets", "save"].forEach((id) => {
+    const label = id === "scan" ? "Tara"
+      : id === "universe" ? "Evren"
+      : id === "boys" ? "The Boys"
+      : id === "presets" ? "İstatistik" : "Kayıt";
     tabBtns[id] = button(tabsRow, label, () => showTab(id));
     tabBtns[id].setTextSize(10);
   });
@@ -644,6 +919,134 @@ function buildUi() {
     if (S.hits.length > shown.length) list.addView(text(`… +${S.hits.length - shown.length} adres`, 9, "#8fa2b1"));
     if (!S.hits.length) list.addView(text("sonuç yok — oyunda değeri değiştirip tekrar daralt", 9, "#8fa2b1"));
   });
+
+  /* ---------------- EVREN (The Boys içerik paketi) ---------------- */
+  const uniPage = makePage("universe");
+  const uniBody = box(LinearLayout.VERTICAL.getValue());
+  uniPage.addView(text("The Boys Evreni", 11, "#ffd9a0"));
+
+  const uniFooter = () => {
+    const ctl = box(LinearLayout.HORIZONTAL.getValue());
+    button(ctl, "Kaydet", () => {
+      const r = universeSave();
+      setStatus(r.ok ? `kaydedildi: ${r.path}` : r.msg);
+    });
+    button(ctl, "Yükle", () => {
+      const r = universeLoad();
+      setStatus(r.ok ? `yüklendi: ${r.done} bölüm` : r.msg);
+      UI.renderUniverse();
+    });
+    button(ctl, "Sıfırla", () => {
+      universeReset();
+      setStatus("evren sıfırlandı");
+      UI.renderUniverse();
+    });
+    uniBody.addView(ctl);
+  };
+
+  const renderUniverse = (UI.renderUniverse = function () {
+    uniBody.removeAllViews();
+    const pack = universePack();
+    if (!pack) {
+      uniBody.addView(text("İçerik paketi yüklenmedi (bitlife/universe.js).", 8, "#e0a13f"));
+      uniFooter();
+      return;
+    }
+    const st = universeStatus();
+    uniBody.addView(text(UNI_STATS.map((k) => `${k}:${st.stat[k] > 0 ? "+" : ""}${st.stat[k]}`).join("  "), 8, "#8fa2b1"));
+
+    if (!st.characterId) {
+      uniBody.addView(text("Karakter seç:", 9, "#c4b5fd"));
+      pack.characters.forEach((c) => {
+        const row = box(LinearLayout.HORIZONTAL.getValue());
+        const b = button(row, c.name, () => {
+          const r = universeStart(c.id);
+          setStatus(r.msg);
+          renderUniverse();
+        });
+        b.setTextSize(9);
+        row.addView(text(c.tag, 8, "#7c7c92"), LP.$new(dp(90), -2, 0));
+        uniBody.addView(row);
+        uniBody.addView(text(c.perk, 8, "#6f6f85"));
+      });
+      uniFooter();
+      return;
+    }
+
+    const char = uChar(st.characterId);
+    uniBody.addView(text(`${char.name} · ${char.perk}`, 8, "#9a9ab0"));
+    if (st.binds.length) uniBody.addView(text(`Bağlı: ${st.binds.join(", ")}`, 8, "#7fd1a8"));
+
+    if (!st.careerId) {
+      uniBody.addView(text("Meslek seç:", 9, "#c4b5fd"));
+      pack.careers.forEach((car) => {
+        const need = universeNeed(car.id);
+        const row = box(LinearLayout.HORIZONTAL.getValue());
+        const b = button(row, `${car.name} · ${car.pay}`, () => {
+          const r = universeChoose(car.id);
+          setStatus(r.msg);
+          renderUniverse();
+        });
+        b.setTextSize(9);
+        if (!need.ok) { b.setEnabled(false); b.setTextColor(color("#5c5c6e")); }
+        const tag = need.ok ? car.employer : `kilitli: ${need.missing.concat(need.blocked).join("/")}`;
+        row.addView(text(tag, 7, need.ok ? "#7c7c92" : "#a86a6a"), LP.$new(dp(94), -2, 0));
+        uniBody.addView(row);
+      });
+      uniFooter();
+      return;
+    }
+
+    const car = uCareer(st.careerId);
+    uniBody.addView(text(`${car.name} · ${st.rank} · ${U.done.length}/${st.total} bölüm`, 9, "#ffd9a0"));
+    uniBody.addView(text(`yıllık ${car.pay} · istatistikleri Tara'da bulup "Bağla" ile yazdır`, 8, "#6f6f85"));
+
+    for (let i = 0; i < UNI_STATS.length; i += 4) {
+      const bindRow = box(LinearLayout.HORIZONTAL.getValue());
+      UNI_STATS.slice(i, i + 4).forEach((k) => {
+        const b = button(bindRow, k, () => {
+          const n = universeBind(k);
+          setStatus(n ? `${k}: ${n} adres bağlandı` : "önce Tara'da değer ara");
+          renderUniverse();
+        });
+        b.setTextSize(8);
+      });
+      uniBody.addView(bindRow);
+    }
+
+    const chapter = universeCurrent();
+    if (chapter) {
+      uniBody.addView(text(chapter.title, 10, "#e9e4fb"));
+      const bodyText = text(chapter.text, 8, "#a9c2d3");
+      bodyText.setPadding(dp(2), dp(3), dp(2), dp(4));
+      uniBody.addView(bodyText);
+      chapter.choices.forEach((ch, i) => {
+        const row = box(LinearLayout.VERTICAL.getValue());
+        const b = button(row, `${i + 1}. ${ch.text}`, () => {
+          const r = universePlay(i);
+          if (!r.ok) { setStatus(r.msg); return; }
+          setStatus(r.outcome + (r.promoted ? ` (terfi: ${r.promoted})` : ""));
+          renderUniverse();
+        });
+        b.setTextSize(9);
+        b.setGravity(Gravity.LEFT.getValue());
+        uniBody.addView(row);
+      });
+      uniBody.addView(text("Seçimler hem hikâye sayacına hem bağlı adreslere yazılır.", 7, "#6f6f85"));
+    } else {
+      const end = U.ending || universeEnding();
+      uniBody.addView(text(`FİNAL · ${end.title}`, 11, "#ffd9a0"));
+      uniBody.addView(text(end.text, 8, "#a9c2d3"));
+    }
+
+    if (U.log.length) uniBody.addView(text("Son olaylar:", 8, "#c4b5fd"));
+    U.log.slice(0, 4).forEach((l) => uniBody.addView(text(`• ${l}`, 8, "#8fa2b1")));
+
+    uniFooter();
+  });
+
+  uniPage.addView(uniBody);
+  renderUniverse();
 
   /* ---------------- THE BOYS ---------------- */
   const boysPage = makePage("boys");
@@ -874,7 +1277,7 @@ function buildUi() {
     onClick() {
       S.visible = !S.visible;
       panel.setVisibility(S.visible ? 0 : 8);
-      if (S.visible) { renderResults(); renderSaves(); }
+      if (S.visible) { renderResults(); renderSaves(); UI.renderUniverse(); }
     },
   }));
 
@@ -947,6 +1350,9 @@ globalThis.BOYS = {
   S, TYPES, TYPE_ORDER, PRESETS, CHARACTERS, VOUGHT_MONEY,
   firstScan, nextScan, writeOne, writeAll, freezeAll,
   saveList, saveRead, saveWrite, saveBackup,
+  UNI_STATS, U, BINDS, universePack, universeStart, universeChoose, universeNeed,
+  universeCurrent, universePlay, universeEnding, universeStatus, universeApply,
+  universeBind, universeSave, universeLoad, universeReset, uCareerChapters, uGlobalChapters,
   findNumberFields, findFlags, setByPath, isTargetActivity, liveValues, compoundV, rankFor, RANKS,
   candidateRanges, startWatcher, stopWatcher,
 };

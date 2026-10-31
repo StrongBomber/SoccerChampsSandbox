@@ -37,6 +37,9 @@ jobs:
       - name: Arayüz testi (Android çerçeve taklidi)
         run: node tests/theboys-ui-test.mjs
 
+      - name: REA içerik tarayıcı testi
+        run: node tests/rea-scan-test.mjs
+
       - name: frida-server indir (android-arm)
         id: fdi
         run: |
@@ -52,7 +55,7 @@ jobs:
         env:
           FDI_SERVER_URL: ${{ steps.fdi.outputs.url }}
           MOD_VERSION: "1.0"
-          MOD_VERSION_CODE: "1"
+          MOD_VERSION_CODE: "3"
         run: bash tools/build-mod-zip.sh
 
       - name: Paketi doğrula
@@ -61,20 +64,30 @@ jobs:
           Z=dist/theboys-mod-magisk.zip
           test -s "$Z"
           unzip -l "$Z" | tee /tmp/list.txt
-          for f in module.prop customize.sh post-fs-data.sh service.sh agent/theboys-mod.js system/bin/frida-server; do
+          for f in module.prop customize.sh post-fs-data.sh service.sh agent/theboys-mod.js agent/universe.js system/bin/frida-server; do
             unzip -l "$Z" "$f" | grep -q "$f" || { echo "eksik: $f" >&2; exit 1; }
           done
           unzip -p "$Z" module.prop | grep -q "id=boysmod"
           unzip -p "$Z" agent/theboys-mod.js | grep -q "THE BOYS MOD"
-          # ajan dosyası repodakiyle birebir aynı olmalı
+          unzip -p "$Z" agent/universe.js | grep -q "BOYS_UNIVERSE"
+          # ajan ve içerik paketi repodakiyle birebir aynı olmalı
           unzip -p "$Z" agent/theboys-mod.js > /tmp/agent.js
           cmp /tmp/agent.js bitlife/theboys-mod.js
+          unzip -p "$Z" agent/universe.js > /tmp/universe.js
+          cmp /tmp/universe.js bitlife/universe.js
+          # içerik bütünlüğü: 30 bölüm, 12 meslek, 10 karakter
+          node -e 'new Function(require("fs").readFileSync("/tmp/universe.js","utf8"))();
+            const u = globalThis.BOYS_UNIVERSE;
+            console.log("karakter", u.characters.length, "meslek", u.careers.length, "bölüm", u.chapters.length);
+            if (u.characters.length !== 10 || u.careers.length !== 12 || u.chapters.length !== 30) process.exit(1);'
+
           file_size=$(unzip -p "$Z" system/bin/frida-server | wc -c)
           echo "frida-server: $file_size bayt"
           test "$file_size" -gt 1000000 || { echo "frida-server çok küçük" >&2; exit 1; }
           sha256sum "$Z" | tee dist/sha.txt
           unzip -l "$Z" > dist/MOD-CONTENTS.txt
           cp bitlife/theboys-mod.js dist/theboys-mod.js
+          cp bitlife/universe.js dist/universe.js
 
       - name: Artifact yükle
         uses: actions/upload-artifact@v4
@@ -85,6 +98,7 @@ jobs:
             dist/theboys-mod-magisk.zip.sha256
             dist/MOD-CONTENTS.txt
             dist/theboys-mod.js
+            dist/universe.js
 
       - name: Release'e ekle
         env:
@@ -100,11 +114,12 @@ jobs:
             echo ""
             echo "- Icerik: frida-server (android-arm) + The Boys ajani + acilista otomatik baslatma"
             echo "- Kurulum: Magisk uzerinden zip'i flash et, oyunu ac, PC'den tools/theboys.sh --attach"
-            echo "- Menu: Tara (para/yas/gorunum/zeka/saglik...) / The Boys (10 karakter, Vought parasi, Vought Modu,"
-            echo "  Compound V +5, Siralamam) / Istatistik (8 sablon) / Kayit (dosyalar + 0-1 bayraklar)"
+            echo "- Menu: Tara (para/yas/gorunum/zeka/saglik...) / Evren (30 bolum, 12 meslek, 10 karakter)"
+            echo "  / The Boys (10 karakter, Vought parasi, Vought Modu, Compound V +5, Siralamam)"
+            echo "  / Istatistik (8 sablon) / Kayit (dosyalar + 0-1 bayraklar)"
             echo "- Oyun APK'si, paket adi ve imzasi korunur; pakette oyun kodu YOKTUR"
             echo ""
-            echo "Ayrica: theboys-mod.js tek basina (frida -U -f com.candywriter.bitlife -l theboys-mod.js)"
+            echo "Ayrica: frida -U -f com.candywriter.bitlife -l universe.js -l theboys-mod.js"
           } > NOTES.md
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --title "The Boys Mod (BitLife) - runtime paket" --notes-file NOTES.md
@@ -113,6 +128,7 @@ jobs:
             dist/theboys-mod-magisk.zip \
             dist/theboys-mod-magisk.zip.sha256 \
             dist/MOD-CONTENTS.txt \
-            dist/theboys-mod.js --clobber
+            dist/theboys-mod.js \
+            dist/universe.js --clobber
           gh release edit "$TAG" --notes-file NOTES.md
           gh release view "$TAG" --json assets --jq '.assets[] | "\(.name)  \(.size) bayt"'
