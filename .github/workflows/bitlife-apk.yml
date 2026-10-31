@@ -214,13 +214,34 @@ jobs:
             echo "::warning::Oyunun veri dosyalarında enjekte edilebilir içerik tablosu bulunamadı"
           fi
 
+      - name: The Boys metin yaması (oyunun kendi metin havuzu)
+        id: textpatch
+        run: |
+          exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
+          set -eu
+          python3 "$GITHUB_WORKSPACE/tools/apk-text-patch.py" \
+            "$RUNNER_TEMP/base.apk" tools/theboys-text-patch.json \
+            "$RUNNER_TEMP/patched.apk" apk-analiz
+          N=$(python3 -c 'import json;print(json.load(open("apk-analiz/text-patch.json"))["applied"])')
+          echo "yamalanan=$N"
+          echo "applied=$N" >> "$GITHUB_OUTPUT"
+          git config user.name "bitlife-bot"
+          git config user.email "bitlife-bot@users.noreply.github.com"
+          git add -A apk-analiz
+          git commit -m "yama(bitlife): The Boys metin yaması ($N çift) [skip ci]" || echo "değişiklik yok"
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push atlandı"
+
       - name: Yeniden paketle (zip yaması)
         if: ${{ always() && steps.unpack.outcome == 'success' }}
         run: |
           exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
           cd "$RUNNER_TEMP"
-          python3 "$GITHUB_WORKSPACE/tools/apk-repack.py" base.apk decoded unsigned.apk
+          SRC=base.apk
+          [ -f patched.apk ] && SRC=patched.apk
+          echo "taban: $SRC"
+          python3 "$GITHUB_WORKSPACE/tools/apk-repack.py" "$SRC" decoded unsigned.apk
           ls -l unsigned.apk
           unzip -t unsigned.apk | tail -2
 
@@ -257,21 +278,30 @@ jobs:
           sha256sum theboys-signed.apk | tee theboys-signed.apk.sha256
 
       - name: Release'e yükle
-        if: ${{ steps.inject.outputs.rows != '' && steps.inject.outputs.rows != '0' }}
+        if: ${{ always() && steps.textpatch.outputs.applied != '' && steps.textpatch.outputs.applied != '0' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -eu
           TAG="bitlife-theboys"
           cat > NOTES.md <<'EOF'
-          BitLife APK — The Boys modu.
-          Oyunun kendi veri dosyalari degistirildi: apktool ile acildi, icerik
-          tablolarina The Boys satirlari yazildi, yeniden paketlendi ve imzalandi.
+          BitLife APK — The Boys metin yamasi.
 
-          - Eklenen icerik: 12 meslek, 30 bolum, 10 karakter (tablo bulunduysa)
-          - Ayrintili rapor: depodaki apk-analiz/ANALIZ.md ve apk-analiz/INJEKSIYON.md
+          Bu APK, Drive'dan alinan gercek BitLife kurulumundan (com.candywriter.bitlife)
+          uretildi. APK apktool ile acildi, icerik modeli cikarildi, oyunun kendi metin
+          havuzu (global-metadata.dat string literalleri) The Boys evrenine cevrildi,
+          yeniden paketlendi ve sabit anahtarla imzalandi.
+
+          - Degisen sey: oyunun gosterdigi METINLER (meslek/olay cumleleri, Vought,
+            Homelander, Supe gonderileri). Her yama birebir ayni bayt uzunlugundadir,
+            bu yuzden literal tablosu ve dosya yapisi bozulmaz.
+          - Degismeyen sey: meslek ve olay SINIFLARI. BitLife'ta meslekler derlenmis
+            IL2CPP siniflaridir (ornek: AstronautJobPack); yeni meslek/bolum eklemek
+            yeniden derleme gerektirir, veri tablosu yok.
+          - Ayrintili rapor: depodaki apk-analiz/ (METIN-YAMASI.md, ANALIZ.md,
+            CONTENT-PROBE.md, UNITY.md)
           - Imza farkli oldugu icin kurmadan once orijinal BitLife'i kaldir.
-          - Yalnizca kendi cihazin icin.
+          - Yalnizca kendi cihazin icin. Oyun dosyalari sende kaliyor.
           EOF
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --title "BitLife — The Boys modu (APK)" --notes-file NOTES.md
@@ -291,6 +321,9 @@ jobs:
             echo ""
             echo "- APK: $(wc -c < "$RUNNER_TEMP/base.apk" 2>/dev/null || echo '?') bayt"
             echo "- Enjekte edilen satır: ${{ steps.inject.outputs.rows }}"
+            echo "- Metin yaması: ${{ steps.textpatch.outputs.applied }} çift"
+            echo ""
+            cat apk-analiz/METIN-YAMASI.md 2>/dev/null | head -40 || echo "metin yaması raporu yok"
             echo ""
             cat apk-analiz/ANALIZ.md 2>/dev/null | head -60 || echo "analiz yok"
             echo ""

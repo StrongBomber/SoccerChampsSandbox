@@ -1,0 +1,94 @@
+[
+  {
+    "find": "I accepted the job offer.",
+    "replace": "I joined the Vought team."
+  },
+  {
+    "find": "I was unable to negotiate a higher salary.",
+    "replace": "I failed to talk Vought into more pay.    "
+  },
+  {
+    "find": "You were sent to the principal's office!",
+    "replace": "You were sent to Homelander's office!   "
+  },
+  {
+    "find": "Your teacher sent you to the principal's office!",
+    "replace": "Vought HR sent you to Homelander's office!      "
+  },
+  {
+    "find": "The contractors botched the job and made out with all of my money!",
+    "replace": "The Boys botched the mission and ran off with all of my money!    "
+  },
+  {
+    "find": "The contractors botched the job and refunded me ",
+    "replace": "The Boys botched the job and refunded me        "
+  },
+  {
+    "find": "My contractors came in over-budget by ",
+    "replace": "My Vought team came in over-budget by "
+  },
+  {
+    "find": "My contractors gave up on the project! ",
+    "replace": "My Vought team gave up on the project! "
+  },
+  {
+    "find": "I began training to be an astronaut at the ",
+    "replace": "I began training to be a Supe at the       "
+  },
+  {
+    "find": "A coworker told everyone you slept with the boss.",
+    "replace": "A Vought coworker told everyone about you.       "
+  },
+  {
+    "find": "I was rejected on account of not having a job.",
+    "replace": "I was rejected by Vought for being no one.    "
+  },
+  {
+    "find": "No one else responded to your job listing.",
+    "replace": "No Vought agent answered your listing.    "
+  },
+  {
+    "find": "I have been promoted to {0} with a salary of {1}.",
+    "replace": "I have been promoted to {0} at Vought for {1}.   "
+  },
+  {
+    "find": "I negotiated for a higher starting salary of <amount>.",
+    "replace": "I negotiated a Vought-level salary of <amount>.       "
+  },
+  {
+    "find": "I began working harder in my job as {0}.",
+    "replace": "I began working harder at Vought as {0}."
+  },
+  {
+    "find": "I began working harder in my job as {0} for {1}.",
+    "replace": "I began working harder at Vought as {0} for {1}."
+  },
+  {
+    "find": "I was hired for the position of <position> at <record-label> with a salary of <amount>.",
+    "replace": "I was hired by Vought for the role of <position> at <record-label> for <amount>.       "
+  },
+  {
+    "find": "I tried to negotiate for a higher salary, but they refused.",
+    "replace": "I tried to negotiate a Vought salary, but they refused.    "
+  },
+  {
+    "find": "I attempted to seduce my {0}, {1}, in order to keep my job but {2} rejected me.",
+    "replace": "I attempted to seduce my {0}, {1}, to stay at Vought but {2} rejected me.      "
+  },
+  {
+    "find": "I chose to buy a Golden Diploma to increase my chances of career success.",
+    "replace": "I bought a Golden Diploma to boost my chances of a Vought career.        "
+  },
+  {
+    "find": "I felt motivated enough about my job as {0} that I put in some extra effort.",
+    "replace": "I felt motivated enough about my Vought job as {0} that I worked extra.     "
+  },
+  {
+    "find": "In this challenge, redemption is just a job change away.",
+    "replace": "In this challenge, redemption is just a Vought job away."
+  },
+  {
+    "find": "I enlightened my communard, I enlisted in the {0} with a salary of {1}.",
+    "replace": "I enlightened my communard, I joined Vought {0} for {1}.               "
+  }
+]
