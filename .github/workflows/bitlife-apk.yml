@@ -41,35 +41,52 @@ jobs:
           java-version: "21"
 
       - name: Araçlar (apktool, build-tools)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -eux
+          exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
+          set +e
+          echo "== uname =="; uname -a
+          echo "== java =="; java -version 2>&1 | head -2
+          echo "== ortam =="; env | grep -Ei 'android|java_home' | sort
           mkdir -p "$HOME/tools"
-          # apktool: en son sürümü API'den al, olmazsa sabit sürüme düş
-          URL=$(curl -fsSL -H "Accept: application/vnd.github+json"             https://api.github.com/repos/iBotPeaches/Apktool/releases/latest             | grep -o 'https://[^"]*apktool_[0-9.]*\.jar' | head -1) || URL=""
-          if [ -z "$URL" ]; then
-            URL="https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar"
-          fi
-          echo "apktool: $URL"
-          curl -fL --retry 3 "$URL" -o "$HOME/tools/apktool.jar"
-          ls -l "$HOME/tools/apktool.jar"
-          java -jar "$HOME/tools/apktool.jar" --version
-          echo "APKTOOL=java -jar $HOME/tools/apktool.jar" >> "$GITHUB_ENV"
 
-          # build-tools (zipalign + apksigner)
-          CANDIDATES=$(ls -d ${ANDROID_HOME:-/nonexistent}/build-tools/* \
-                            ${ANDROID_SDK_ROOT:-/nonexistent}/build-tools/* \
-                            /usr/local/lib/android/sdk/build-tools/* 2>/dev/null || true)
-          echo "adaylar: $CANDIDATES"
-          BT=$(echo "$CANDIDATES" | tr ' ' '\n' | grep -E '^/' | sort -V | tail -1)
-          [ -n "$BT" ] || { echo "build-tools bulunamadı" >&2; exit 1; }
-          echo "build-tools: $BT"
-          "$BT/zipalign" 2>&1 | head -2 || true
-          echo "$BT" >> "$GITHUB_PATH"
+          APKTOOL_OK=no
+          # 1) apt
+          sudo apt-get update -qq >/dev/null 2>&1
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq apktool >/dev/null 2>&1
+          if command -v apktool >/dev/null 2>&1; then
+            apktool --version && APKTOOL_OK=yes && echo "APKTOOL=apktool" >> "$GITHUB_ENV"
+          fi
+          # 2) jar (github)
+          if [ "$APKTOOL_OK" = "no" ]; then
+            URL=$(curl -fsSL https://api.github.com/repos/iBotPeaches/Apktool/releases/latest \
+              | grep -o 'https://[^"]*apktool_[0-9.]*\.jar' | head -1)
+            echo "jar url: ${URL:-yok}"
+            [ -n "$URL" ] || URL="https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar"
+            curl -fL --retry 3 "$URL" -o "$HOME/tools/apktool.jar"
+            if java -jar "$HOME/tools/apktool.jar" --version; then
+              echo "APKTOOL=java -jar $HOME/tools/apktool.jar" >> "$GITHUB_ENV"
+              APKTOOL_OK=yes
+            fi
+          fi
+          echo "apktool durumu: $APKTOOL_OK"
+
+          # build-tools
+          for d in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}" /usr/local/lib/android/sdk "$HOME/android-sdk"; do
+            [ -n "$d" ] && [ -d "$d/build-tools" ] && ls -d "$d"/build-tools/* 2>/dev/null
+          done | sort -V | tail -1 > "$RUNNER_TEMP/bt.txt"
+          BT=$(cat "$RUNNER_TEMP/bt.txt")
+          echo "build-tools: ${BT:-yok}"
+          if [ -n "$BT" ]; then echo "$BT" >> "$GITHUB_PATH"; fi
+          [ -x "$BT/zipalign" ] && zipalign -h 2>&1 | head -2
+          [ -x "$BT/apksigner" ] && apksigner --version
+
+          echo "== dosyalar =="; ls -l "$HOME/tools" 2>/dev/null
+          [ "$APKTOOL_OK" = "yes" ] && [ -n "$BT" ] || echo "ARAÇ EKSİK: apktool=$APKTOOL_OK build-tools=${BT:-yok}"
+          true
 
       - name: APK'yı Drive'dan indir
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/diag.log") 2>&1
           set -eu
           bash tools/drive-fetch.sh "${DRIVE_ID:-19nxS1vrw5oP56ymsumXNRUMXmgA90-ef}" "$RUNNER_TEMP/bitlife.apk"
           cp "$RUNNER_TEMP/bitlife.apk" "$RUNNER_TEMP/original.apk"
@@ -224,3 +241,27 @@ jobs:
             echo ""
             cat apk-analiz/INJEKSIYON.md 2>/dev/null | head -60 || echo "enjeksiyon raporu yok"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Tanılama (her durumda)
+        if: always()
+        run: |
+          set +e
+          mkdir -p apk-analiz
+          {
+            echo "# Tanılama"
+            echo ""
+            echo "sürüm: $(date -u +%FT%TZ)"
+            echo ""
+            echo '```'
+            tail -200 "$RUNNER_TEMP/diag.log" 2>/dev/null || echo "log yok"
+            echo '```'
+            echo ""
+            echo "## artifacts"
+            ls -lh "$RUNNER_TEMP" 2>/dev/null | head -30
+          } > apk-analiz/TANILAMA.md
+          git config user.name "bitlife-bot"
+          git config user.email "bitlife-bot@users.noreply.github.com"
+          git add -A apk-analiz
+          git commit -m "tanilama(bitlife) [skip ci]" || echo "değişiklik yok"
+          git pull --rebase origin "${GITHUB_REF_NAME}" || true
+          git push origin "HEAD:${GITHUB_REF_NAME}" || echo "push atlandı"
