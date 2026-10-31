@@ -1,0 +1,28 @@
+{
+  "started_at": "2026-10-31T09:26:25.676Z",
+  "databases": [],
+  "json": [
+    {
+      "path": "assets/bin/Data/RuntimeInitializeOnLoads.json",
+      "added": 12,
+      "error": null
+    },
+    {
+      "path": "assets/didomi_master_config.json",
+      "added": 36,
+      "error": null
+    },
+    {
+      "path": "original/META-INF/native-image/io.opentelemetry/opentelemetry-sdk-trace/reflect-config.json",
+      "added": 12,
+      "error": null
+    },
+    {
+      "path": "res/raw/applovin_consent_flow_unified_cmp.json",
+      "added": 12,
+      "error": null
+    }
+  ],
+  "total_rows": 72,
+  "skipped": []
+}
